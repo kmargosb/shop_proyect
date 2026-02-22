@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String?
+  name     String?
+  role     Role    @default(USER)
+  tokenVersion Int @default(0)
+  refreshTokens RefreshToken[]
+  loginAttempts Int      @default(0)
+  lockUntil     DateTime?
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int
+  images      ProductImage[]
+  createdAt   DateTime       @default(now())
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  url       String
+  publicId  String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}

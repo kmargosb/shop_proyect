@@ -1,0 +1,8 @@
+{
+  "name": "proyecto",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "devDependencies": {
+    "turbo": "^2.8.9"
+  }
+}

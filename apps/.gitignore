@@ -1,0 +1,22 @@
+# Node
+node_modules
+
+# Next
+.next
+out
+
+# Logs
+*.log
+
+# Env
+.env
+.env.local
+.env.production
+.env.development
+
+# Prisma
+prisma/dev.db
+
+# OS
+.DS_Store
+Thumbs.db
