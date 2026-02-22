@@ -5,6 +5,7 @@ import productRoutes from "./routes/product.routes"
 import { errorHandler } from "./middleware/error.middleware"
 import authRoutes from "./routes/auth.routes"
 import cookieParser from "cookie-parser";
+import orderRoutes from "./routes/order.routes"
 
 const app = express()
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 })
 
 app.use("/products", productRoutes)
+app.use("/orders", orderRoutes)
 
 // 🔥 Middleware global de errores
 app.use(errorHandler)
