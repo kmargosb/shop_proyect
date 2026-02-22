@@ -1,9 +1,9 @@
-# Node
-node_modules
+# Dependencies
+node_modules/
 
 # Next
-.next
-out
+.next/
+out/
 
 # Logs
 *.log
@@ -13,9 +13,6 @@ out
 .env.local
 .env.production
 .env.development
-
-# Prisma
-prisma/dev.db
 
 # OS
 .DS_Store
