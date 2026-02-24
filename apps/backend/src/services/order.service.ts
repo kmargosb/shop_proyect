@@ -99,3 +99,66 @@ export async function createOrder(data: CreateOrderInput) {
     return order
   })
 }
+
+export async function getOrders(params: {
+  page?: number
+  limit?: number
+  status?: string
+}) {
+  const page = params.page ?? 1
+  const limit = params.limit ?? 10
+  const skip = (page - 1) * limit
+
+  const where: any = {}
+
+  if (params.status) {
+    where.status = params.status
+  }
+
+  const [orders, total] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      include: {
+        items: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.order.count({ where }),
+  ])
+
+  return {
+    data: orders,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  }
+}
+
+// Cambiar estado de orden (ADMIN)
+export async function updateOrderStatus(orderId: string, status: string) {
+  const validStatuses = ["PENDING", "PAID", "SHIPPED", "CANCELLED"]
+
+  if (!validStatuses.includes(status)) {
+    throw new Error("Estado inválido")
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  })
+
+  if (!order) {
+    throw new Error("Orden no encontrada")
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { status: status as any },
+  })
+}

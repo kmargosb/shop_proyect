@@ -1,6 +1,6 @@
 import { Response } from "express"
 import { asyncHandler } from "../utils/asyncHandler"
-import { createOrder } from "../services/order.service"
+import { createOrder, getOrders, updateOrderStatus } from "../services/order.service"
 import { AuthRequest } from "../middleware/auth.middleware"
 
 export const createOrderController = asyncHandler(
@@ -31,5 +31,34 @@ export const createOrderController = asyncHandler(
     })
 
     res.status(201).json(order)
+  }
+)
+
+export const getOrdersController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { page, limit, status } = req.query
+
+    const result = await getOrders({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      status: status as string | undefined,
+    })
+
+    res.json(result)
+  }
+)
+
+// Actualizar estado de orden (ADMIN)
+export const updateOrderStatusController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const id = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id
+
+    const { status } = req.body
+
+    const updated = await updateOrderStatus(id, status)
+
+    res.json(updated)
   }
 )
