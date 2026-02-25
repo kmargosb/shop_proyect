@@ -101,25 +101,34 @@ export async function createOrder(data: CreateOrderInput) {
 }
 
 export async function getOrders(params: {
-  page?: number
-  limit?: number
-  status?: string
+  page?: number;
+  limit?: number;
+  status?: string;
 }) {
-  const page = params.page ?? 1
-  const limit = params.limit ?? 10
-  const skip = (page - 1) * limit
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 10;
+  const skip = (page - 1) * limit;
 
-  const where: any = {}
+  const where: any = {};
 
   if (params.status) {
-    where.status = params.status
+    where.status = params.status;
   }
 
   const [orders, total] = await prisma.$transaction([
     prisma.order.findMany({
       where,
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -128,7 +137,7 @@ export async function getOrders(params: {
       take: limit,
     }),
     prisma.order.count({ where }),
-  ])
+  ]);
 
   return {
     data: orders,
@@ -138,7 +147,7 @@ export async function getOrders(params: {
       limit,
       totalPages: Math.ceil(total / limit),
     },
-  }
+  };
 }
 
 /**
