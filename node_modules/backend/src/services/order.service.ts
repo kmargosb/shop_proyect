@@ -141,37 +141,59 @@ export async function getOrders(params: {
   }
 }
 
-// Actualiza estado de orden con validación profesional
+/**
+ * Actualiza estado de orden con:
+ * - Validación de transición
+ * - Devolución automática de stock si se cancela
+ */
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrderStatus
 ) {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-  })
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
-  if (!order) {
-    throw new Error("Orden no encontrada")
-  }
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    })
 
-  const currentStatus = order.status
+    if (!order) {
+      throw new Error("Orden no encontrada")
+    }
 
-  // 🔒 Reglas profesionales de transición
-  const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-    PENDING: ["PAID", "CANCELLED"],
-    PAID: ["SHIPPED", "CANCELLED"],
-    SHIPPED: [],
-    CANCELLED: [],
-  }
+    const currentStatus = order.status
 
-  if (!validTransitions[currentStatus].includes(newStatus)) {
-    throw new Error(
-      `No se puede cambiar estado de ${currentStatus} a ${newStatus}`
-    )
-  }
+    // 🔒 Reglas de transición
+    const validTransitions: Record<OrderStatus, OrderStatus[]> = {
+      PENDING: ["PAID", "CANCELLED"],
+      PAID: ["SHIPPED", "CANCELLED"],
+      SHIPPED: [],
+      CANCELLED: [],
+    }
 
-  return prisma.order.update({
-    where: { id: orderId },
-    data: { status: newStatus },
+    if (!validTransitions[currentStatus].includes(newStatus)) {
+      throw new Error(
+        `No se puede cambiar estado de ${currentStatus} a ${newStatus}`
+      )
+    }
+
+    // 🔥 Si se cancela, devolver stock
+    if (newStatus === "CANCELLED") {
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        })
+      }
+    }
+
+    return tx.order.update({
+      where: { id: orderId },
+      data: { status: newStatus },
+    })
   })
 }
