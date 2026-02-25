@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma"
-import { Prisma } from "@prisma/client"
+import { Prisma, OrderStatus } from "@prisma/client"
 
 type CreateOrderInput = {
   userId?: string
@@ -141,14 +141,11 @@ export async function getOrders(params: {
   }
 }
 
-// Cambiar estado de orden (ADMIN)
-export async function updateOrderStatus(orderId: string, status: string) {
-  const validStatuses = ["PENDING", "PAID", "SHIPPED", "CANCELLED"]
-
-  if (!validStatuses.includes(status)) {
-    throw new Error("Estado inválido")
-  }
-
+// Actualiza estado de orden con validación profesional
+export async function updateOrderStatus(
+  orderId: string,
+  newStatus: OrderStatus
+) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
   })
@@ -157,8 +154,24 @@ export async function updateOrderStatus(orderId: string, status: string) {
     throw new Error("Orden no encontrada")
   }
 
+  const currentStatus = order.status
+
+  // 🔒 Reglas profesionales de transición
+  const validTransitions: Record<OrderStatus, OrderStatus[]> = {
+    PENDING: ["PAID", "CANCELLED"],
+    PAID: ["SHIPPED", "CANCELLED"],
+    SHIPPED: [],
+    CANCELLED: [],
+  }
+
+  if (!validTransitions[currentStatus].includes(newStatus)) {
+    throw new Error(
+      `No se puede cambiar estado de ${currentStatus} a ${newStatus}`
+    )
+  }
+
   return prisma.order.update({
     where: { id: orderId },
-    data: { status: status as any },
+    data: { status: newStatus },
   })
 }
