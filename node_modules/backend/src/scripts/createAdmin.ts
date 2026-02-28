@@ -1,6 +1,6 @@
 import "dotenv/config"
 import bcrypt from "bcrypt"
-import { prisma } from "../lib/prisma"
+import { prisma } from "@/lib/prisma"
 
 async function main() {
   // 🚫 No permitir ejecutar en producción
