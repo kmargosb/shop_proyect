@@ -13,40 +13,27 @@ type Product = {
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProducts = async () => {
-      try {
-        const res = await apiFetch("/products");
+      const res = await apiFetch("/products");
+      if (!res) return;
 
-        if (!res) return;
-
-        const data = await res.json();
-        setProducts(data);
-      } finally {
-        setLoading(false);
-      }
+      const data = await res.json();
+      setProducts(data);
     };
 
     loadProducts();
   }, []);
 
-  if (loading) return <p>Cargando productos...</p>;
-
   return (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {products.map((p) => (
-      <ProductCard
-        key={p.id}
-        product={p}
-        onAddToCart={(product) =>
-          window.dispatchEvent(
-            new CustomEvent("add-to-cart", { detail: product })
-          )
-        }
-      />
-    ))}
-  </div>
-);
+    <div className="grid grid-cols-3 gap-6">
+      {products.map((product) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+        />
+      ))}
+    </div>
+  );
 }

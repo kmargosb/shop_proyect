@@ -22,47 +22,60 @@ export async function apiFetch(
   options: RequestInit = {}
 ) {
   try {
+    const isJSONBody =
+      options.body && !(options.body instanceof FormData);
+
     let response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       credentials: "include",
-    })
+
+      headers: {
+        ...(isJSONBody && {
+          "Content-Type": "application/json",
+        }),
+        ...(options.headers || {}),
+      },
+    });
 
     /* ============================
-       SI ACCESS EXPIRÓ → INTENTAR REFRESH
+       ACCESS TOKEN EXPIRED
     ============================ */
 
     if (response.status === 401) {
-      const refreshed = await refreshAccessToken()
+      const refreshed = await refreshAccessToken();
 
       if (!refreshed) {
-        // 🔥 NO reload
-        // 🔥 NO refresh
-        // 🔥 NO loop
-
-        window.location.href = "/login"
-        return null
+        window.location.href = "/login";
+        return null;
       }
 
-      // Reintentar request original
+      // retry original request
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         credentials: "include",
-      })
+
+        headers: {
+          ...(isJSONBody && {
+            "Content-Type": "application/json",
+          }),
+          ...(options.headers || {}),
+        },
+      });
     }
 
     /* ============================
-       SI DESPUÉS DEL REFRESH SIGUE FALLANDO
+       STILL UNAUTHORIZED
     ============================ */
 
     if (response.status === 401 || response.status === 403) {
-      window.location.href = "/login"
-      return null
+      window.location.href = "/login";
+      return null;
     }
 
-    return response
+    return response;
   } catch (error) {
-    console.error("Error de red:", error)
-    return null
+    console.error("Error de red:", error);
+    return null;
   }
 }
 

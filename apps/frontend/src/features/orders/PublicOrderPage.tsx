@@ -10,37 +10,56 @@ export default function PublicOrderPage() {
   const params = useParams();
   const searchParams = useSearchParams();
 
-  const id = params.id as string;
+  // ✅ proteger params
+  const id =
+    typeof params?.id === "string"
+      ? params.id
+      : undefined;
+
   const email = searchParams.get("email");
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // ⭐ EVITA REQUESTS INVALIDOS
+    if (!id || !email) return;
+
     async function fetchOrder() {
       try {
+        console.log("Fetching order:", id, email);
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/orders/public/${id}?email=${email}`
         );
 
         if (!res.ok) {
-          setLoading(false);
+          setOrder(null);
           return;
         }
 
         const data = await res.json();
         setOrder(data);
       } catch (err) {
-        console.error(err);
+        console.error("Public order error:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    if (id && email) {
-      fetchOrder();
-    }
+    fetchOrder();
   }, [id, email]);
+
+  /* ======================
+     STATES
+  ====================== */
+
+  if (!id || !email)
+    return (
+      <div className="p-10 text-center">
+        Cargando pedido...
+      </div>
+    );
 
   if (loading)
     return (
@@ -55,6 +74,10 @@ export default function PublicOrderPage() {
         Pedido no encontrado
       </div>
     );
+
+  /* ======================
+     UI
+  ====================== */
 
   return (
     <div className="max-w-3xl mx-auto p-10 space-y-6">

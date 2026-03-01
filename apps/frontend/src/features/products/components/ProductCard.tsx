@@ -1,13 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-};
+import type { Product } from "@/types/product";
 
 type Props = {
   product: Product;
@@ -21,15 +15,15 @@ export default function ProductCard({ product }: Props) {
           id: product.id,
           name: product.name,
           price: product.price,
+          quantity: 1,
         },
       })
     );
   };
 
   return (
-    <div className="bg-gray-900 rounded-xl p-4 space-y-3">
-      <h2 className="text-lg font-semibold">{product.name}</h2>
-
+    <div className="bg-neutral-900 rounded-xl p-5 space-y-4">
+      <h2>{product.name}</h2>
       <p>${product.price}</p>
 
       <Button onClick={addToCart}>
