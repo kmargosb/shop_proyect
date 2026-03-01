@@ -137,6 +137,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     return res.status(403).json({ error: "Refresh inválido" });
   }
 
+  // ✅ buscar tokens del usuario
   const storedTokens = await prisma.refreshToken.findMany({
     where: { userId: decoded.id },
   });
@@ -144,19 +145,21 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   let matchedToken = null;
 
   for (const dbToken of storedTokens) {
-    const isValid = await bcrypt.compare(token, dbToken.token);
+    const valid = await bcrypt.compare(token, dbToken.token);
 
-    if (isValid) {
+    if (valid) {
       matchedToken = dbToken;
       break;
     }
   }
 
+  // 🚨 reuse attack protection
   if (!matchedToken) {
-    // 🔥 Posible reuse attack
     await prisma.user.update({
       where: { id: decoded.id },
-      data: { tokenVersion: { increment: 1 } },
+      data: {
+        tokenVersion: { increment: 1 },
+      },
     });
 
     await prisma.refreshToken.deleteMany({
@@ -171,20 +174,23 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  // ⏰ expirado
   if (matchedToken.expiresAt < new Date()) {
-    await prisma.refreshToken.delete({
+    await prisma.refreshToken.deleteMany({
       where: { id: matchedToken.id },
     });
 
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);
 
-    return res.status(403).json({ error: "Refresh expirado" });
+    return res.status(403).json({
+      error: "Refresh expirado",
+    });
   }
 
-  // Rotación real
-  await prisma.refreshToken.delete({
-    where: { id: matchedToken.id },
+  // ✅ ROTACIÓN SEGURA
+  await prisma.refreshToken.deleteMany({
+    where: { userId: decoded.id },
   });
 
   const newRefreshToken = generateRefreshToken({
@@ -199,7 +205,9 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     data: {
       token: hashedRefreshToken,
       userId: decoded.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      ),
     },
   });
 
@@ -211,7 +219,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
   res.cookie("accessToken", newAccessToken, {
     ...cookieOptions,
-    maxAge: 60 * 60 * 1000, // 1 hora
+    maxAge: 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", newRefreshToken, {
@@ -219,5 +227,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.json({ message: "Tokens renovados correctamente" });
+  res.json({
+    message: "Tokens renovados correctamente",
+  });
 });

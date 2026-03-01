@@ -167,7 +167,7 @@ export async function getOrders(params: {
  */
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: OrderStatus
+  newStatus: OrderStatus,
 ) {
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const order = await tx.order.findUnique({
@@ -193,7 +193,7 @@ export async function updateOrderStatus(
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
       throw new Error(
-        `No se puede cambiar estado de ${currentStatus} a ${newStatus}`
+        `No se puede cambiar estado de ${currentStatus} a ${newStatus}`,
       );
     }
 
@@ -217,8 +217,16 @@ export async function updateOrderStatus(
     });
 
     // ✅ crear factura automáticamente
-    if (newStatus === "PAID" && !order.invoice) {
+    if (newStatus === "PAID") {
+      const { createInvoiceFromOrder } =
+        await import("@/modules/invoices/invoice.service");
+
+      const { sendOrderConfirmationEmail } =
+        await import("@/modules/email/sendOrderEmail");
+
       await createInvoiceFromOrder(orderId);
+
+      await sendOrderConfirmationEmail(orderId);
     }
 
     return updatedOrder;
