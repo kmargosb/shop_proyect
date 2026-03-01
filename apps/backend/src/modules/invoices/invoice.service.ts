@@ -1,43 +1,37 @@
 import { prisma } from "@/lib/prisma";
+import { generateInvoiceNumber } from "./invoice-number.service";
 
 export async function createInvoiceFromOrder(orderId: string) {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: {
-      items: true,
-      invoice: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        invoice: true,
+      },
+    });
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    // ✅ evitar duplicar facturas
+    if (order.invoice) {
+      return order.invoice;
+    }
+
+    // ✅ generar número legal seguro
+    const invoiceNumber = await generateInvoiceNumber(tx);
+
+    // ✅ crear factura
+    const invoice = await tx.invoice.create({
+      data: {
+        invoiceNumber,
+        orderId: order.id,
+        customerEmail: order.email,
+        total: order.total,
+      },
+    });
+
+    return invoice;
   });
-
-  if (!order) {
-    throw new Error("Order not found");
-  }
-
-  // ✅ evitar duplicadas
-  if (order.invoice) {
-    return order.invoice;
-  }
-
-  // ✅ siguiente número de factura
-  const lastInvoice = await prisma.invoice.findFirst({
-    orderBy: {
-      invoiceNumber: "desc",
-    },
-  });
-
-  const nextInvoiceNumber = lastInvoice
-    ? lastInvoice.invoiceNumber + 1
-    : 1;
-
-  // ✅ crear factura
-  const invoice = await prisma.invoice.create({
-    data: {
-      invoiceNumber: nextInvoiceNumber,
-      orderId: order.id,
-      customerEmail: order.email,
-      total: order.total,
-    },
-  });
-
-  return invoice;
 }

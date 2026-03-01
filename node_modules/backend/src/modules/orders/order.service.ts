@@ -109,10 +109,10 @@ export async function getOrders(params: {
   const limit = params.limit ?? 10;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.OrderWhereInput = {};
 
   if (params.status) {
-    where.status = params.status;
+    where.status = params.status as any;
   }
 
   const [orders, total] = await prisma.$transaction([
@@ -129,7 +129,14 @@ export async function getOrders(params: {
             },
           },
         },
-        invoice: true, // ✅ ahora admin podrá ver factura
+
+        // ✅ necesario para botón factura
+        invoice: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -137,6 +144,7 @@ export async function getOrders(params: {
       skip,
       take: limit,
     }),
+
     prisma.order.count({ where }),
   ]);
 

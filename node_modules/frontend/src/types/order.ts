@@ -8,6 +8,12 @@ export type OrderItem = {
     name: string;
   };
 };
+
+export type Invoice = {
+  id: string;
+  invoiceNumber: string;
+};
+
 export type Order = {
   id: string;
   fullName: string;
@@ -21,5 +27,8 @@ export type Order = {
   total: number;
   status: string;
   createdAt: string;
+
   items: OrderItem[];
+
+  invoice?: Invoice | null;
 };

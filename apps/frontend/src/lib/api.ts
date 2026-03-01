@@ -65,3 +65,30 @@ export async function apiFetch(
     return null
   }
 }
+
+//Descargar Factura
+
+export async function downloadInvoice(orderId: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/orders/${orderId}/invoice`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("No se pudo descargar la factura");
+  }
+
+  const blob = await res.blob();
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `invoice-${orderId}.pdf`;
+  a.click();
+
+  window.URL.revokeObjectURL(url);
+}

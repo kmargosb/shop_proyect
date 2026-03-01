@@ -107,3 +107,49 @@ export const downloadOrderInvoice = asyncHandler(
     res.send(pdf);
   }
 );
+
+
+//Pagina publica de compra
+export const getPublicOrderController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id =
+      typeof req.params.id === "string"
+        ? req.params.id
+        : req.params.id[0];
+
+    const email = req.query.email as string;
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Email requerido",
+      });
+    }
+
+    const order = await prisma.order.findFirst({
+      where: {
+        id,
+        email,
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        invoice: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Pedido no encontrado",
+      });
+    }
+
+    res.json(order);
+  }
+);

@@ -50,7 +50,7 @@ export async function generateInvoicePDF(invoiceId: string) {
     doc.moveDown();
 
     doc.fontSize(12);
-    doc.text(`Factura #: INV-${invoice.invoiceNumber}`);
+    doc.text(`Factura #: ${invoice.invoiceNumber}`);
     doc.text(
       `Fecha: ${invoice.createdAt.toLocaleDateString()}`
     );

@@ -160,13 +160,19 @@ enum OrderStatus {
 
 model Invoice {
   id            String @id @default(uuid())
-  invoiceNumber Int    @unique
-
+  invoiceNumber String @unique
   orderId String @unique
   order   Order  @relation(fields: [orderId], references: [id])
 
   customerEmail String
   total         Float
 
+  createdAt DateTime @default(now())
+}
+
+model InvoiceSequence {
+  id        String   @id @default(uuid())
+  year      Int      @unique
+  current   Int      @default(0)
   createdAt DateTime @default(now())
 }
