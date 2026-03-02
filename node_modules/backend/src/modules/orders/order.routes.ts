@@ -6,6 +6,7 @@ import {
   updateOrderStatusController,
   downloadOrderInvoice,
   getPublicOrderController,
+  getPublicPaidOrderController
 } from "./order.controller";
 
 const router = Router();
@@ -21,5 +22,7 @@ router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 router.get("/:id/invoice", protect, downloadOrderInvoice);
 
 router.get("/public/:id", getPublicOrderController);
+
+router.get("/public-paid/:id", getPublicPaidOrderController);
 
 export default router;

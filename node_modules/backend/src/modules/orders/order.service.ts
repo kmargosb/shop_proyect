@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
-import { createInvoiceFromOrder } from "@/modules/invoices/invoice.service";
 
 type CreateOrderInput = {
   userId?: string;
@@ -37,8 +36,8 @@ export async function createOrder(data: CreateOrderInput) {
     throw new Error("La orden debe contener productos");
   }
 
-  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    let total = 0;
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    let totalAmount = 0;
 
     const orderItemsData: {
       productId: string;
@@ -59,7 +58,10 @@ export async function createOrder(data: CreateOrderInput) {
         throw new Error(`Stock insuficiente para ${product.name}`);
       }
 
-      total += product.price * item.quantity;
+      /**
+       * price ya está en CENTS
+       */
+      totalAmount += product.price * item.quantity;
 
       orderItemsData.push({
         productId: product.id,
@@ -86,7 +88,12 @@ export async function createOrder(data: CreateOrderInput) {
         city,
         postalCode,
         country,
-        total,
+
+        totalAmount,
+        currency: "eur",
+
+        status: OrderStatus.PENDING,
+
         items: {
           create: orderItemsData,
         },
@@ -100,6 +107,12 @@ export async function createOrder(data: CreateOrderInput) {
   });
 }
 
+/**
+ * ============================
+ * GET ORDERS
+ * ============================
+ */
+
 export async function getOrders(params: {
   page?: number;
   limit?: number;
@@ -112,7 +125,7 @@ export async function getOrders(params: {
   const where: Prisma.OrderWhereInput = {};
 
   if (params.status) {
-    where.status = params.status as any;
+    where.status = params.status as OrderStatus;
   }
 
   const [orders, total] = await prisma.$transaction([
@@ -129,8 +142,6 @@ export async function getOrders(params: {
             },
           },
         },
-
-        // ✅ necesario para botón factura
         invoice: {
           select: {
             id: true,
@@ -160,11 +171,11 @@ export async function getOrders(params: {
 }
 
 /**
- * Actualiza estado de orden con:
- * - Validación de transición
- * - Devolución automática de stock
- * - Creación automática de factura
+ * ============================
+ * UPDATE ORDER STATUS
+ * ============================
  */
+
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrderStatus,
@@ -184,9 +195,34 @@ export async function updateOrderStatus(
 
     const currentStatus = order.status;
 
+    /**
+     * ✅ Stripe compatible transitions
+     */
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      PENDING: ["PAID", "CANCELLED"],
+      /**
+       * Order recién creada
+       */
+      PENDING: [
+        "PAYMENT_PROCESSING", // Stripe inicia pago
+        "PAID", // ✅ admin manual payment
+        "CANCELLED",
+      ],
+
+      /**
+       * Usuario pagando en Stripe
+       */
+      PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
+
+      /**
+       * Pago confirmado
+       */
       PAID: ["SHIPPED", "CANCELLED"],
+
+      /**
+       * Pago fallido
+       */
+      FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
+
       SHIPPED: [],
       CANCELLED: [],
     };
@@ -197,7 +233,9 @@ export async function updateOrderStatus(
       );
     }
 
-    // ✅ devolver stock
+    /**
+     * devolver stock si cancelada
+     */
     if (newStatus === "CANCELLED") {
       for (const item of order.items) {
         await tx.product.update({
@@ -216,8 +254,10 @@ export async function updateOrderStatus(
       data: { status: newStatus },
     });
 
-    // ✅ crear factura automáticamente
-    if (newStatus === "PAID") {
+    /**
+     * FACTURA SOLO CUANDO SE PAGA
+     */
+    if (newStatus === "PAID" && !order.invoice) {
       const { createInvoiceFromOrder } =
         await import("@/modules/invoices/invoice.service");
 
@@ -225,7 +265,6 @@ export async function updateOrderStatus(
         await import("@/modules/email/sendOrderEmail");
 
       await createInvoiceFromOrder(orderId);
-
       await sendOrderConfirmationEmail(orderId);
     }
 

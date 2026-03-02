@@ -1,14 +1,31 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+
 import authRoutes from "./modules/auth/auth.routes";
 import productRoutes from "./modules/products/product.routes";
 import orderRoutes from "./modules/orders/order.routes";
-import { errorHandler } from "./common/middleware/error.middleware";
 import invoiceRoutes from "@/modules/invoices/invoice.routes";
+import paymentRouter from "./modules/payment/payment.router";
+
+import { stripeWebhook } from "./modules/payment/webhook.controller";
+import { errorHandler } from "./common/middleware/error.middleware";
 
 const app = express();
 
+/**
+ * ✅ STRIPE WEBHOOK (ANTES DE TODO)
+ */
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" })
+);
+
+app.post("/api/payments/webhook", stripeWebhook);
+
+/**
+ * ✅ NORMAL MIDDLEWARE
+ */
 app.use(express.json());
 app.use(cookieParser());
 
@@ -26,9 +43,13 @@ app.get("/", (_, res) => {
   });
 });
 
+/**
+ * ROUTES
+ */
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
+app.use("/api/payments", paymentRouter);
 app.use("/invoices", invoiceRoutes);
 
 app.use(errorHandler);

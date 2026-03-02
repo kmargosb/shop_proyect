@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { prisma } from "@/lib/prisma";
+import { formatMoney } from "@/common/utils/money";
 
 export async function generateInvoicePDF(invoiceId: string) {
   const invoice = await prisma.invoice.findUnique({
@@ -37,23 +38,17 @@ export async function generateInvoicePDF(invoiceId: string) {
        HEADER
     ====================== */
 
-    doc
-      .fontSize(22)
-      .text("MI TIENDA", { align: "center" });
+    doc.fontSize(22).text("MI TIENDA", { align: "center" });
 
     doc.moveDown(0.5);
 
-    doc
-      .fontSize(16)
-      .text("FACTURA", { align: "center" });
+    doc.fontSize(16).text("FACTURA", { align: "center" });
 
     doc.moveDown();
 
     doc.fontSize(12);
     doc.text(`Factura #: ${invoice.invoiceNumber}`);
-    doc.text(
-      `Fecha: ${invoice.createdAt.toLocaleDateString()}`
-    );
+    doc.text(`Fecha: ${invoice.createdAt.toLocaleDateString()}`);
 
     doc.moveDown();
 
@@ -67,9 +62,7 @@ export async function generateInvoicePDF(invoiceId: string) {
     doc.text(invoice.order.fullName);
     doc.text(invoice.order.email);
     doc.text(invoice.order.addressLine1);
-    doc.text(
-      `${invoice.order.postalCode} ${invoice.order.city}`
-    );
+    doc.text(`${invoice.order.postalCode} ${invoice.order.city}`);
     doc.text(invoice.order.country);
 
     doc.moveDown(2);
@@ -115,11 +108,7 @@ export async function generateInvoicePDF(invoiceId: string) {
     doc
       .font("Helvetica-Bold")
       .fontSize(14)
-      .text(
-        `TOTAL: €${invoice.total.toFixed(2)}`,
-        400,
-        position + 20
-      );
+      .text(`TOTAL: €${formatMoney(invoice.totalAmount)}`, 400, position + 20);
 
     /* =====================
        FOOTER
@@ -130,10 +119,7 @@ export async function generateInvoicePDF(invoiceId: string) {
     doc
       .fontSize(10)
       .font("Helvetica")
-      .text(
-        "Gracias por tu compra",
-        { align: "center" }
-      );
+      .text("Gracias por tu compra", { align: "center" });
 
     doc.end();
   });

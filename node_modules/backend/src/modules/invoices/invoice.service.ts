@@ -28,7 +28,7 @@ export async function createInvoiceFromOrder(orderId: string) {
         invoiceNumber,
         orderId: order.id,
         customerEmail: order.email,
-        total: order.total,
+        totalAmount: order.totalAmount,
       },
     });
 

@@ -26,7 +26,7 @@ model User {
   lockUntil     DateTime?
 
   refreshTokens RefreshToken[]
-  orders        Order[] // 🔥 relación inversa
+  orders        Order[]
 
   createdAt DateTime @default(now())
 }
@@ -41,11 +41,12 @@ model Product {
   id          String  @id @default(uuid())
   name        String
   description String?
-  price       Float
-  stock       Int
+
+  price Int // cents
+  stock Int
 
   images     ProductImage[]
-  orderItems OrderItem[] // 🔥 relación inversa
+  orderItems OrderItem[]
 
   createdAt DateTime @default(now())
 }
@@ -78,7 +79,7 @@ model Order {
   id String @id @default(uuid())
 
   userId String?
-  user   User?   @relation(fields: [userId], references: [id])
+  user   User? @relation(fields: [userId], references: [id])
 
   fullName String
   email    String
@@ -90,13 +91,19 @@ model Order {
   postalCode   String
   country      String
 
-  total  Float
-  status OrderStatus @default(PENDING)
+  totalAmount Int
+  currency    String @default("eur")
 
-  items OrderItem[]
+  stripePaymentIntentId String? @unique
+  stripeCustomerId      String?
+
+  status OrderStatus @default(PENDING)
+  paidAt DateTime?
+
+  items   OrderItem[]
+  invoice Invoice?
 
   createdAt DateTime @default(now())
-  invoice   Invoice?
 }
 
 /**
@@ -109,13 +116,13 @@ model OrderItem {
   id String @id @default(uuid())
 
   orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
   quantity Int
-  price    Float // 🔥 precio congelado al momento de compra
+  price    Int // cents
 }
 
 /**
@@ -127,11 +134,38 @@ model OrderItem {
 model RefreshToken {
   id     String @id @default(uuid())
   token  String @unique
+
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   expiresAt DateTime
+}
+
+/**
+ * ============================
+ * INVOICE
+ * ============================
+ */
+
+model Invoice {
+  id            String @id @default(uuid())
+  invoiceNumber String @unique
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  customerEmail String
+  totalAmount   Int
+
+  createdAt DateTime @default(now())
+}
+
+model InvoiceSequence {
+  id        String   @id @default(uuid())
+  year      Int      @unique
+  current   Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 /**
@@ -147,32 +181,9 @@ enum Role {
 
 enum OrderStatus {
   PENDING
+  PAYMENT_PROCESSING
   PAID
+  FAILED
   SHIPPED
   CANCELLED
-}
-
-/**
- * ============================
- * Facturacion
- * ============================
- */
-
-model Invoice {
-  id            String @id @default(uuid())
-  invoiceNumber String @unique
-  orderId String @unique
-  order   Order  @relation(fields: [orderId], references: [id])
-
-  customerEmail String
-  total         Float
-
-  createdAt DateTime @default(now())
-}
-
-model InvoiceSequence {
-  id        String   @id @default(uuid())
-  year      Int      @unique
-  current   Int      @default(0)
-  createdAt DateTime @default(now())
 }

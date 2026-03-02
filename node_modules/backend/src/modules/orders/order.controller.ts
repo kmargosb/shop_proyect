@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "@/common/utils/asyncHandler";
-import {
-  createOrder,
-  getOrders,
-  updateOrderStatus,
-} from "./order.service";
+import { createOrder, getOrders, updateOrderStatus } from "./order.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
@@ -40,7 +36,7 @@ export const createOrderController = asyncHandler(
     });
 
     res.status(201).json(order);
-  }
+  },
 );
 
 /**
@@ -57,7 +53,7 @@ export const getOrdersController = asyncHandler(
     });
 
     res.json(result);
-  }
+  },
 );
 
 /**
@@ -72,7 +68,7 @@ export const updateOrderStatusController = asyncHandler(
     const updated = await updateOrderStatus(id, status);
 
     res.json(updated);
-  }
+  },
 );
 
 /**
@@ -101,35 +97,23 @@ export const downloadOrderInvoice = asyncHandler(
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`
+      `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`,
     );
 
     res.send(pdf);
-  }
+  },
 );
 
-
-//Pagina publica de compra
+// ===============================
+// Página pública de compra
+// ===============================
 export const getPublicOrderController = asyncHandler(
   async (req: Request, res: Response) => {
     const id =
-      typeof req.params.id === "string"
-        ? req.params.id
-        : req.params.id[0];
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
-    const email = req.query.email as string;
-
-    if (!email) {
-      return res.status(400).json({
-        error: "Email requerido",
-      });
-    }
-
-    const order = await prisma.order.findFirst({
-      where: {
-        id,
-        email,
-      },
+    const order = await prisma.order.findUnique({
+      where: { id },
       include: {
         items: {
           include: {
@@ -145,6 +129,49 @@ export const getPublicOrderController = asyncHandler(
     });
 
     if (!order) {
+      return res.status(404).json({
+        error: "Pedido no encontrado",
+      });
+    }
+
+    /**
+     * 🔒 Seguridad profesional:
+     * Solo permitir acceso público si está PAGADO
+     */
+    // Permitir ver orden si aún no está cancelada
+    if (order.status === "CANCELLED") {
+      return res.status(403).json({
+        error: "Pedido cancelado",
+      });
+    }
+
+    res.json(order);
+  },
+);
+
+// Solo devuelve ordenes ya pagadas
+export const getPublicPaidOrderController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id =
+      typeof req.params.id === "string"
+        ? req.params.id
+        : req.params.id[0];
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { name: true },
+            },
+          },
+        },
+        invoice: true,
+      },
+    });
+
+    if (!order || order.status !== "PAID") {
       return res.status(404).json({
         error: "Pedido no encontrado",
       });
