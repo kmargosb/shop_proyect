@@ -110,52 +110,11 @@ export const downloadOrderInvoice = asyncHandler(
 export const getPublicOrderController = asyncHandler(
   async (req: Request, res: Response) => {
     const id =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-        invoice: true,
-      },
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        error: "Pedido no encontrado",
-      });
-    }
-
-    /**
-     * 🔒 Seguridad profesional:
-     * Solo permitir acceso público si está PAGADO
-     */
-    // Permitir ver orden si aún no está cancelada
-    if (order.status === "CANCELLED") {
-      return res.status(403).json({
-        error: "Pedido cancelado",
-      });
-    }
-
-    res.json(order);
-  },
-);
-
-// Solo devuelve ordenes ya pagadas
-export const getPublicPaidOrderController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id =
       typeof req.params.id === "string"
         ? req.params.id
         : req.params.id[0];
+
+    const email = req.query.email as string | undefined;
 
     const order = await prisma.order.findUnique({
       where: { id },
@@ -171,12 +130,78 @@ export const getPublicPaidOrderController = asyncHandler(
       },
     });
 
-    if (!order || order.status !== "PAID") {
+    if (!order) {
       return res.status(404).json({
         error: "Pedido no encontrado",
       });
     }
 
+    // 🔒 Bloquear si está cancelada
+    if (order.status === "CANCELLED") {
+      return res.status(403).json({
+        error: "Pedido cancelado",
+      });
+    }
+
+    // Si no está pagada ni en procesamiento, requiere email válido
+if (
+  order.status !== "PAID" &&
+  order.status !== "PAYMENT_PROCESSING"
+) {
+  if (!email || email !== order.email) {
+    return res.status(403).json({
+      error: "No autorizado",
+    });
+  }
+}
+
     res.json(order);
+  }
+);
+
+// ===============================
+// Descarga pública de Factura
+// ===============================
+
+export const downloadPublicInvoice = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id =
+      typeof req.params.id === "string"
+        ? req.params.id
+        : req.params.id[0];
+
+    const email = req.query.email as string | undefined;
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { invoice: true },
+    });
+
+    if (!order || !order.invoice) {
+      return res.status(404).json({
+        error: "Factura no encontrada",
+      });
+    }
+
+    // 🔒 Solo permitir si:
+    // - Está pagada
+    // - O coincide email
+    if (order.status !== "PAID") {
+      if (!email || email !== order.email) {
+        return res.status(403).json({
+          error: "No autorizado",
+        });
+      }
+    }
+
+    const pdf = await generateInvoicePDF(order.invoice.id);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`
+    );
+
+    res.send(pdf);
   }
 );

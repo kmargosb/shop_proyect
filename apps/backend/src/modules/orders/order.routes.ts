@@ -6,23 +6,35 @@ import {
   updateOrderStatusController,
   downloadOrderInvoice,
   getPublicOrderController,
-  getPublicPaidOrderController
+  downloadPublicInvoice
 } from "./order.controller";
 
 const router = Router();
 
+/* ===============================
+   PUBLIC ROUTES (SIEMPRE ARRIBA)
+================================= */
+
+// Public invoice (más específica)
+router.get("/public/:id/invoice", downloadPublicInvoice);
+
+// Public order
+router.get("/public/:id", getPublicOrderController);
+
+/* ===============================
+   ADMIN / PRIVATE ROUTES
+================================= */
+
 // Guest checkout
 router.post("/", createOrderController);
 
-// Admin routes
+// Admin list
 router.get("/", protect, adminOnly, getOrdersController);
+
+// Admin update
 router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
-//Invoice
+// Admin invoice (protegida)
 router.get("/:id/invoice", protect, downloadOrderInvoice);
-
-router.get("/public/:id", getPublicOrderController);
-
-router.get("/public-paid/:id", getPublicPaidOrderController);
 
 export default router;

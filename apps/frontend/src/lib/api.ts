@@ -1,26 +1,30 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL as string
+const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
-async function refreshAccessToken() {
+/* ============================================
+   🔐 REFRESH TOKEN
+============================================ */
+
+async function refreshAccessToken(): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
       credentials: "include",
-    })
+    });
 
-    if (!res.ok) {
-      return false
-    }
-
-    return true
+    return res.ok;
   } catch {
-    return false
+    return false;
   }
 }
+
+/* ============================================
+   🌐 BASE FETCH (PRIVATE - WITH AUTH)
+============================================ */
 
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {}
-) {
+): Promise<Response | null> {
   try {
     const isJSONBody =
       options.body && !(options.body instanceof FormData);
@@ -28,11 +32,8 @@ export async function apiFetch(
     let response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       credentials: "include",
-
       headers: {
-        ...(isJSONBody && {
-          "Content-Type": "application/json",
-        }),
+        ...(isJSONBody && { "Content-Type": "application/json" }),
         ...(options.headers || {}),
       },
     });
@@ -49,15 +50,12 @@ export async function apiFetch(
         return null;
       }
 
-      // retry original request
+      // retry
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         credentials: "include",
-
         headers: {
-          ...(isJSONBody && {
-            "Content-Type": "application/json",
-          }),
+          ...(isJSONBody && { "Content-Type": "application/json" }),
           ...(options.headers || {}),
         },
       });
@@ -74,34 +72,56 @@ export async function apiFetch(
 
     return response;
   } catch (error) {
-    console.error("Error de red:", error);
+    console.error("API error:", error);
     return null;
   }
 }
 
-//Descargar Factura
+/* ============================================
+   🌍 PUBLIC FETCH (NO AUTH LOGIC)
+============================================ */
 
-export async function downloadInvoice(orderId: string) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/orders/${orderId}/invoice`,
-    {
-      method: "GET",
-      credentials: "include",
-    }
-  );
+export async function publicFetch(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const res = await fetch(`${API_URL}${endpoint}`, options);
 
   if (!res.ok) {
-    throw new Error("No se pudo descargar la factura");
+    throw new Error(`Public API error: ${res.status}`);
   }
+
+  return res;
+}
+
+/* ============================================
+   📄 DOWNLOAD PUBLIC INVOICE
+============================================ */
+
+export async function downloadInvoice(
+  orderId: string,
+  email?: string
+) {
+  let url = `/orders/public/${orderId}/invoice`;
+
+  if (email) {
+    url += `?email=${email}`;
+  }
+
+  const res = await publicFetch(url, {
+    method: "GET",
+  });
 
   const blob = await res.blob();
 
-  const url = window.URL.createObjectURL(blob);
+  const fileURL = window.URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `invoice-${orderId}.pdf`;
-  a.click();
+  const link = document.createElement("a");
+  link.href = fileURL;
+  link.download = `invoice-${orderId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 
-  window.URL.revokeObjectURL(url);
+  window.URL.revokeObjectURL(fileURL);
 }

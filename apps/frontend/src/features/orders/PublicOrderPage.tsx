@@ -14,45 +14,40 @@ export default function PublicOrderPage() {
   const id = typeof params?.id === "string" ? params.id : undefined;
 
   const email = searchParams.get("email");
-  const paid = searchParams.get("paid");
 
   const [order, setOrder] = useState<Order | null>(null);
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+  if (!id) return;
 
-    async function fetchOrder() {
-      try {
-        let url;
+  async function fetchOrder() {
+    try {
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/orders/public/${id}`;
 
-        // Si viene de Stripe
-        if (paid === "true") {
-          url = `${process.env.NEXT_PUBLIC_API_URL}/orders/public-paid/${id}`;
-        } else {
-          if (!email) return;
-          url = `${process.env.NEXT_PUBLIC_API_URL}/orders/public/${id}?email=${email}`;
-        }
-
-        const res = await fetch(url);
-
-        if (!res.ok) {
-          setOrder(null);
-          return;
-        }
-
-        const data = await res.json();
-        setOrder(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      if (email) {
+        url += `?email=${email}`;
       }
-    }
 
-    fetchOrder();
-  }, [id, email, paid]);
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        setOrder(null);
+        return;
+      }
+
+      const data = await res.json();
+      setOrder(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchOrder();
+}, [id, email]);
 
   if (!id) return <div className="p-10">Cargando...</div>;
 
@@ -63,12 +58,6 @@ export default function PublicOrderPage() {
   return (
     <div className="max-w-3xl mx-auto p-10 space-y-6">
       <h1 className="text-2xl font-bold">Pedido #{order.id.slice(0, 6)}</h1>
-
-      {paid && (
-        <div className="bg-green-100 text-green-800 p-4 rounded">
-          ✅ Pago realizado correctamente
-        </div>
-      )}
 
       <p className="text-gray-400">Estado: {order.status}</p>
 
