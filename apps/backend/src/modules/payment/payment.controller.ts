@@ -9,6 +9,12 @@ export const createPaymentIntent = async (
   try {
     const { orderId } = req.body;
 
+    if (!orderId) {
+      return res.status(400).json({
+        error: "Order ID is required",
+      });
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
     });
@@ -19,49 +25,70 @@ export const createPaymentIntent = async (
       });
     }
 
-    console.log("ORDER TOTAL:", order.totalAmount);
-
-    /**
-     * reutilizar intent existente
-     */
-    if (order.stripePaymentIntentId) {
-      const existingIntent =
-        await stripe.paymentIntents.retrieve(
-          order.stripePaymentIntentId
-        );
-
-      return res.json({
-        clientSecret: existingIntent.client_secret,
+    if (order.status === "PAID") {
+      return res.status(400).json({
+        error: "Order already paid",
       });
     }
 
-    const paymentIntent =
-      await stripe.paymentIntents.create({
+    let paymentIntent;
+
+    /* =========================================================
+       REUTILIZAR INTENT SI EXISTE Y NO ESTÁ COMPLETADO
+    ========================================================= */
+
+    if (order.stripePaymentIntentId) {
+      paymentIntent = await stripe.paymentIntents.retrieve(
+        order.stripePaymentIntentId
+      );
+
+      if (paymentIntent.status === "succeeded") {
+        return res.status(400).json({
+          error: "Payment already completed",
+        });
+      }
+
+      // 🔐 Asegurarnos que metadata existe
+      if (!paymentIntent.metadata?.orderId) {
+        await stripe.paymentIntents.update(paymentIntent.id, {
+          metadata: { orderId: order.id },
+        });
+      }
+
+    } else {
+
+      /* =========================================================
+         CREAR NUEVO PAYMENT INTENT
+      ========================================================= */
+
+      paymentIntent = await stripe.paymentIntents.create({
         amount: order.totalAmount,
         currency: order.currency,
         automatic_payment_methods: {
           enabled: true,
         },
         metadata: {
-          orderId: order.id,
+          orderId: order.id,   // 🔥 MUY IMPORTANTE
         },
       });
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        stripePaymentIntentId: paymentIntent.id,
-        status: "PAYMENT_PROCESSING",
-      },
-    });
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          stripePaymentIntentId: paymentIntent.id,
+          status: "PAYMENT_PROCESSING",
+        },
+      });
+    }
 
-    res.json({
+    return res.json({
       clientSecret: paymentIntent.client_secret,
     });
+
   } catch (error) {
     console.error("🔥 STRIPE ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Payment initialization failed",
     });
   }
