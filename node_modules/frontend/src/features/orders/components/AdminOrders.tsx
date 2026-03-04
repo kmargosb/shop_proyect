@@ -12,7 +12,10 @@ export default function AdminOrders() {
   const [filter, setFilter] = useState("ALL");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // 🔄 Cargar órdenes
+  /* ======================================================
+     LOAD ORDERS
+  ====================================================== */
+
   const loadOrders = async () => {
     try {
       const res = await apiFetch("/orders");
@@ -20,7 +23,8 @@ export default function AdminOrders() {
       if (!res || !res.ok) throw new Error();
 
       const data = await res.json();
-      setOrders(data.data);
+
+      setOrders(data.data ?? []);
     } catch {
       toast.error("Error cargando órdenes");
     } finally {
@@ -32,7 +36,10 @@ export default function AdminOrders() {
     loadOrders();
   }, []);
 
-  // 🔄 Actualizar estado
+  /* ======================================================
+     UPDATE STATUS
+  ====================================================== */
+
   const updateStatus = async (id: string, status: string) => {
     try {
       const res = await apiFetch(`/orders/${id}`, {
@@ -52,7 +59,10 @@ export default function AdminOrders() {
     }
   };
 
-  // 🔘 Acciones según transición válida
+  /* ======================================================
+     ACTIONS
+  ====================================================== */
+
   const renderActions = (order: Order) => {
     if (order.status === "PENDING") {
       return (
@@ -102,9 +112,18 @@ export default function AdminOrders() {
   const filteredOrders =
     filter === "ALL" ? orders : orders.filter((o) => o.status === filter);
 
+  /* ======================================================
+     METRICS
+  ====================================================== */
+
+  const paidRevenue = orders
+    .filter((o) => o.status === "PAID")
+    .reduce((acc, o) => acc + (o.totalAmount ?? 0), 0);
+
   return (
     <div className="space-y-6">
-      {/* 📊 MÉTRICAS */}
+      {/* ================= METRICS ================= */}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
           <p className="text-sm text-gray-400">Total órdenes</p>
@@ -114,10 +133,7 @@ export default function AdminOrders() {
         <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
           <p className="text-sm text-gray-400">Ventas reales (PAID)</p>
           <p className="text-2xl font-bold">
-            $
-            {orders
-              .filter((o) => o.status === "PAID")
-              .reduce((acc, o) => acc + o.total, 0)}
+            €{(paidRevenue / 100).toFixed(2)}
           </p>
         </div>
 
@@ -131,7 +147,8 @@ export default function AdminOrders() {
 
       <h2 className="text-2xl font-bold">Órdenes</h2>
 
-      {/* 🔍 Filtros */}
+      {/* ================= FILTERS ================= */}
+
       <div className="flex gap-3">
         {["ALL", "PENDING", "PAID", "SHIPPED", "CANCELLED"].map((status) => (
           <button
@@ -148,7 +165,8 @@ export default function AdminOrders() {
         ))}
       </div>
 
-      {/* 📋 Tabla */}
+      {/* ================= TABLE ================= */}
+
       <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-800 text-gray-400">
@@ -158,6 +176,7 @@ export default function AdminOrders() {
               <th className="p-4 text-left">Total</th>
               <th className="p-4 text-left">Estado</th>
               <th className="p-4 text-left">Fecha</th>
+              <th className="p-4 text-left">Stripe</th>
               <th className="p-4 text-left">Acciones</th>
             </tr>
           </thead>
@@ -176,7 +195,10 @@ export default function AdminOrders() {
                 </td>
 
                 <td className="p-4">{order.email}</td>
-                <td className="p-4">${order.total}</td>
+
+                <td className="p-4">
+                  €{((order.totalAmount ?? 0) / 100).toFixed(2)}
+                </td>
 
                 <td className="p-4">
                   <span
@@ -184,10 +206,10 @@ export default function AdminOrders() {
                       order.status === "PENDING"
                         ? "bg-yellow-600"
                         : order.status === "PAID"
-                        ? "bg-green-600"
-                        : order.status === "SHIPPED"
-                        ? "bg-purple-600"
-                        : "bg-red-600"
+                          ? "bg-green-600"
+                          : order.status === "SHIPPED"
+                            ? "bg-purple-600"
+                            : "bg-red-600"
                     }`}
                   >
                     {order.status}
@@ -198,6 +220,20 @@ export default function AdminOrders() {
                   {new Date(order.createdAt).toLocaleDateString()}
                 </td>
 
+                <td className="p-4 text-xs">
+                  {order.stripePaymentIntentId ? (
+                    <a
+                      href={`https://dashboard.stripe.com/test/payments/${order.stripePaymentIntentId}`}
+                      target="_blank"
+                      className="text-blue-400 hover:underline"
+                    >
+                      Ver pago
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+
                 <td className="p-4">{renderActions(order)}</td>
               </tr>
             ))}
@@ -205,7 +241,8 @@ export default function AdminOrders() {
         </table>
       </div>
 
-      {/* 🧾 Modal Detalle */}
+      {/* ================= ORDER MODAL ================= */}
+
       {selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}

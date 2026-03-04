@@ -6,8 +6,10 @@ import {
   updateOrderStatusController,
   downloadOrderInvoice,
   getPublicOrderController,
-  downloadPublicInvoice
+  downloadPublicInvoice,
+  resendOrderEmailController,
 } from "./order.controller";
+import {getOrderAnalytics} from "@/modules/orders/order.analytics.controller"
 
 const router = Router();
 
@@ -21,12 +23,12 @@ router.get("/public/:id/invoice", downloadPublicInvoice);
 // Public order
 router.get("/public/:id", getPublicOrderController);
 
+// Guest checkout
+router.post("/", createOrderController);
+
 /* ===============================
    ADMIN / PRIVATE ROUTES
 ================================= */
-
-// Guest checkout
-router.post("/", createOrderController);
 
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);
@@ -34,7 +36,18 @@ router.get("/", protect, adminOnly, getOrdersController);
 // Admin update
 router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
+// Reenviar email
+router.post(
+  "/:id/resend-email",
+  protect,
+  adminOnly,
+  resendOrderEmailController,
+);
+
 // Admin invoice (protegida)
 router.get("/:id/invoice", protect, downloadOrderInvoice);
+
+//Analitycs dashboard
+router.get("/analytics", protect, adminOnly, getOrderAnalytics);
 
 export default router;

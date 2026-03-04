@@ -4,6 +4,7 @@ import { createOrder, getOrders, updateOrderStatus } from "./order.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
+import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
 
 /**
  * Crear orden
@@ -110,9 +111,7 @@ export const downloadOrderInvoice = asyncHandler(
 export const getPublicOrderController = asyncHandler(
   async (req: Request, res: Response) => {
     const id =
-      typeof req.params.id === "string"
-        ? req.params.id
-        : req.params.id[0];
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
     const email = req.query.email as string | undefined;
 
@@ -144,19 +143,16 @@ export const getPublicOrderController = asyncHandler(
     }
 
     // Si no está pagada ni en procesamiento, requiere email válido
-if (
-  order.status !== "PAID" &&
-  order.status !== "PAYMENT_PROCESSING"
-) {
-  if (!email || email !== order.email) {
-    return res.status(403).json({
-      error: "No autorizado",
-    });
-  }
-}
+    if (order.status !== "PAID" && order.status !== "PAYMENT_PROCESSING") {
+      if (!email || email !== order.email) {
+        return res.status(403).json({
+          error: "No autorizado",
+        });
+      }
+    }
 
     res.json(order);
-  }
+  },
 );
 
 // ===============================
@@ -166,9 +162,7 @@ if (
 export const downloadPublicInvoice = asyncHandler(
   async (req: Request, res: Response) => {
     const id =
-      typeof req.params.id === "string"
-        ? req.params.id
-        : req.params.id[0];
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
     const email = req.query.email as string | undefined;
 
@@ -199,9 +193,22 @@ export const downloadPublicInvoice = asyncHandler(
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`
+      `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`,
     );
 
     res.send(pdf);
+  },
+);
+
+export const resendOrderEmailController = asyncHandler(
+  async (req: Request<{ id: string }>, res: Response) => {
+
+    const id = req.params.id;
+
+    await sendOrderConfirmationEmail(id);
+
+    res.json({
+      message: "Email reenviado correctamente",
+    });
   }
 );

@@ -24,11 +24,18 @@ export type Order = {
   city: string;
   postalCode: string;
   country: string;
-  total: number;
+  totalAmount: number;
   status: string;
   createdAt: string;
-
+  stripePaymentIntentId?: string | null
   items: OrderItem[];
-
   invoice?: Invoice | null;
+
+  //status:
+    //| "PENDING"
+    //| "PAYMENT_PROCESSING"
+    //| "PAID"
+    //| "SHIPPED"
+    //| "CANCELLED"
+    //| "FAILED"
 };

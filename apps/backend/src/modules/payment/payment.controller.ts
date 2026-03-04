@@ -93,3 +93,46 @@ export const createPaymentIntent = async (
     });
   }
 };
+
+export const refundPayment = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: "Order ID required" });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order || !order.stripePaymentIntentId) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (order.status !== "PAID") {
+      return res.status(400).json({ error: "Order not paid" });
+    }
+
+    // Crear refund en Stripe
+    const refund = await stripe.refunds.create({
+      payment_intent: order.stripePaymentIntentId,
+    });
+
+    // Actualizar orden
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: "REFUNDED",
+      },
+    });
+
+    res.json({
+      success: true,
+      refundId: refund.id,
+    });
+  } catch (error) {
+    console.error("Refund error:", error);
+    res.status(500).json({ error: "Refund failed" });
+  }
+};

@@ -108,7 +108,7 @@ model Order {
 
 /**
  * ============================
- * ORDER ITEM
+ * ORDER ITEM (PRODUCT SNAPSHOT)
  * ============================
  */
 
@@ -121,8 +121,12 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
+  // 🔒 Snapshot del producto al momento de compra
+  productName String?
+  productSku  String?
+
   quantity Int
-  price    Int // cents
+  price    Int // precio unitario en cents
 }
 
 /**
@@ -183,7 +187,8 @@ enum OrderStatus {
   PENDING
   PAYMENT_PROCESSING
   PAID
-  FAILED
   SHIPPED
   CANCELLED
+  FAILED
+  REFUNDED
 }

@@ -113,7 +113,7 @@ export default function OrderDetailModal({ order, onClose }: Props) {
 
         {/* TOTAL */}
         <div className="mt-6 text-right font-bold text-lg">
-          Total: ${order.total.toFixed(2)}
+          Total: €{(order.totalAmount / 100).toFixed(2)}
         </div>
       </div>
     </div>

@@ -41,6 +41,8 @@ export async function createOrder(data: CreateOrderInput) {
 
     const orderItemsData: {
       productId: string;
+      productName: string;
+      productSku?: string | null;
       quantity: number;
       price: number;
     }[] = [];
@@ -65,14 +67,21 @@ export async function createOrder(data: CreateOrderInput) {
 
       orderItemsData.push({
         productId: product.id,
+        productName: product.name,
+        productSku: null,
         quantity: item.quantity,
         price: product.price,
       });
 
+      /**
+       * 🔒 decrement seguro para evitar race conditions
+       */
       await tx.product.update({
         where: { id: product.id },
         data: {
-          stock: product.stock - item.quantity,
+          stock: {
+            decrement: item.quantity,
+          },
         },
       });
     }
@@ -199,33 +208,20 @@ export async function updateOrderStatus(
      * ✅ Stripe compatible transitions
      */
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      /**
-       * Order recién creada
-       */
-      PENDING: [
-        "PAYMENT_PROCESSING", // Stripe inicia pago
-        "PAID", // ✅ admin manual payment
-        "CANCELLED",
-      ],
+  PENDING: ["PAYMENT_PROCESSING", "PAID", "CANCELLED"],
 
-      /**
-       * Usuario pagando en Stripe
-       */
-      PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
+  PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
 
-      /**
-       * Pago confirmado
-       */
-      PAID: ["SHIPPED", "CANCELLED"],
+  PAID: ["SHIPPED", "REFUNDED"],
 
-      /**
-       * Pago fallido
-       */
-      FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
+  FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
 
-      SHIPPED: [],
-      CANCELLED: [],
-    };
+  SHIPPED: [],
+
+  CANCELLED: [],
+
+  REFUNDED: [],
+};
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
       throw new Error(
