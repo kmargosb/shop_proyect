@@ -142,53 +142,49 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   if (event.type === "refund.created") {
     const refund = event.data.object as any;
 
-    if (event.type === "refund.created") {
-      const refund = event.data.object as any;
+    try {
 
-      try {
+      const existingRefund = await prisma.refund.findUnique({
+        where: { stripeRefundId: refund.id }
+      });
 
-        const existingRefund = await prisma.refund.findUnique({
-          where: { stripeRefundId: refund.id }
-        });
-
-        if (existingRefund) {
-          console.log("⚠ Refund already exists, skipping:", refund.id);
-          return res.json({ received: true });
-        }
-
-        const order = await prisma.order.findFirst({
-          where: {
-            stripePaymentIntentId: refund.payment_intent,
-          },
-        });
-
-        if (!order) return res.json({ received: true });
-
-        await prisma.refund.create({
-          data: {
-            orderId: order.id,
-            stripeRefundId: refund.id,
-            amount: refund.amount,
-            currency: refund.currency,
-            status: "PENDING",
-          },
-        });
-
-        await prisma.orderTransaction.create({
-          data: {
-            orderId: order.id,
-            type: "REFUND",
-            amount: refund.amount,
-            currency: refund.currency,
-            stripeRefundId: refund.id,
-          },
-        });
-
-        console.log("💸 Refund created from webhook:", refund.id);
-
-      } catch (err) {
-        console.error("🔥 Error processing refund.created:", err);
+      if (existingRefund) {
+        console.log("⚠ Refund already exists, skipping:", refund.id);
+        return res.json({ received: true });
       }
+
+      const order = await prisma.order.findFirst({
+        where: {
+          stripePaymentIntentId: refund.payment_intent,
+        },
+      });
+
+      if (!order) return res.json({ received: true });
+
+      await prisma.refund.create({
+        data: {
+          orderId: order.id,
+          stripeRefundId: refund.id,
+          amount: refund.amount,
+          currency: refund.currency,
+          status: "PENDING",
+        },
+      });
+
+      await prisma.orderTransaction.create({
+        data: {
+          orderId: order.id,
+          type: "REFUND",
+          amount: refund.amount,
+          currency: refund.currency,
+          stripeRefundId: refund.id,
+        },
+      });
+
+      console.log("💸 Refund created from webhook:", refund.id);
+
+    } catch (err) {
+      console.error("🔥 Error processing refund.created:", err);
     }
   }
 
