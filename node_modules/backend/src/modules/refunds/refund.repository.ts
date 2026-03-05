@@ -26,6 +26,13 @@ export const RefundRepository = {
     return prisma.refund.findUnique({
       where: { stripeRefundId }
     })
-  }
+  },
+
+  findByOrderId(orderId: string) {
+  return prisma.refund.findMany({
+    where: { orderId },
+    include: { items: true }
+  })
+}
 
 }

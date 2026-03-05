@@ -14,6 +14,15 @@ export const RefundService = {
     reason?: string
   ) {
 
+    /* =========================
+       PROTECCIÓN 1
+       Validar items antes de todo
+    ========================= */
+
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("Refund items are required")
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -66,8 +75,34 @@ export const RefundService = {
       refundAmount += orderItem.price * item.quantity
     }
 
+    /* =========================
+       PROTECCIÓN 2
+       Evitar refund de 0 o negativo
+    ========================= */
+
     if (refundAmount <= 0) {
       throw new Error("Invalid refund amount")
+    }
+
+    /* =========================
+       PROTECCIÓN 3
+       Evitar devolver más que el total
+    ========================= */
+
+    const refundAggregate = await prisma.refund.aggregate({
+      where: {
+        orderId: orderId,
+        status: "SUCCEEDED"
+      },
+      _sum: {
+        amount: true
+      }
+    })
+
+    const alreadyRefunded = refundAggregate._sum.amount ?? 0
+
+    if (alreadyRefunded + refundAmount > order.totalAmount) {
+      throw new Error("Refund exceeds order total")
     }
 
     const stripeRefund = await stripe.refunds.create({

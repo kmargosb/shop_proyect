@@ -38,9 +38,32 @@ export const RefundController = {
 
       console.error("Refund error:", error)
 
+      /* =========================
+         MEJORA PROFESIONAL
+         errores de negocio → 400
+      ========================= */
+
+      const businessErrors = [
+        "Order not found",
+        "Order has no payment intent",
+        "Order already fully refunded",
+        "Refund items are required",
+        "Item already fully refunded",
+        "Refund quantity exceeds purchased quantity",
+        "Invalid refund amount",
+        "Refund exceeds order total"
+      ]
+
+      if (businessErrors.includes(error.message)) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        })
+      }
+
       return res.status(500).json({
         success: false,
-        message: error.message || "Internal server error"
+        message: "Internal server error"
       })
 
     }

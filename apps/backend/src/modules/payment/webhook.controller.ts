@@ -222,6 +222,36 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
         if (!order) return
 
+        /* =========================
+           RESTORE STOCK
+        ========================= */
+
+        const refundItems = await prisma.refundItem.findMany({
+          where: {
+            refundId: dbRefund.id
+          },
+          include: {
+            orderItem: true
+          }
+        })
+
+        for (const item of refundItems) {
+          await prisma.product.update({
+            where: {
+              id: item.orderItem.productId
+            },
+            data: {
+              stock: {
+                increment: item.quantity
+              }
+            }
+          })
+        }
+
+        /* =========================
+           CALCULAR TOTAL REFUND
+        ========================= */
+
         const refundAggregate = await prisma.refund.aggregate({
           where: {
             orderId: dbRefund.orderId,
