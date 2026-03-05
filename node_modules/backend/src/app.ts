@@ -1,15 +1,14 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
 import authRoutes from "./modules/auth/auth.routes";
 import productRoutes from "./modules/products/product.routes";
 import orderRoutes from "./modules/orders/order.routes";
 import invoiceRoutes from "@/modules/invoices/invoice.routes";
 import paymentRouter from "./modules/payment/payment.router";
-
 import { stripeWebhook } from "./modules/payment/webhook.controller";
 import { errorHandler } from "./common/middleware/error.middleware";
+import refundRoutes from "./modules/refunds/refund.routes";
 
 const app = express();
 
@@ -51,6 +50,7 @@ app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
 app.use("/api/payments", paymentRouter);
 app.use("/invoices", invoiceRoutes);
+app.use("/refunds", refundRoutes);
 
 app.use(errorHandler);
 

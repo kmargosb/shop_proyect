@@ -42,11 +42,14 @@ model Product {
   name        String
   description String?
 
-  price Int // cents
+  price Int
   stock Int
 
+  isActive Boolean @default(true)
+  
   images     ProductImage[]
   orderItems OrderItem[]
+
 
   createdAt DateTime @default(now())
 }
@@ -100,15 +103,17 @@ model Order {
   status OrderStatus @default(PENDING)
   paidAt DateTime?
 
-  items   OrderItem[]
-  invoice Invoice?
+  items        OrderItem[]
+  invoice      Invoice?
+  refunds      Refund[]
+  transactions OrderTransaction[]
 
   createdAt DateTime @default(now())
 }
 
 /**
  * ============================
- * ORDER ITEM (PRODUCT SNAPSHOT)
+ * ORDER ITEM
  * ============================
  */
 
@@ -121,12 +126,84 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  // 🔒 Snapshot del producto al momento de compra
   productName String?
   productSku  String?
 
   quantity Int
-  price    Int // precio unitario en cents
+  price    Int
+
+  refundItems RefundItem[]
+}
+
+/**
+ * ============================
+ * ORDER TRANSACTION
+ * ============================
+ */
+
+model OrderTransaction {
+  id String @id @default(uuid())
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  type TransactionType
+
+  amount   Int
+  currency String
+
+  stripePaymentIntentId String?
+  stripeRefundId        String?
+
+  createdAt DateTime @default(now())
+}
+
+/**
+ * ============================
+ * REFUND
+ * ============================
+ */
+
+model Refund {
+  id String @id @default(uuid())
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  stripeRefundId String? @unique
+
+  amount   Int
+  currency String
+
+  reason String?
+
+  status RefundStatus @default(PENDING)
+
+  items RefundItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * ============================
+ * REFUND ITEM
+ * ============================
+ */
+
+model RefundItem {
+  id String @id @default(uuid())
+
+  refundId String
+  refund   Refund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+
+  quantity Int
+  amount   Int
+
+  createdAt DateTime @default(now())
 }
 
 /**
@@ -190,5 +267,17 @@ enum OrderStatus {
   SHIPPED
   CANCELLED
   FAILED
+  PARTIALLY_REFUNDED
   REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
 }
