@@ -175,7 +175,8 @@ model Refund {
   amount   Int
   currency String
 
-  reason String?
+  reason RefundReason?
+  note   String?
 
   status RefundStatus @default(PENDING)
 
@@ -275,6 +276,15 @@ enum RefundStatus {
   PENDING
   SUCCEEDED
   FAILED
+}
+
+enum RefundReason {
+  CUSTOMER_RETURN
+  DAMAGED
+  WRONG_ITEM
+  FRAUD
+  ORDER_CANCELLED
+  OTHER
 }
 
 enum TransactionType {
