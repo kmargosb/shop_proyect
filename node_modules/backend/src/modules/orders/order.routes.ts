@@ -2,16 +2,16 @@ import { Router } from "express";
 import { protect, adminOnly } from "@/common/middleware/auth.middleware";
 
 import {
-  createOrderController,
-  getOrdersController,
-  updateOrderStatusController,
-  downloadOrderInvoice,
-  getPublicOrderController,
-  downloadPublicInvoice,
-  resendOrderEmailController,
-  getOrderTimelineController
+   createOrderController,
+   getOrdersController,
+   updateOrderStatusController,
+   downloadOrderInvoice,
+   getPublicOrderController,
+   downloadPublicInvoice,
+   resendOrderEmailController,
+   getOrderTimelineController
 } from "./order.controller";
-
+import { getActivityFeedController } from "./order.activity.controller";
 import { getOrderAnalytics } from "@/modules/orders/order.analytics.controller";
 
 const router = Router();
@@ -39,6 +39,9 @@ router.get("/analytics", protect, adminOnly, getOrderAnalytics);
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);
 
+//Activity feed
+router.get("/activity-feed", protect, adminOnly, getActivityFeedController);
+
 // Timeline Orders
 router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
 
@@ -50,5 +53,6 @@ router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
 // Descargar invoice admin
 router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
+
 
 export default router;
