@@ -97,6 +97,8 @@ model Order {
   totalAmount Int
   currency    String @default("eur")
 
+  paymentProvider PaymentProvider @default(STRIPE)
+
   stripePaymentIntentId String? @unique
   stripeCustomerId      String?
 
@@ -321,4 +323,10 @@ enum OrderEventType {
   ORDER_CANCELLED
   ORDER_SHIPPED
   ORDER_UPDATED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  KLARNA
 }
