@@ -259,8 +259,8 @@ export async function updateOrderStatus(
           newStatus === "SHIPPED"
             ? "ORDER_SHIPPED"
             : newStatus === "CANCELLED"
-            ? "ORDER_CANCELLED"
-            : "ORDER_UPDATED",
+              ? "ORDER_CANCELLED"
+              : "ORDER_UPDATED",
         message: `Order status changed to ${newStatus}`,
       },
     });
@@ -278,4 +278,72 @@ export async function updateOrderStatus(
 
     return updatedOrder;
   });
+}
+
+export async function searchOrders(params: {
+  query?: string;
+  status?: OrderStatus;
+  page?: number;
+  limit?: number;
+}) {
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 10;
+
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.OrderWhereInput = {};
+
+  if (params.status) {
+    where.status = params.status;
+  }
+
+  if (params.query) {
+    where.OR = [
+      {
+        id: {
+          contains: params.query,
+          mode: "insensitive",
+        },
+      },
+      {
+        email: {
+          contains: params.query,
+          mode: "insensitive",
+        },
+      },
+      {
+        fullName: {
+          contains: params.query,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  const [orders, total] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      include: {
+        items: true,
+        invoice: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+
+    prisma.order.count({ where }),
+  ]);
+
+  return {
+    data: orders,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }

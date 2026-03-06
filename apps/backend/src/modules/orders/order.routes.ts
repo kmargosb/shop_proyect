@@ -13,12 +13,15 @@ import {
 } from "./order.controller";
 import { getActivityFeedController } from "./order.activity.controller";
 import { getOrderAnalytics } from "@/modules/orders/order.analytics.controller";
+import { searchOrdersController } from "./order.controller";
 
 const router = Router();
 
 /* ===============================
    PUBLIC ROUTES (SIEMPRE ARRIBA)
 ================================= */
+
+
 
 // Public invoice
 router.get("/public/:id/invoice", downloadPublicInvoice);
@@ -35,6 +38,9 @@ router.post("/", createOrderController);
 
 // Analytics dashboard
 router.get("/analytics", protect, adminOnly, getOrderAnalytics);
+
+//Filter Orders
+router.get("/search", protect, adminOnly, searchOrdersController);
 
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);

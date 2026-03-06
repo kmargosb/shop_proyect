@@ -4,6 +4,7 @@ import { createOrder, getOrders, updateOrderStatus } from "./order.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
+import { searchOrders } from "./order.service";
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
 import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
 
@@ -229,4 +230,20 @@ export const getOrderTimelineController = asyncHandler(
 
     res.json(timeline);
   },
+);
+
+export const searchOrdersController = asyncHandler(
+  async (req: Request, res: Response) => {
+
+    const { q, status, page, limit } = req.query;
+
+    const result = await searchOrders({
+      query: q as string | undefined,
+      status: status as OrderStatus | undefined,
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+    });
+
+    res.json(result);
+  }
 );
