@@ -11,6 +11,7 @@ import { errorHandler } from "./common/middleware/error.middleware";
 import refundRoutes from "./modules/refunds/refund.routes";
 import dashboardRoutes from "@/modules/dashboard/dashboard.routes";
 import customerRoutes from "@/modules/customers/customer.routes";
+import adminRoutes from "@/modules/admin/admin.routes";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/api/payments", paymentRouter);
 app.use("/invoices", invoiceRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/customers", customerRoutes);
+app.use("/admin", adminRoutes);
 
 app.use(errorHandler);
 

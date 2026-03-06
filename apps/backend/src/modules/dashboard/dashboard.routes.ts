@@ -3,6 +3,7 @@ import { protect, adminOnly } from "@/common/middleware/auth.middleware";
 import { getDashboardMetricsController } from "./dashboard.metrics.controller";
 import { getTopProductsController } from "./dashboard.top-products.controller";
 import { getRefundRateController } from "./dashboard.refund-rate.controller";
+import { getRevenueChartController } from "./dashboard.revenue-chart.controller";
 
 const router = Router();
 
@@ -15,5 +16,7 @@ router.get("/metrics", protect, adminOnly, getDashboardMetricsController);
 router.get("/top-products", protect, adminOnly, getTopProductsController);
 
 router.get("/refund-rate", protect, adminOnly, getRefundRateController);
+
+router.get("/revenue-chart", protect, adminOnly, getRevenueChartController);
 
 export default router;
