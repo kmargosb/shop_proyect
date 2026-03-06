@@ -6,6 +6,7 @@ import { getRefundRateController } from "./dashboard.refund-rate.controller";
 import { getRevenueChartController } from "./dashboard.revenue-chart.controller";
 import { getTopCustomersController } from "./dashboard.top-customers.controller";
 import { getRevenueGrowthController } from "./dashboard.revenue-growth.controller";
+import { getSalesByCountryController } from "./dashboard.sales-by-country.controller";
 
 const router = Router();
 
@@ -24,5 +25,7 @@ router.get("/revenue-chart", protect, adminOnly, getRevenueChartController);
 router.get("/top-customers", protect, adminOnly, getTopCustomersController);
 
 router.get("/revenue-growth", protect, adminOnly, getRevenueGrowthController);
+
+router.get("/sales-by-country", protect, adminOnly, getSalesByCountryController);
 
 export default router;
