@@ -98,6 +98,7 @@ model Order {
   currency    String @default("eur")
 
   paymentProvider PaymentProvider @default(STRIPE)
+  paymentMethod PaymentMethod?
 
   stripePaymentIntentId String? @unique
   stripeCustomerId      String?
@@ -329,4 +330,13 @@ enum PaymentProvider {
   STRIPE
   PAYPAL
   KLARNA
+}
+
+enum PaymentMethod {
+  CARD
+  PAYPAL
+  KLARNA
+  BIZUM
+  APPLE_PAY
+  GOOGLE_PAY
 }
