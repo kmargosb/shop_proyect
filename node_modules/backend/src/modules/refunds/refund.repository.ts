@@ -1,4 +1,5 @@
-import {prisma} from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
+import { RefundReason } from "@prisma/client"
 
 export const RefundRepository = {
 
@@ -7,7 +8,7 @@ export const RefundRepository = {
     stripeRefundId?: string
     amount: number
     currency: string
-    reason?: string
+    reason?: RefundReason
   }) {
     return prisma.refund.create({ data })
   },

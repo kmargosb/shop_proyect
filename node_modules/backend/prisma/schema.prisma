@@ -107,6 +107,7 @@ model Order {
   invoice      Invoice?
   refunds      Refund[]
   transactions OrderTransaction[]
+  events       OrderEvent[]
 
   createdAt DateTime @default(now())
 }
@@ -158,7 +159,26 @@ model OrderTransaction {
   createdAt DateTime @default(now())
 }
 
-/**
+/*
+ * ============================
+ * OrderEvent
+ * ============================
+ */
+
+model OrderEvent {
+  id String @id @default(uuid())
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  type OrderEventType
+
+  message String?
+
+  createdAt DateTime @default(now())
+}
+
+/*
  * ============================
  * REFUND
  * ============================
@@ -290,4 +310,15 @@ enum RefundReason {
 enum TransactionType {
   PAYMENT
   REFUND
+}
+
+enum OrderEventType {
+  ORDER_CREATED
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  REFUND_CREATED
+  REFUND_COMPLETED
+  ORDER_CANCELLED
+  ORDER_SHIPPED
+  ORDER_UPDATED
 }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { protect, adminOnly } from "@/common/middleware/auth.middleware";
+
 import {
   createOrderController,
   getOrdersController,
@@ -8,8 +9,10 @@ import {
   getPublicOrderController,
   downloadPublicInvoice,
   resendOrderEmailController,
+  getOrderTimelineController
 } from "./order.controller";
-import {getOrderAnalytics} from "@/modules/orders/order.analytics.controller"
+
+import { getOrderAnalytics } from "@/modules/orders/order.analytics.controller";
 
 const router = Router();
 
@@ -17,37 +20,35 @@ const router = Router();
    PUBLIC ROUTES (SIEMPRE ARRIBA)
 ================================= */
 
-// Public invoice (más específica)
+// Public invoice
 router.get("/public/:id/invoice", downloadPublicInvoice);
 
-// Public order
+// Public order page
 router.get("/public/:id", getPublicOrderController);
 
 // Guest checkout
 router.post("/", createOrderController);
 
 /* ===============================
-   ADMIN / PRIVATE ROUTES
+   ADMIN ROUTES
 ================================= */
+
+// Analytics dashboard
+router.get("/analytics", protect, adminOnly, getOrderAnalytics);
 
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);
 
-// Admin update
-router.patch("/:id", protect, adminOnly, updateOrderStatusController);
+// Timeline Orders
+router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
 
 // Reenviar email
-router.post(
-  "/:id/resend-email",
-  protect,
-  adminOnly,
-  resendOrderEmailController,
-);
+router.post("/:id/resend-email", protect, adminOnly, resendOrderEmailController);
 
-// Admin invoice (protegida)
-router.get("/:id/invoice", protect, downloadOrderInvoice);
+// Cambiar estado
+router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
-//Analitycs dashboard
-router.get("/analytics", protect, adminOnly, getOrderAnalytics);
+// Descargar invoice admin
+router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
 
 export default router;

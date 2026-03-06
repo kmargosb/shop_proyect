@@ -3,6 +3,7 @@ import { asyncHandler } from "@/common/utils/asyncHandler";
 import { createOrder, getOrders, updateOrderStatus } from "./order.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
+import { OrderStatus } from "@prisma/client";
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
 import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
 
@@ -65,6 +66,12 @@ export const updateOrderStatusController = asyncHandler(
     const id = req.params.id as string;
 
     const { status } = req.body;
+
+    if (!Object.values(OrderStatus).includes(status)) {
+      return res.status(400).json({
+        error: "Invalid order status",
+      });
+    }
 
     const updated = await updateOrderStatus(id, status);
 
@@ -211,4 +218,15 @@ export const resendOrderEmailController = asyncHandler(
       message: "Email reenviado correctamente",
     });
   }
+);
+
+export const getOrderTimelineController = asyncHandler(
+  async (req: Request<{ id: string }>, res: Response) => {
+    const timeline = await prisma.orderEvent.findMany({
+      where: { orderId: req.params.id },
+      orderBy: { createdAt: "asc" },
+    });
+
+    res.json(timeline);
+  },
 );

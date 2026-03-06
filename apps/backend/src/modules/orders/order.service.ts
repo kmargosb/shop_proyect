@@ -60,9 +60,6 @@ export async function createOrder(data: CreateOrderInput) {
         throw new Error(`Stock insuficiente para ${product.name}`);
       }
 
-      /**
-       * price ya está en CENTS
-       */
       totalAmount += product.price * item.quantity;
 
       orderItemsData.push({
@@ -73,9 +70,6 @@ export async function createOrder(data: CreateOrderInput) {
         price: product.price,
       });
 
-      /**
-       * 🔒 decrement seguro para evitar race conditions
-       */
       await tx.product.update({
         where: { id: product.id },
         data: {
@@ -109,6 +103,15 @@ export async function createOrder(data: CreateOrderInput) {
       },
       include: {
         items: true,
+      },
+    });
+
+    // 📌 Order Timeline
+    await tx.orderEvent.create({
+      data: {
+        orderId: order.id,
+        type: "ORDER_CREATED",
+        message: "Order created",
       },
     });
 
@@ -157,6 +160,8 @@ export async function getOrders(params: {
             invoiceNumber: true,
           },
         },
+        refunds: true,
+        transactions: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -204,24 +209,23 @@ export async function updateOrderStatus(
 
     const currentStatus = order.status;
 
-    /**
-     * ✅ Stripe compatible transitions
-     */
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ["PAYMENT_PROCESSING", "PAID", "CANCELLED"],
+      PENDING: ["PAYMENT_PROCESSING", "PAID", "CANCELLED"],
 
-  PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
+      PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
 
-  PAID: ["SHIPPED", "REFUNDED"],
+      PAID: ["SHIPPED", "PARTIALLY_REFUNDED", "REFUNDED"],
 
-  FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
+      PARTIALLY_REFUNDED: ["REFUNDED"],
 
-  SHIPPED: [],
+      FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
 
-  CANCELLED: [],
+      SHIPPED: [],
 
-  REFUNDED: [],
-};
+      CANCELLED: [],
+
+      REFUNDED: [],
+    };
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
       throw new Error(
@@ -229,9 +233,6 @@ export async function updateOrderStatus(
       );
     }
 
-    /**
-     * devolver stock si cancelada
-     */
     if (newStatus === "CANCELLED") {
       for (const item of order.items) {
         await tx.product.update({
@@ -250,9 +251,20 @@ export async function updateOrderStatus(
       data: { status: newStatus },
     });
 
-    /**
-     * FACTURA SOLO CUANDO SE PAGA
-     */
+    // 📌 Order Timeline
+    await tx.orderEvent.create({
+      data: {
+        orderId: order.id,
+        type:
+          newStatus === "SHIPPED"
+            ? "ORDER_SHIPPED"
+            : newStatus === "CANCELLED"
+            ? "ORDER_CANCELLED"
+            : "ORDER_UPDATED",
+        message: `Order status changed to ${newStatus}`,
+      },
+    });
+
     if (newStatus === "PAID" && !order.invoice) {
       const { createInvoiceFromOrder } =
         await import("@/modules/invoices/invoice.service");

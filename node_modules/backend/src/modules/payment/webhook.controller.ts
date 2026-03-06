@@ -12,22 +12,21 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET as string,
+      process.env.STRIPE_WEBHOOK_SECRET as string
     );
   } catch (err) {
     console.error("❌ Webhook signature verification failed.");
     return res.status(400).send("Webhook Error");
   }
 
-  /* =========================================================
-     PAYMENT SUCCESS
-  ========================================================= */
+  try {
+    /* =========================================================
+       PAYMENT SUCCESS
+    ========================================================= */
 
-  if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object as any;
+    if (event.type === "payment_intent.succeeded") {
+      const paymentIntent = event.data.object as any;
 
-    try {
-      // Buscar orden por PaymentIntent
       let order = await prisma.order.findFirst({
         where: {
           stripePaymentIntentId: paymentIntent.id,
@@ -35,7 +34,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         include: { invoice: true },
       });
 
-      // Fallback usando metadata
       if (!order && paymentIntent.metadata?.orderId) {
         order = await prisma.order.findUnique({
           where: { id: paymentIntent.metadata.orderId },
@@ -48,7 +46,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         return res.json({ received: true });
       }
 
-      // Validación de seguridad
       if (
         order.totalAmount !== paymentIntent.amount ||
         order.currency !== paymentIntent.currency
@@ -57,13 +54,29 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         return res.json({ received: true });
       }
 
-      // Idempotencia
       if (order.status === "PAID") {
-        console.log("⚠ Duplicate webhook ignored.");
-        return res.json({ received: true });
+
+        const existingEvent = await prisma.orderEvent.findFirst({
+          where: {
+            orderId: order.id,
+            type: "PAYMENT_SUCCEEDED"
+          }
+        })
+
+        if (!existingEvent) {
+          await prisma.orderEvent.create({
+            data: {
+              orderId: order.id,
+              type: "PAYMENT_SUCCEEDED",
+              message: "Payment confirmed"
+            }
+          })
+        }
+
+        console.log("⚠ Duplicate webhook ignored.")
+        return res.json({ received: true })
       }
 
-      // Actualizar orden
       await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -73,7 +86,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         },
       });
 
-      // Registrar transacción de pago
       await prisma.orderTransaction.create({
         data: {
           orderId: order.id,
@@ -84,36 +96,38 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         },
       });
 
+      await prisma.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: "PAYMENT_SUCCEEDED",
+          message: "Payment confirmed",
+        },
+      });
+
       console.log("✅ Order marked as PAID:", order.id);
 
-      // Crear invoice si no existe
       if (!order.invoice) {
         await prisma.invoice.create({
           data: {
             orderId: order.id,
             invoiceNumber: `INV-${Date.now()}`,
             totalAmount: order.totalAmount,
-            customerEmail: order.email, // 🔥 ESTE ERA EL ERROR
+            customerEmail: order.email,
           },
         });
       }
 
-      // Enviar email
       await sendOrderConfirmationEmail(order.id);
       console.log("📧 Confirmation email sent.");
-    } catch (err) {
-      console.error("🔥 Error processing succeeded webhook:", err);
     }
-  }
 
-  /* =========================================================
-     PAYMENT FAILED
-  ========================================================= */
+    /* =========================================================
+       PAYMENT FAILED
+    ========================================================= */
 
-  if (event.type === "payment_intent.payment_failed") {
-    const paymentIntent = event.data.object as any;
+    if (event.type === "payment_intent.payment_failed") {
+      const paymentIntent = event.data.object as any;
 
-    try {
       const order = await prisma.order.findFirst({
         where: {
           stripePaymentIntentId: paymentIntent.id,
@@ -128,24 +142,27 @@ export const stripeWebhook = async (req: Request, res: Response) => {
           },
         });
 
+        await prisma.orderEvent.create({
+          data: {
+            orderId: order.id,
+            type: "PAYMENT_FAILED",
+            message: "Payment failed",
+          },
+        });
+
         console.log("❌ Order marked as FAILED:", order.id);
       }
-    } catch (err) {
-      console.error("🔥 Error processing failed webhook:", err);
     }
-  }
 
-  /* =========================================================
-   REFUND CREATED
-========================================================= */
+    /* =========================================================
+       REFUND CREATED
+    ========================================================= */
 
-  if (event.type === "refund.created") {
-    const refund = event.data.object as any;
-
-    try {
+    if (event.type === "refund.created") {
+      const refund = event.data.object as any;
 
       const existingRefund = await prisma.refund.findUnique({
-        where: { stripeRefundId: refund.id }
+        where: { stripeRefundId: refund.id },
       });
 
       if (existingRefund) {
@@ -181,21 +198,24 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         },
       });
 
+      await prisma.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: "REFUND_CREATED",
+          message: "Refund created",
+        },
+      });
+
       console.log("💸 Refund created from webhook:", refund.id);
-
-    } catch (err) {
-      console.error("🔥 Error processing refund.created:", err);
     }
-  }
 
-  /* =========================================================
-   REFUND UPDATED
-========================================================= */
+    /* =========================================================
+       REFUND UPDATED
+    ========================================================= */
 
-  if (event.type === "refund.updated") {
-    const refund = event.data.object as any;
+    if (event.type === "refund.updated") {
+      const refund = event.data.object as any;
 
-    try {
       const dbRefund = await prisma.refund.findUnique({
         where: { stripeRefundId: refund.id },
       });
@@ -215,12 +235,11 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       });
 
       if (status === "SUCCEEDED") {
-
         const order = await prisma.order.findUnique({
-          where: { id: dbRefund.orderId }
-        })
+          where: { id: dbRefund.orderId },
+        });
 
-        if (!order) return
+        if (!order) return;
 
         /* =========================
            RESTORE STOCK
@@ -228,24 +247,24 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
         const refundItems = await prisma.refundItem.findMany({
           where: {
-            refundId: dbRefund.id
+            refundId: dbRefund.id,
           },
           include: {
-            orderItem: true
-          }
-        })
+            orderItem: true,
+          },
+        });
 
         for (const item of refundItems) {
           await prisma.product.update({
             where: {
-              id: item.orderItem.productId
+              id: item.orderItem.productId,
             },
             data: {
               stock: {
-                increment: item.quantity
-              }
-            }
-          })
+                increment: item.quantity,
+              },
+            },
+          });
         }
 
         /* =========================
@@ -255,32 +274,40 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         const refundAggregate = await prisma.refund.aggregate({
           where: {
             orderId: dbRefund.orderId,
-            status: "SUCCEEDED"
+            status: "SUCCEEDED",
           },
           _sum: {
-            amount: true
-          }
-        })
+            amount: true,
+          },
+        });
 
-        const totalRefunded = refundAggregate._sum.amount ?? 0
+        const totalRefunded = refundAggregate._sum.amount ?? 0;
 
         const newStatus =
           totalRefunded >= order.totalAmount
             ? "REFUNDED"
-            : "PARTIALLY_REFUNDED"
+            : "PARTIALLY_REFUNDED";
 
         await prisma.order.update({
           where: { id: order.id },
-          data: { status: newStatus }
-        })
+          data: { status: newStatus },
+        });
 
-        console.log(`💰 Order refund processed: ${order.id} → ${newStatus}`)
+        await prisma.orderEvent.create({
+          data: {
+            orderId: order.id,
+            type: "REFUND_COMPLETED",
+            message: "Refund completed",
+          },
+        });
+
+        console.log(`💰 Order refund processed: ${order.id} → ${newStatus}`);
       }
-
-    } catch (err) {
-      console.error("🔥 Error processing refund.updated:", err);
     }
-  }
 
-  return res.json({ received: true });
+    return res.json({ received: true });
+  } catch (err) {
+    console.error("🔥 Stripe webhook error:", err);
+    return res.json({ received: true });
+  }
 };

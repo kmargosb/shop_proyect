@@ -119,6 +119,14 @@ export const RefundService = {
       reason
     })
 
+    await prisma.orderEvent.create({
+      data: {
+        orderId,
+        type: "REFUND_CREATED",
+        message: "Refund created",
+      },
+    });
+
     for (const item of items) {
 
       const orderItem = order.items.find(i => i.id === item.orderItemId)
