@@ -10,6 +10,7 @@ import { stripeWebhook } from "./modules/payment/webhook.controller";
 import { errorHandler } from "./common/middleware/error.middleware";
 import refundRoutes from "./modules/refunds/refund.routes";
 import dashboardRoutes from "@/modules/dashboard/dashboard.routes";
+import customerRoutes from "@/modules/customers/customer.routes";
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use("/refunds", refundRoutes);
 app.use("/api/payments", paymentRouter);
 app.use("/invoices", invoiceRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/customers", customerRoutes);
 
 app.use(errorHandler);
 
