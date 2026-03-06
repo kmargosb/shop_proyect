@@ -1,6 +1,23 @@
 import { Request, Response } from "express";
 import { prisma } from "@/lib/prisma";
 import { asyncHandler } from "@/common/utils/asyncHandler";
+import { getCustomers } from "./customer.service";
+
+export const getCustomersController = asyncHandler(
+  async (req: Request, res: Response) => {
+
+    const { page, limit, search } = req.query;
+
+    const result = await getCustomers({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: search as string | undefined
+    });
+
+    res.json(result);
+
+  }
+);
 
 export const getCustomerOrdersController = asyncHandler(
   async (req: Request<{ email: string }>, res: Response) => {
