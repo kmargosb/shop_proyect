@@ -45,11 +45,12 @@ model Product {
   price Int
   stock Int
 
+  reservations InventoryReservation[]
+
   isActive Boolean @default(true)
-  
+
   images     ProductImage[]
   orderItems OrderItem[]
-
 
   createdAt DateTime @default(now())
 }
@@ -74,6 +75,28 @@ model ProductImage {
 
 /**
  * ============================
+ * Reservation
+ * ============================
+ */
+
+model InventoryReservation {
+  id String @id @default(uuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  quantity Int
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+}
+
+/**
+ * ============================
  * ORDER
  * ============================
  */
@@ -82,7 +105,7 @@ model Order {
   id String @id @default(uuid())
 
   userId String?
-  user   User? @relation(fields: [userId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
 
   fullName String
   email    String
@@ -100,7 +123,7 @@ model Order {
   paymentSessions PaymentSession[]
 
   paymentProvider PaymentProvider @default(STRIPE)
-  paymentMethod PaymentMethod?
+  paymentMethod   PaymentMethod?
 
   stripePaymentIntentId String? @unique
   stripeCustomerId      String?
@@ -114,10 +137,12 @@ model Order {
   transactions OrderTransaction[]
   events       OrderEvent[]
 
+  reservations InventoryReservation[]
+
   createdAt DateTime @default(now())
 }
 
-/*
+/**
  * ============================
  * ORDER ITEM
  * ============================
@@ -127,7 +152,7 @@ model OrderItem {
   id String @id @default(uuid())
 
   orderId String
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
@@ -141,7 +166,7 @@ model OrderItem {
   refundItems RefundItem[]
 }
 
-/*
+/**
  * ============================
  * PaymnentSession
  * ============================
@@ -151,7 +176,7 @@ model PaymentSession {
   id String @id @default(uuid())
 
   orderId String
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   provider PaymentProvider
   method   PaymentMethod
@@ -174,7 +199,7 @@ model OrderTransaction {
   id String @id @default(uuid())
 
   orderId String
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   type TransactionType
 
@@ -187,7 +212,7 @@ model OrderTransaction {
   createdAt DateTime @default(now())
 }
 
-/*
+/**
  * ============================
  * OrderEvent
  * ============================
@@ -197,7 +222,7 @@ model OrderEvent {
   id String @id @default(uuid())
 
   orderId String
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   type OrderEventType
 
@@ -206,7 +231,7 @@ model OrderEvent {
   createdAt DateTime @default(now())
 }
 
-/*
+/**
  * ============================
  * REFUND
  * ============================
@@ -216,7 +241,7 @@ model Refund {
   id String @id @default(uuid())
 
   orderId String
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   stripeRefundId String? @unique
 
@@ -262,11 +287,11 @@ model RefundItem {
  */
 
 model RefreshToken {
-  id     String @id @default(uuid())
-  token  String @unique
+  id    String @id @default(uuid())
+  token String @unique
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   expiresAt DateTime

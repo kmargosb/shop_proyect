@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
 import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
+import { InventoryService } from "@/modules/inventory/inventory.service"
 
 /* =========================================================
    UTIL
@@ -45,6 +46,9 @@ async function handlePaymentSucceeded(paymentIntent: any) {
   }
 
   if (order.status === "PAID") {
+
+    console.log("⚠ Duplicate payment webhook:", paymentIntent.id)
+
     const existingEvent = await prisma.orderEvent.findFirst({
       where: {
         orderId: order.id,
@@ -74,6 +78,8 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       stripePaymentIntentId: paymentIntent.id,
     },
   });
+
+  await InventoryService.confirmReservation(order.id)
 
   await prisma.orderTransaction.create({
     data: {
@@ -141,6 +147,8 @@ async function handlePaymentFailed(paymentIntent: any) {
     },
   });
 
+  await InventoryService.releaseReservation(order.id)
+
   await PaymentSessionService.markSessionFailed(paymentIntent.id);
 
   console.log("❌ Order marked as FAILED:", order.id);
@@ -206,16 +214,22 @@ async function handleRefundCreated(refund: any) {
 async function handleRefundUpdated(refund: any) {
   const dbRefund = await prisma.refund.findUnique({
     where: { stripeRefundId: refund.id },
+    include: { order: true }
   });
 
   if (!dbRefund) return;
+
+  if (dbRefund.status === "SUCCEEDED") {
+    console.log("⚠ Refund already processed:", refund.id)
+    return
+  }
 
   const status =
     refund.status === "succeeded"
       ? "SUCCEEDED"
       : refund.status === "failed"
-      ? "FAILED"
-      : "PENDING";
+        ? "FAILED"
+        : "PENDING";
 
   await prisma.refund.update({
     where: { stripeRefundId: refund.id },
