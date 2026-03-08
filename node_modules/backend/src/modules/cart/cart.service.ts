@@ -29,14 +29,10 @@ export const CartService = {
     if (!userId) {
 
       return prisma.cart.create({
-        data: {
-          expiresAt
-        },
+        data: { expiresAt },
         include: {
           items: {
-            include: {
-              product: true
-            }
+            include: { product: true }
           }
         }
       })
@@ -53,9 +49,7 @@ export const CartService = {
       },
       include: {
         items: {
-          include: {
-            product: true
-          }
+          include: { product: true }
         }
       }
     })
@@ -69,9 +63,7 @@ export const CartService = {
         },
         include: {
           items: {
-            include: {
-              product: true
-            }
+            include: { product: true }
           }
         }
       })
@@ -91,73 +83,78 @@ export const CartService = {
       throw new Error("Invalid quantity")
     }
 
-    const cart = await prisma.cart.findUnique({
-      where: { id: cartId }
-    })
+    return prisma.$transaction(async (tx) => {
 
-    if (!cart) {
-      throw new Error("Cart not found")
-    }
-
-    if (cart.status !== "ACTIVE") {
-      throw new Error("Cart not active")
-    }
-
-    if (cart.expiresAt < new Date()) {
-      throw new Error("Cart expired")
-    }
-
-    const product = await prisma.product.findUnique({
-      where: { id: productId }
-    })
-
-    if (!product) {
-      throw new Error("Product not found")
-    }
-
-    const existingItem = await prisma.cartItem.findFirst({
-      where: {
-        cartId,
-        productId
-      }
-    })
-
-    let item
-
-    if (existingItem) {
-
-      item = await prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: {
-          quantity: {
-            increment: quantity
-          }
-        }
+      const cart = await tx.cart.findUnique({
+        where: { id: cartId }
       })
 
-    } else {
+      if (!cart) {
+        throw new Error("Cart not found")
+      }
 
-      item = await prisma.cartItem.create({
-        data: {
+      if (cart.status !== "ACTIVE") {
+        throw new Error("Cart not active")
+      }
+
+      if (cart.expiresAt < new Date()) {
+        throw new Error("Cart expired")
+      }
+
+      const product = await tx.product.findUnique({
+        where: { id: productId }
+      })
+
+      if (!product) {
+        throw new Error("Product not found")
+      }
+
+      const existingItem = await tx.cartItem.findFirst({
+        where: {
           cartId,
-          productId,
-          quantity
+          productId
         }
       })
 
-    }
+      let item
 
-    // refresh expiration
-    await prisma.cart.update({
-      where: { id: cartId },
-      data: {
-        expiresAt: new Date(
-          Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000
-        )
+      if (existingItem) {
+
+        item = await tx.cartItem.update({
+          where: { id: existingItem.id },
+          data: {
+            quantity: {
+              increment: quantity
+            }
+          }
+        })
+
+      } else {
+
+        item = await tx.cartItem.create({
+          data: {
+            cartId,
+            productId,
+            quantity,
+            price: product.price // ⭐ PRICE SNAPSHOT
+          }
+        })
+
       }
-    })
 
-    return item
+      // refresh expiration
+      await tx.cart.update({
+        where: { id: cartId },
+        data: {
+          expiresAt: new Date(
+            Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000
+          )
+        }
+      })
+
+      return item
+
+    })
 
   },
 
@@ -191,9 +188,7 @@ export const CartService = {
       where: { id: cartId },
       include: {
         items: {
-          include: {
-            product: true
-          }
+          include: { product: true }
         }
       }
     })
@@ -211,19 +206,16 @@ export const CartService = {
   },
 
   /* =========================================================
-     CONVERT CART TO ORDER
+     CALCULATE CART TOTALS
+     (estructura preparada para impuestos / cupones)
   ========================================================= */
 
-  async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
+  async calculateTotals(cartId: string) {
 
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
       include: {
-        items: {
-          include: {
-            product: true
-          }
-        }
+        items: true
       }
     })
 
@@ -231,39 +223,82 @@ export const CartService = {
       throw new Error("Cart not found")
     }
 
-    if (cart.status !== "ACTIVE") {
-      throw new Error("Cart already converted")
+    const subtotal = cart.items.reduce((acc, item) => {
+      return acc + item.price * item.quantity
+    }, 0)
+
+    const discount = 0
+    const tax = 0
+    const shipping = 0
+
+    const total = subtotal - discount + tax + shipping
+
+    return {
+      subtotal,
+      discount,
+      tax,
+      shipping,
+      total
     }
 
-    if (cart.expiresAt < new Date()) {
-      throw new Error("Cart expired")
-    }
+  },
 
-    if (cart.items.length === 0) {
-      throw new Error("Cart empty")
-    }
+  /* =========================================================
+     CONVERT CART TO ORDER
+  ========================================================= */
 
-    const { createOrder } = await import("@/modules/orders/order.service")
+  async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
 
-    const order = await createOrder({
+    return prisma.$transaction(async (tx) => {
 
-      ...checkoutData,
+      const cart = await tx.cart.findUnique({
+        where: { id: cartId },
+        include: {
+          items: {
+            include: { product: true }
+          }
+        }
+      })
 
-      items: cart.items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity
-      }))
-
-    })
-
-    await prisma.cart.update({
-      where: { id: cartId },
-      data: {
-        status: "CONVERTED"
+      if (!cart) {
+        throw new Error("Cart not found")
       }
-    })
 
-    return order
+      if (cart.status !== "ACTIVE") {
+        throw new Error("Cart already converted")
+      }
+
+      if (cart.expiresAt < new Date()) {
+        throw new Error("Cart expired")
+      }
+
+      if (cart.items.length === 0) {
+        throw new Error("Cart empty")
+      }
+
+      const { createOrder } = await import("@/modules/orders/order.service")
+
+      const order = await createOrder({
+
+        ...checkoutData,
+
+        items: cart.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }))
+
+      })
+
+      await tx.cart.update({
+        where: { id: cartId },
+        data: {
+          status: "CONVERTED"
+        }
+      })
+
+      return order
+
+    })
 
   }
 
