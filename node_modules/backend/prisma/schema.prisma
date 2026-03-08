@@ -27,6 +27,7 @@ model User {
 
   refreshTokens RefreshToken[]
   orders        Order[]
+  carts         Cart[]
 
   createdAt DateTime @default(now())
 }
@@ -44,7 +45,7 @@ model Product {
 
   price Int
 
-  stock Int
+  stock         Int
   reservedStock Int @default(0)
 
   reservations InventoryReservation[]
@@ -53,6 +54,7 @@ model Product {
 
   images     ProductImage[]
   orderItems OrderItem[]
+  cartItems  CartItem[]
 
   createdAt DateTime @default(now())
 }
@@ -77,6 +79,48 @@ model ProductImage {
 
 /**
  * ============================
+ * CART
+ * ============================
+ */
+
+model Cart {
+  id String @id @default(uuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  items CartItem[]
+
+  status CartStatus @default(ACTIVE)
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * ============================
+ * CART ITEM
+ * ============================
+ */
+
+model CartItem {
+  id String @id @default(uuid())
+
+  cartId String
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int
+
+  createdAt DateTime @default(now())
+}
+
+/**
+ * ============================
  * Reservation
  * ============================
  */
@@ -85,7 +129,7 @@ model InventoryReservation {
   id String @id @default(uuid())
 
   productId String
-  orderId String
+  orderId   String
 
   quantity Int
 
@@ -94,7 +138,7 @@ model InventoryReservation {
   createdAt DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id])
-  order Order @relation(fields: [orderId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
 
   @@unique([productId, orderId])
   @@index([productId, expiresAt])
@@ -151,7 +195,7 @@ model Order {
   createdAt DateTime @default(now())
 }
 
-/*
+/**
  * ============================
  * Shipment
  * ============================
@@ -161,20 +205,20 @@ model Shipment {
   id String @id @default(uuid())
 
   orderId String @unique
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  carrier String
+  carrier        String
   trackingNumber String
 
   status ShipmentStatus @default(PENDING)
 
-  shippedAt DateTime?
+  shippedAt   DateTime?
   deliveredAt DateTime?
 
   createdAt DateTime @default(now())
 }
 
-/*
+/**
  * ============================
  * ORDER ITEM
  * ============================
@@ -366,8 +410,8 @@ model Coupon {
 
   minOrderAmount Int?
 
-  maxUses Int?
-  usedCount Int @default(0)
+  maxUses   Int?
+  usedCount Int  @default(0)
 
   expiresAt DateTime?
 
@@ -376,7 +420,7 @@ model Coupon {
   createdAt DateTime @default(now())
 }
 
-/*
+/**
  * ============================
  * ENUMS
  * ============================
@@ -462,4 +506,10 @@ enum ShipmentStatus {
 enum CouponType {
   PERCENTAGE
   FIXED
+}
+
+enum CartStatus {
+  ACTIVE
+  CONVERTED
+  EXPIRED
 }

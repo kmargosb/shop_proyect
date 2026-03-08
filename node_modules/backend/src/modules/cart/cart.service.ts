@@ -1,0 +1,270 @@
+import { prisma } from "@/lib/prisma"
+
+const CART_EXPIRATION_HOURS = 24
+
+type CheckoutData = {
+  userId?: string
+  fullName: string
+  email: string
+  phone: string
+  addressLine1: string
+  addressLine2?: string
+  city: string
+  postalCode: string
+  country: string
+}
+
+export const CartService = {
+
+  /* =========================================================
+     GET OR CREATE CART
+  ========================================================= */
+
+  async getOrCreateCart(userId?: string) {
+
+    const expiresAt = new Date(
+      Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000
+    )
+
+    if (!userId) {
+
+      return prisma.cart.create({
+        data: {
+          expiresAt
+        },
+        include: {
+          items: {
+            include: {
+              product: true
+            }
+          }
+        }
+      })
+
+    }
+
+    let cart = await prisma.cart.findFirst({
+      where: {
+        userId,
+        status: "ACTIVE",
+        expiresAt: {
+          gt: new Date()
+        }
+      },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        }
+      }
+    })
+
+    if (!cart) {
+
+      cart = await prisma.cart.create({
+        data: {
+          userId,
+          expiresAt
+        },
+        include: {
+          items: {
+            include: {
+              product: true
+            }
+          }
+        }
+      })
+
+    }
+
+    return cart
+  },
+
+  /* =========================================================
+     ADD ITEM
+  ========================================================= */
+
+  async addItem(cartId: string, productId: string, quantity: number) {
+
+    if (quantity <= 0) {
+      throw new Error("Invalid quantity")
+    }
+
+    const cart = await prisma.cart.findUnique({
+      where: { id: cartId }
+    })
+
+    if (!cart) {
+      throw new Error("Cart not found")
+    }
+
+    if (cart.status !== "ACTIVE") {
+      throw new Error("Cart not active")
+    }
+
+    if (cart.expiresAt < new Date()) {
+      throw new Error("Cart expired")
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    })
+
+    if (!product) {
+      throw new Error("Product not found")
+    }
+
+    const existingItem = await prisma.cartItem.findFirst({
+      where: {
+        cartId,
+        productId
+      }
+    })
+
+    let item
+
+    if (existingItem) {
+
+      item = await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: {
+          quantity: {
+            increment: quantity
+          }
+        }
+      })
+
+    } else {
+
+      item = await prisma.cartItem.create({
+        data: {
+          cartId,
+          productId,
+          quantity
+        }
+      })
+
+    }
+
+    // refresh expiration
+    await prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        expiresAt: new Date(
+          Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000
+        )
+      }
+    })
+
+    return item
+
+  },
+
+  /* =========================================================
+     REMOVE ITEM
+  ========================================================= */
+
+  async removeItem(cartItemId: string) {
+
+    const item = await prisma.cartItem.findUnique({
+      where: { id: cartItemId }
+    })
+
+    if (!item) {
+      throw new Error("Cart item not found")
+    }
+
+    return prisma.cartItem.delete({
+      where: { id: cartItemId }
+    })
+
+  },
+
+  /* =========================================================
+     GET CART
+  ========================================================= */
+
+  async getCart(cartId: string) {
+
+    const cart = await prisma.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        }
+      }
+    })
+
+    if (!cart) {
+      throw new Error("Cart not found")
+    }
+
+    if (cart.expiresAt < new Date()) {
+      throw new Error("Cart expired")
+    }
+
+    return cart
+
+  },
+
+  /* =========================================================
+     CONVERT CART TO ORDER
+  ========================================================= */
+
+  async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
+
+    const cart = await prisma.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        }
+      }
+    })
+
+    if (!cart) {
+      throw new Error("Cart not found")
+    }
+
+    if (cart.status !== "ACTIVE") {
+      throw new Error("Cart already converted")
+    }
+
+    if (cart.expiresAt < new Date()) {
+      throw new Error("Cart expired")
+    }
+
+    if (cart.items.length === 0) {
+      throw new Error("Cart empty")
+    }
+
+    const { createOrder } = await import("@/modules/orders/order.service")
+
+    const order = await createOrder({
+
+      ...checkoutData,
+
+      items: cart.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }))
+
+    })
+
+    await prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        status: "CONVERTED"
+      }
+    })
+
+    return order
+
+  }
+
+}
