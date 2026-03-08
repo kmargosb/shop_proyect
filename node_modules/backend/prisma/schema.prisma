@@ -131,6 +131,8 @@ model Order {
   status OrderStatus @default(PENDING)
   paidAt DateTime?
 
+  abandonedEmailStage Int @default(0)
+
   items        OrderItem[]
   invoice      Invoice?
   refunds      Refund[]
