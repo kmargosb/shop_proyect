@@ -79,6 +79,8 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     },
   });
 
+  await InventoryService.validateReservation(order.id)
+
   await InventoryService.confirmReservation(order.id)
 
   await prisma.orderTransaction.create({
