@@ -513,4 +513,5 @@ enum CartStatus {
   ACTIVE
   CONVERTED
   EXPIRED
+  MERGED
 }
