@@ -4,28 +4,48 @@ export const InventoryService = {
 
   async reserveStock(productId: string, orderId: string, quantity: number) {
 
-    const product = await prisma.product.findUnique({
-      where: { id: productId }
-    })
+    return prisma.$transaction(async (tx) => {
 
-    if (!product) {
-      throw new Error("Product not found")
-    }
+      const product = await tx.product.findUnique({
+        where: { id: productId }
+      })
 
-    if (product.stock < quantity) {
-      throw new Error("Not enough stock")
-    }
-
-    const reservation = await prisma.inventoryReservation.create({
-      data: {
-        productId,
-        orderId,
-        quantity,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+      if (!product) {
+        throw new Error("Product not found")
       }
-    })
 
-    return reservation
+      const activeReservations = await tx.inventoryReservation.aggregate({
+        where: {
+          productId,
+          expiresAt: {
+            gt: new Date()
+          }
+        },
+        _sum: {
+          quantity: true
+        }
+      })
+
+      const reserved = activeReservations._sum.quantity ?? 0
+
+      const availableStock = product.stock - reserved
+
+      if (availableStock < quantity) {
+        throw new Error("Not enough stock available")
+      }
+
+      const reservation = await tx.inventoryReservation.create({
+        data: {
+          productId,
+          orderId,
+          quantity,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+        }
+      })
+
+      return reservation
+
+    })
   },
 
   async confirmReservation(orderId: string) {
@@ -34,18 +54,18 @@ export const InventoryService = {
       where: { orderId }
     })
 
-    for (const reservation of reservations) {
-
-      await prisma.product.update({
-        where: { id: reservation.productId },
-        data: {
-          stock: {
-            decrement: reservation.quantity
+    await prisma.$transaction(
+      reservations.map((reservation) =>
+        prisma.product.update({
+          where: { id: reservation.productId },
+          data: {
+            stock: {
+              decrement: reservation.quantity
+            }
           }
-        }
-      })
-
-    }
+        })
+      )
+    )
 
     await prisma.inventoryReservation.deleteMany({
       where: { orderId }

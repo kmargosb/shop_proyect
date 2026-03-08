@@ -4,7 +4,7 @@ import { InventoryService } from "@/modules/inventory/inventory.service";
 
 export async function cleanupExpiredOrders() {
 
-  const timeoutMinutes = 5;
+  const timeoutMinutes = 15;
 
   const expiryDate = new Date(Date.now() - timeoutMinutes * 60 * 1000);
 
