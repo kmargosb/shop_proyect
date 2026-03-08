@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { getPaymentProvider } from "./payment.factory";
-import { getProviderFromMethod } from "./payment-method.mapper"
+import { getProviderFromMethod } from "./payment-method.mapper";
 
 export const createPaymentIntent = async (
   req: Request,
@@ -10,7 +10,7 @@ export const createPaymentIntent = async (
 ) => {
   try {
 
-    const { orderId, method } = req.body
+    const { orderId, method } = req.body;
 
     if (!orderId) {
       return res.status(400).json({
@@ -18,8 +18,12 @@ export const createPaymentIntent = async (
       });
     }
 
+    /* =========================================================
+       LOCK ORDER (IDEMPOTENT CHECKOUT)
+    ========================================================= */
+
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderId }
     });
 
     if (!order) {
@@ -35,12 +39,12 @@ export const createPaymentIntent = async (
     }
 
     /* ===============================
-       DETECTAR METHOD Y PROVIDER
+       DETECT METHOD Y PROVIDER
     =============================== */
 
-    const paymentMethod = method ?? "CARD"
+    const paymentMethod = method ?? "CARD";
 
-    const paymentProvider = getProviderFromMethod(paymentMethod)
+    const paymentProvider = getProviderFromMethod(paymentMethod);
 
     let paymentIntent;
 
@@ -54,11 +58,33 @@ export const createPaymentIntent = async (
         order.stripePaymentIntentId
       );
 
+      /* ===============================================
+         SI YA ESTA PAGADO
+      =============================================== */
+
       if (paymentIntent.status === "succeeded") {
         return res.status(400).json({
           error: "Payment already completed",
         });
       }
+
+      /* ===============================================
+         SI ESTA ACTIVO → REUTILIZAR
+      =============================================== */
+
+      if (
+        paymentIntent.status === "requires_payment_method" ||
+        paymentIntent.status === "requires_confirmation" ||
+        paymentIntent.status === "processing"
+      ) {
+        return res.json({
+          clientSecret: paymentIntent.client_secret,
+        });
+      }
+
+      /* ===============================================
+         ASEGURAR METADATA
+      =============================================== */
 
       if (!paymentIntent.metadata?.orderId) {
         await stripe.paymentIntents.update(paymentIntent.id, {
@@ -69,7 +95,7 @@ export const createPaymentIntent = async (
     } else {
 
       /* =========================================================
-         USAR PAYMENT PROVIDER
+         CREAR NUEVO PAYMENT INTENT
       ========================================================= */
 
       const provider = getPaymentProvider(paymentProvider);
@@ -98,7 +124,7 @@ export const createPaymentIntent = async (
 
   } catch (error) {
 
-    console.error("🔥 STRIPE ERROR:", error);
+    console.error("🔥 PAYMENT ERROR:", error);
 
     return res.status(500).json({
       error: "Payment initialization failed",
@@ -109,10 +135,13 @@ export const createPaymentIntent = async (
 
 export const refundPayment = async (req: Request, res: Response) => {
   try {
+
     const { orderId } = req.body;
 
     if (!orderId) {
-      return res.status(400).json({ error: "Order ID required" });
+      return res.status(400).json({
+        error: "Order ID required"
+      });
     }
 
     const order = await prisma.order.findUnique({
@@ -120,19 +149,25 @@ export const refundPayment = async (req: Request, res: Response) => {
     });
 
     if (!order || !order.stripePaymentIntentId) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({
+        error: "Order not found"
+      });
     }
 
     if (order.status !== "PAID") {
-      return res.status(400).json({ error: "Order not paid" });
+      return res.status(400).json({
+        error: "Order not paid"
+      });
     }
 
-    // Crear refund en Stripe
+    /* =========================================================
+       CREATE REFUND
+    ========================================================= */
+
     const refund = await stripe.refunds.create({
       payment_intent: order.stripePaymentIntentId,
     });
 
-    // Actualizar orden
     await prisma.order.update({
       where: { id: order.id },
       data: {
@@ -140,12 +175,18 @@ export const refundPayment = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       refundId: refund.id,
     });
+
   } catch (error) {
+
     console.error("Refund error:", error);
-    res.status(500).json({ error: "Refund failed" });
+
+    return res.status(500).json({
+      error: "Refund failed"
+    });
+
   }
 };
