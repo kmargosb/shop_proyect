@@ -13,42 +13,25 @@ export const InventoryService = {
     return prisma.$transaction(async (tx) => {
 
       const product = await tx.product.findUnique({
-        where: { id: productId }
+        where: { id: productId },
+        select: {
+          id: true,
+          stock: true,
+          reservedStock: true
+        }
       })
 
       if (!product) {
         throw new Error("Product not found")
       }
 
-      /* =========================
-         CALCULATE RESERVED STOCK
-      ========================= */
-
-      const activeReservations = await tx.inventoryReservation.aggregate({
-        where: {
-          productId,
-          expiresAt: {
-            gt: new Date()
-          }
-        },
-        _sum: {
-          quantity: true
-        }
-      })
-
-      const reserved = activeReservations._sum.quantity ?? 0
-
-      const availableStock = product.stock - reserved
+      const availableStock = product.stock - product.reservedStock
 
       if (availableStock < quantity) {
         throw new Error("Not enough stock available")
       }
 
-      /* =========================
-         CREATE RESERVATION
-      ========================= */
-
-      const reservation = await tx.inventoryReservation.create({
+      await tx.inventoryReservation.create({
         data: {
           productId,
           orderId,
@@ -59,8 +42,17 @@ export const InventoryService = {
         }
       })
 
-      return reservation
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          reservedStock: {
+            increment: quantity
+          }
+        }
+      })
+
     })
+
   },
 
   /* =========================================================
@@ -72,17 +64,28 @@ export const InventoryService = {
     const reservations = await prisma.inventoryReservation.findMany({
       where: { orderId },
       include: {
-        product: true
+        product: {
+          select: {
+            id: true,
+            stock: true
+          }
+        }
       }
     })
 
+    if (reservations.length === 0) {
+      return
+    }
+
+    const now = new Date()
+
     for (const reservation of reservations) {
 
-      const activeReservations = await prisma.inventoryReservation.aggregate({
+      const reservationAggregate = await prisma.inventoryReservation.aggregate({
         where: {
           productId: reservation.productId,
           expiresAt: {
-            gt: new Date()
+            gt: now
           }
         },
         _sum: {
@@ -90,8 +93,7 @@ export const InventoryService = {
         }
       })
 
-      const reserved = activeReservations._sum.quantity ?? 0
-
+      const reserved = reservationAggregate._sum.quantity ?? 0
       const availableStock = reservation.product.stock - reserved
 
       if (availableStock < reservation.quantity) {
@@ -100,6 +102,7 @@ export const InventoryService = {
         )
       }
     }
+
   },
 
   /* =========================================================
@@ -112,9 +115,7 @@ export const InventoryService = {
       where: { orderId }
     })
 
-    if (reservations.length === 0) {
-      return
-    }
+    if (reservations.length === 0) return
 
     await prisma.$transaction(async (tx) => {
 
@@ -125,9 +126,13 @@ export const InventoryService = {
           data: {
             stock: {
               decrement: reservation.quantity
+            },
+            reservedStock: {
+              decrement: reservation.quantity
             }
           }
         })
+
       }
 
       await tx.inventoryReservation.deleteMany({
@@ -135,6 +140,7 @@ export const InventoryService = {
       })
 
     })
+
   },
 
   /* =========================================================
@@ -143,8 +149,31 @@ export const InventoryService = {
 
   async releaseReservation(orderId: string) {
 
-    await prisma.inventoryReservation.deleteMany({
+    const reservations = await prisma.inventoryReservation.findMany({
       where: { orderId }
+    })
+
+    if (reservations.length === 0) return
+
+    await prisma.$transaction(async (tx) => {
+
+      for (const reservation of reservations) {
+
+        await tx.product.update({
+          where: { id: reservation.productId },
+          data: {
+            reservedStock: {
+              decrement: reservation.quantity
+            }
+          }
+        })
+
+      }
+
+      await tx.inventoryReservation.deleteMany({
+        where: { orderId }
+      })
+
     })
 
   }
