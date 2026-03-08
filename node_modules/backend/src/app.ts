@@ -12,32 +12,24 @@ import refundRoutes from "./modules/refunds/refund.routes";
 import dashboardRoutes from "@/modules/dashboard/dashboard.routes";
 import customerRoutes from "@/modules/customers/customer.routes";
 import adminRoutes from "@/modules/admin/admin.routes";
+import paymentSessionRoutes from "@/modules/payment-sessions/payment-session.routes"
 
 const app = express();
 
-/**
- * ✅ STRIPE WEBHOOK (ANTES DE TODO)
- */
-app.use(
-  "/api/payments/webhook",
-  express.raw({ type: "application/json" })
-);
-
+/* STRIPE WEBHOOK */
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
 app.post("/api/payments/webhook", stripeWebhook);
 
-/**
- * ✅ NORMAL MIDDLEWARE
- */
+/* GLOBAL MIDDLEWARE */
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
-
+/* HEALTH CHECK */
 app.get("/", (_, res) => {
   res.json({
     status: "OK",
@@ -45,12 +37,11 @@ app.get("/", (_, res) => {
   });
 });
 
-/**
- * ROUTES
- */
+/* ROUTES */
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
+app.use("/payment-sessions", paymentSessionRoutes);
 app.use("/refunds", refundRoutes);
 app.use("/api/payments", paymentRouter);
 app.use("/invoices", invoiceRoutes);
@@ -58,6 +49,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/customers", customerRoutes);
 app.use("/admin", adminRoutes);
 
+/* ERROR HANDLER */
 app.use(errorHandler);
 
 export default app;

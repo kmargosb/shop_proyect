@@ -97,6 +97,8 @@ model Order {
   totalAmount Int
   currency    String @default("eur")
 
+  paymentSessions PaymentSession[]
+
   paymentProvider PaymentProvider @default(STRIPE)
   paymentMethod PaymentMethod?
 
@@ -115,7 +117,7 @@ model Order {
   createdAt DateTime @default(now())
 }
 
-/**
+/*
  * ============================
  * ORDER ITEM
  * ============================
@@ -137,6 +139,29 @@ model OrderItem {
   price    Int
 
   refundItems RefundItem[]
+}
+
+/*
+ * ============================
+ * PaymnentSession
+ * ============================
+ */
+
+model PaymentSession {
+  id String @id @default(uuid())
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider PaymentProvider
+  method   PaymentMethod
+
+  paymentIntentId String?
+
+  status PaymentSessionStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /**
@@ -324,6 +349,14 @@ enum OrderEventType {
   ORDER_CANCELLED
   ORDER_SHIPPED
   ORDER_UPDATED
+}
+
+enum PaymentSessionStatus {
+  PENDING
+  ACTIVE
+  FAILED
+  COMPLETED
+  EXPIRED
 }
 
 enum PaymentProvider {
