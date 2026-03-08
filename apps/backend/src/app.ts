@@ -14,6 +14,7 @@ import customerRoutes from "@/modules/customers/customer.routes";
 import adminRoutes from "@/modules/admin/admin.routes";
 import paymentSessionRoutes from "@/modules/payment-sessions/payment-session.routes"
 import shippingRoutes from "@/modules/shipping/shipping.routes"
+import couponRoutes from "@/modules/coupons/coupon.routes"
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/customers", customerRoutes);
 app.use("/admin", adminRoutes);
 app.use("/shipping", shippingRoutes)
+app.use("/coupons", couponRoutes)
 
 /* ERROR HANDLER */
 app.use(errorHandler);

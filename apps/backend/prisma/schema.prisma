@@ -348,7 +348,28 @@ model InvoiceSequence {
   createdAt DateTime @default(now())
 }
 
-/**
+model Coupon {
+  id String @id @default(uuid())
+
+  code String @unique
+
+  type CouponType
+
+  value Int
+
+  minOrderAmount Int?
+
+  maxUses Int?
+  usedCount Int @default(0)
+
+  expiresAt DateTime?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+/*
  * ============================
  * ENUMS
  * ============================
@@ -429,4 +450,9 @@ enum ShipmentStatus {
   SHIPPED
   IN_TRANSIT
   DELIVERED
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
 }

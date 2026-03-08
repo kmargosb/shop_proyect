@@ -29,7 +29,7 @@ export const createShipmentController = async (
 }
 
 export const updateShipmentStatusController = async (
-  req: Request,
+  req: Request<{ id: string }>,
   res: Response
 ) => {
 
@@ -56,7 +56,7 @@ export const updateShipmentStatusController = async (
 }
 
 export const getShipmentController = async (
-  req: Request,
+  req: Request<{ orderId: string }>,
   res: Response
 ) => {
 
