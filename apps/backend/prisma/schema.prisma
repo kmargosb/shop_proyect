@@ -139,10 +139,35 @@ model Order {
 
   reservations InventoryReservation[]
 
+  shipment Shipment?
+
   createdAt DateTime @default(now())
 }
 
-/**
+/*
+ * ============================
+ * Shipment
+ * ============================
+ */
+
+model Shipment {
+  id String @id @default(uuid())
+
+  orderId String @unique
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  carrier String
+  trackingNumber String
+
+  status ShipmentStatus @default(PENDING)
+
+  shippedAt DateTime?
+  deliveredAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+/*
  * ============================
  * ORDER ITEM
  * ============================
@@ -397,4 +422,11 @@ enum PaymentMethod {
   BIZUM
   APPLE_PAY
   GOOGLE_PAY
+}
+
+enum ShipmentStatus {
+  PENDING
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
 }
