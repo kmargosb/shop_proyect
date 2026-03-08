@@ -70,14 +70,6 @@ export async function createOrder(data: CreateOrderInput) {
         price: product.price,
       });
 
-      await tx.product.update({
-        where: { id: product.id },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      });
     }
 
     const order = await tx.order.create({
@@ -105,6 +97,22 @@ export async function createOrder(data: CreateOrderInput) {
         items: true,
       },
     });
+
+    // 📦 Reserve inventory
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
+
+    for (const item of order.items) {
+
+      await tx.inventoryReservation.create({
+        data: {
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          expiresAt,
+        },
+      });
+
+    }
 
     // 📌 Order Timeline
     await tx.orderEvent.create({
