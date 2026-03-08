@@ -16,6 +16,7 @@ import paymentSessionRoutes from "@/modules/payment-sessions/payment-session.rou
 import shippingRoutes from "@/modules/shipping/shipping.routes"
 import couponRoutes from "@/modules/coupon/coupon.routes"
 import cartRoutes from "@/modules/cart/cart.routes"
+import checkoutRoutes from "@/modules/checkout/checkout.routes"
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/admin", adminRoutes);
 app.use("/shipping", shippingRoutes);
 app.use("/coupons", couponRoutes);
 app.use("/cart", cartRoutes);
+app.use("/checkout", checkoutRoutes);
 
 
 /* ERROR HANDLER */

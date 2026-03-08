@@ -184,11 +184,15 @@ export const CartService = {
 
   async getCart(cartId: string) {
 
+    await this.syncCartInventory(cartId)
+
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
       include: {
         items: {
-          include: { product: true }
+          include: {
+            product: true
+          }
         }
       }
     })
@@ -206,16 +210,19 @@ export const CartService = {
   },
 
   /* =========================================================
-     CALCULATE CART TOTALS
-     (estructura preparada para impuestos / cupones)
-  ========================================================= */
+   SYNC CART WITH INVENTORY
+========================================================= */
 
-  async calculateTotals(cartId: string) {
+  async syncCartInventory(cartId: string) {
 
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
       include: {
-        items: true
+        items: {
+          include: {
+            product: true
+          }
+        }
       }
     })
 
@@ -223,25 +230,87 @@ export const CartService = {
       throw new Error("Cart not found")
     }
 
-    const subtotal = cart.items.reduce((acc, item) => {
-      return acc + item.price * item.quantity
-    }, 0)
+    for (const item of cart.items) {
 
-    const discount = 0
-    const tax = 0
-    const shipping = 0
+      if (!item.product) {
 
-    const total = subtotal - discount + tax + shipping
+        await prisma.cartItem.delete({
+          where: { id: item.id }
+        })
 
-    return {
-      subtotal,
-      discount,
-      tax,
-      shipping,
-      total
+        continue
+      }
+
+      if (!item.product.isActive) {
+
+        await prisma.cartItem.delete({
+          where: { id: item.id }
+        })
+
+        continue
+      }
+
+      if (item.product.stock < item.quantity) {
+
+        if (item.product.stock === 0) {
+
+          await prisma.cartItem.delete({
+            where: { id: item.id }
+          })
+
+        } else {
+
+          await prisma.cartItem.update({
+            where: { id: item.id },
+            data: {
+              quantity: item.product.stock
+            }
+          })
+
+        }
+
+      }
+
     }
 
+    return this.getCart(cartId)
+
   },
+
+  /* =========================================================
+   CALCULATE CART TOTALS
+========================================================= */
+
+  async calculateTotals(cartId: string) {
+
+  const cart = await prisma.cart.findUnique({
+    where: { id: cartId },
+    include: { items: true }
+  })
+
+  if (!cart) {
+    throw new Error("Cart not found")
+  }
+
+  const subtotal = cart.items.reduce((acc, item) => {
+    return acc + item.price * item.quantity
+  }, 0)
+
+  const discount = 0
+  const tax = Math.floor(subtotal * 0.21)
+
+  const shipping = subtotal > 5000 ? 0 : 500
+
+  const total = subtotal - discount + tax + shipping
+
+  return {
+    subtotal,
+    discount,
+    tax,
+    shipping,
+    total
+  }
+},
 
   /* =========================================================
      CONVERT CART TO ORDER
