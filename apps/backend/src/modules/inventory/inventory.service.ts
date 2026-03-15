@@ -13,14 +13,18 @@ export const InventoryService = {
     orderId: string,
     quantity: number,
   ) {
-    const product = await tx.product.findUnique({
-      where: { id: productId },
-      select: {
-        id: true,
-        stock: true,
-        reservedStock: true,
-      },
-    });
+    /* =========================
+     LOCK PRODUCT ROW
+  ========================= */
+
+    const rows: any[] = await tx.$queryRaw`
+    SELECT id, stock, "reservedStock"
+    FROM "Product"
+    WHERE id = ${productId}
+    FOR UPDATE
+  `;
+
+    const product = rows[0];
 
     if (!product) {
       throw new Error("Product not found");
@@ -32,7 +36,9 @@ export const InventoryService = {
       throw new Error("Not enough stock available");
     }
 
-    /* create reservation */
+    /* =========================
+     CREATE RESERVATION
+  ========================= */
 
     await tx.inventoryReservation.create({
       data: {
@@ -43,7 +49,9 @@ export const InventoryService = {
       },
     });
 
-    /* reserve stock */
+    /* =========================
+     UPDATE RESERVED STOCK
+  ========================= */
 
     await tx.product.update({
       where: { id: productId },

@@ -14,17 +14,25 @@ export class StripeProvider {
 
     console.log("Creating Stripe PaymentIntent for order:", orderId)
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: "never"
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount,
+        currency,
+
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: "never"
+        },
+
+        metadata: {
+          orderId
+        }
+
       },
-      metadata: {
-        orderId
+      {
+        idempotencyKey: `payment_intent_${orderId}`
       }
-    })
+    )
 
     console.log("Stripe PaymentIntent created:", paymentIntent.id)
 
