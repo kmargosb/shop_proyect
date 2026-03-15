@@ -65,3 +65,11 @@ export const getProduct = async (req: Request, res: Response) => {
 
   }
 };
+
+export const getRelatedProducts = asyncHandler(async (req, res) => {
+  const { id } = req.params as { id: string };
+
+  const products = await productService.getRelatedProducts(id);
+
+  res.json(products);
+});

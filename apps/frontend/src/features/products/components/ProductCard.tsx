@@ -44,7 +44,7 @@ export default function ProductCard({ product }: Props) {
             src={hoverImage}
             alt={product.name}
             fill
-            className="object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            className="object-cover opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
           />
         </div>
       </Link>

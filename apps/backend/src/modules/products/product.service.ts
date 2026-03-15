@@ -36,6 +36,53 @@ export async function getProducts() {
   return products;
 };
 
+export async function getProductById(id: string) {
+  return await prisma.product.findUnique({
+    where: { id },
+    include: {
+      images: true,
+    },
+  });
+};
+
+export async function getRelatedProducts(productId: string) {
+  const relatedProducts = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      id: {
+        not: productId,
+      },
+    },
+    include: {
+      images: true,
+    },
+    take: 4,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  /* ===============================
+     SYNC REDIS STOCK CACHE
+  =============================== */
+
+  for (const product of relatedProducts) {
+    try {
+      const cachedStock = await InventoryCache.getStock(product.id);
+
+      if (cachedStock !== null) {
+        product.stock = cachedStock;
+      } else {
+        await InventoryCache.setStock(product.id, product.stock);
+      }
+    } catch (error) {
+      console.error("Redis cache error:", error);
+    }
+  }
+
+  return relatedProducts;
+}
+
 export async function createProduct(
   data: {
     name: string;
@@ -248,14 +295,5 @@ export const deleteProduct = async (id: string) => {
         images: true,
       },
     });
-  });
-};
-
-export async function getProductById(id: string) {
-  return await prisma.product.findUnique({
-    where: { id },
-    include: {
-      images: true,
-    },
   });
 };

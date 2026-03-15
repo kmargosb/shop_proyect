@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import RelatedProducts from "@/features/products/components/RelatedProducts";
 
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/features/cart/CartContext";
@@ -103,7 +104,8 @@ export default function ProductPage() {
   =============================== */
 
   return (
-    <main className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-14">
+  <div className="max-w-7xl mx-auto px-6 py-16 space-y-24">
+    <main className="grid md:grid-cols-2 gap-14">
       {/* ===============================
          IMAGE GALLERY
       =============================== */}
@@ -212,5 +214,12 @@ export default function ProductPage() {
         </div>
       </div>
     </main>
-  );
+
+    {/* ===============================
+       RELATED PRODUCTS
+    =============================== */}
+
+    <RelatedProducts productId={product.id} />
+  </div>
+);
 }

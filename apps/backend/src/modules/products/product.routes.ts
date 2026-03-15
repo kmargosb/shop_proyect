@@ -6,7 +6,8 @@ import {
   updateProduct,
   deleteProduct,
   getProducts,
-  getProduct
+  getProduct,
+  getRelatedProducts
 } from "./product.controller";
 import { getInventoryAlertsController } from "@/modules/products/product.inventory.controller";
 
@@ -21,6 +22,8 @@ router.get("/", getProducts);
 
 // obtener un producto por ID (product page)
 router.get("/:id", getProduct);
+
+router.get("/:id/related", getRelatedProducts);
 
 /* =========================================================
    ADMIN ROUTES
