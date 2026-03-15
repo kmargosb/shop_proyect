@@ -1,49 +1,63 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { useCart } from "@/features/cart/CartContext"
-import type { Product } from "@/types/product"
+import Image from "next/image";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/features/cart/CartContext";
+
+import type { Product } from "@/types/product";
 
 type Props = {
-  product: Product
-}
+  product: Product;
+};
 
 export default function ProductCard({ product }: Props) {
-
-  const { addItem } = useCart()
+  const { addItem } = useCart();
 
   const handleAddToCart = async () => {
-    await addItem(product.id, 1)
-  }
+    await addItem(product.id, 1);
+  };
 
-  const imageUrl =
-    product.images?.[0]?.url ?? "/placeholder-product.png"
+  const primaryImage = product.images?.[0]?.url ?? "/placeholder-product.png";
+
+  const hoverImage = product.images?.[1]?.url ?? primaryImage;
 
   return (
-
     <div className="group bg-neutral-900 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+      {/* PRODUCT IMAGE */}
 
-      {/* IMAGE */}
+      <Link href={`/product/${product.id}`} className="block cursor-pointer">
+        <div className="relative aspect-square overflow-hidden">
+          {/* MAIN IMAGE */}
 
-      <div className="relative aspect-square overflow-hidden">
+          <Image
+            src={primaryImage}
+            alt={product.name}
+            fill
+            className="object-cover transition-opacity duration-500 group-hover:opacity-0"
+          />
 
-        <Image
-          src={imageUrl}
-          alt={product.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+          {/* HOVER IMAGE */}
 
-      </div>
+          <Image
+            src={hoverImage}
+            alt={product.name}
+            fill
+            className="object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          />
+        </div>
+      </Link>
 
-      {/* INFO */}
+      {/* PRODUCT INFO */}
 
       <div className="p-4 space-y-3">
-
-        <h3 className="text-sm font-medium text-white line-clamp-2">
+        <Link
+          href={`/product/${product.id}`}
+          className="block text-sm font-medium text-white hover:underline cursor-pointer"
+        >
           {product.name}
-        </h3>
+        </Link>
 
         <p className="text-lg font-semibold text-white">
           €{(product.price / 100).toFixed(2)}
@@ -55,10 +69,7 @@ export default function ProductCard({ product }: Props) {
         >
           Añadir al carrito
         </Button>
-
       </div>
-
     </div>
-
-  )
+  );
 }
