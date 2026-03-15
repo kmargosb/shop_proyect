@@ -3,7 +3,6 @@ import cloudinary from "@/common/utils/cloudinary";
 import { InventoryCache } from "@/modules/inventory/inventory.cache";
 
 export async function getProducts() {
-
   const products = await prisma.product.findMany({
     where: {
       isActive: true,
@@ -21,32 +20,21 @@ export async function getProducts() {
   =============================== */
 
   for (const product of products) {
-
     try {
-
       const cachedStock = await InventoryCache.getStock(product.id);
 
       if (cachedStock !== null) {
-
         product.stock = cachedStock;
-
       } else {
-
         await InventoryCache.setStock(product.id, product.stock);
-
       }
-
     } catch (error) {
-
       console.error("Redis cache error:", error);
-
     }
-
   }
 
   return products;
-
-}
+};
 
 export async function createProduct(
   data: {
@@ -57,9 +45,7 @@ export async function createProduct(
   },
   files: Express.Multer.File[],
 ) {
-
   return await prisma.$transaction(async (tx) => {
-
     const product = await tx.product.create({
       data: {
         name: data.name,
@@ -72,17 +58,12 @@ export async function createProduct(
     /* cache stock */
 
     try {
-
       await InventoryCache.setStock(product.id, product.stock);
-
     } catch (error) {
-
       console.error("Redis cache error:", error);
-
     }
 
     if (files && files.length > 0) {
-
       const uploadedImages: {
         url: string;
         publicId: string;
@@ -91,20 +72,15 @@ export async function createProduct(
       }[] = [];
 
       for (let i = 0; i < files.length; i++) {
-
         const file = files[i];
 
         const result: any = await new Promise((resolve, reject) => {
-
           cloudinary.uploader
             .upload_stream({ folder: "products" }, (err, result) => {
-
               if (err) reject(err);
               else resolve(result);
-
             })
             .end(file.buffer);
-
         });
 
         uploadedImages.push({
@@ -113,32 +89,26 @@ export async function createProduct(
           productId: product.id,
           isPrimary: i === 0,
         });
-
       }
 
       await tx.productImage.createMany({
         data: uploadedImages,
       });
-
     }
 
     return await tx.product.findUnique({
       where: { id: product.id },
       include: { images: true },
     });
-
   });
-
-}
+};
 
 export async function updateProduct(
   id: string,
   data: any,
   files: Express.Multer.File[],
 ) {
-
   return await prisma.$transaction(async (tx) => {
-
     const imagesToDelete = data.imagesToDelete
       ? JSON.parse(data.imagesToDelete)
       : [];
@@ -165,20 +135,15 @@ export async function updateProduct(
     }[] = [];
 
     for (let i = 0; i < files.length; i++) {
-
       const file = files[i];
 
       const result: any = await new Promise((resolve, reject) => {
-
         cloudinary.uploader
           .upload_stream({ folder: "products" }, (err, result) => {
-
             if (err) reject(err);
             else resolve(result);
-
           })
           .end(file.buffer);
-
       });
 
       uploadedImages.push({
@@ -187,37 +152,29 @@ export async function updateProduct(
         productId: id,
         isPrimary: false,
       });
-
     }
 
     if (uploadedImages.length > 0) {
-
       await tx.productImage.createMany({
         data: uploadedImages,
       });
-
     }
 
     if (imagesToDelete.length > 0) {
-
       const imagesToRemove = product.images.filter((img) =>
         imagesToDelete.includes(img.id),
       );
 
       for (const image of imagesToRemove) {
-
         await cloudinary.uploader.destroy(image.publicId);
 
         await tx.productImage.delete({
           where: { id: image.id },
         });
-
       }
-
     }
 
     if (primaryImageId) {
-
       await tx.productImage.updateMany({
         where: { productId: id },
         data: { isPrimary: false },
@@ -227,7 +184,6 @@ export async function updateProduct(
         where: { id: primaryImageId },
         data: { isPrimary: true },
       });
-
     }
 
     const finalImages = await tx.productImage.findMany({
@@ -235,18 +191,14 @@ export async function updateProduct(
     });
 
     if (finalImages.length > 0) {
-
       const hasPrimary = finalImages.some((img) => img.isPrimary);
 
       if (!hasPrimary) {
-
         await tx.productImage.update({
           where: { id: finalImages[0].id },
           data: { isPrimary: true },
         });
-
       }
-
     }
 
     const updatedProduct = await tx.product.update({
@@ -263,25 +215,17 @@ export async function updateProduct(
     /* update redis cache */
 
     try {
-
       await InventoryCache.setStock(id, updatedProduct.stock);
-
     } catch (error) {
-
       console.error("Redis cache error:", error);
-
     }
 
     return updatedProduct;
-
   });
-
-}
+};
 
 export const deleteProduct = async (id: string) => {
-
   return await prisma.$transaction(async (tx) => {
-
     const product = await tx.product.findUnique({
       where: { id },
       include: { images: true },
@@ -302,9 +246,16 @@ export const deleteProduct = async (id: string) => {
       },
       include: {
         images: true,
-      }
+      },
     });
-
   });
+};
 
+export async function getProductById(id: string) {
+  return await prisma.product.findUnique({
+    where: { id },
+    include: {
+      images: true,
+    },
+  });
 };
