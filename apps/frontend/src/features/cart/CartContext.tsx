@@ -8,91 +8,223 @@ import {
   useEffect,
 } from "react";
 
-import { CartItem, CartContextType } from "@/types/cart";
+import { apiFetch } from "@/lib/api";
 
-/* =========================
-   CONTEXT
-========================= */
+const CART_KEY = "cartId";
+
+/* ============================================
+   TYPES
+============================================ */
+
+type CartItem = {
+  id: string;
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+type CartContextType = {
+  items: CartItem[];
+  open: boolean;
+  setOpen: (value: boolean) => void;
+
+  addItem: (productId: string, quantity?: number) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  clearCart: () => void;
+
+  totalItems: number;
+  totalPrice: number;
+};
 
 const CartContext = createContext<CartContextType | null>(null);
 
-/* =========================
+/* ============================================
    PROVIDER
-========================= */
+============================================ */
 
-export function CartProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function CartProvider({ children }: { children: ReactNode }) {
+
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
 
-  /* =========================
-     LOAD CART FROM STORAGE
-  ========================= */
+  /* ============================================
+     CREATE CART
+  ============================================ */
+
+  const createCart = async (): Promise<string | null> => {
+
+    const res = await apiFetch("/cart", {
+      method: "POST",
+    });
+
+    if (!res || !res.ok) {
+      console.error("Failed to create cart");
+      return null;
+    }
+
+    const cart = await res.json();
+
+    localStorage.setItem(CART_KEY, cart.id);
+
+    return cart.id;
+  };
+
+  /* ============================================
+     ENSURE CART EXISTS
+  ============================================ */
+
+  const ensureCart = async (): Promise<string | null> => {
+
+    let cartId = localStorage.getItem(CART_KEY);
+
+    if (cartId) {
+      return cartId;
+    }
+
+    cartId = await createCart();
+
+    return cartId;
+  };
+
+  /* ============================================
+     FETCH CART
+  ============================================ */
+
+  const fetchCart = async (cartId: string) => {
+
+    const res = await apiFetch(`/cart/${cartId}`);
+
+    if (!res || !res.ok) return;
+
+    const cart = await res.json();
+
+    if (!cart) return;
+
+    /* sincronizar cartId si backend devuelve otro */
+
+    if (cart.id && cart.id !== cartId) {
+      localStorage.setItem(CART_KEY, cart.id);
+      cartId = cart.id;
+    }
+
+    const mappedItems: CartItem[] = (cart.items ?? []).map((item: any) => ({
+      id: item.id,
+      productId: item.productId,
+      name: item.product?.name ?? "Producto",
+      price: item.price,
+      quantity: item.quantity,
+    }));
+
+    setItems(mappedItems);
+  };
+
+  /* ============================================
+     INIT CART
+  ============================================ */
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
 
-    if (savedCart) {
-      setItems(JSON.parse(savedCart));
-    }
+    const init = async () => {
+
+      const cartId = await ensureCart();
+
+      if (!cartId) return;
+
+      await fetchCart(cartId);
+    };
+
+    init();
+
   }, []);
 
-  /* =========================
-     SAVE CART
-  ========================= */
-
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
-
-  /* =========================
+  /* ============================================
      ADD ITEM
-  ========================= */
+  ============================================ */
 
-  const addItem = (item: CartItem) => {
-    setItems((prev) => {
-      const existing = prev.find((p) => p.id === item.id);
+  const addItem = async (productId: string, quantity = 1) => {
 
-      if (existing) {
-        return prev.map((p) =>
-          p.id === item.id
-            ? {
-                ...p,
-                quantity: p.quantity + item.quantity,
-              }
-            : p
-        );
-      }
+    let cartId = await ensureCart();
 
-      return [...prev, item];
+    if (!cartId) {
+      console.error("Cart not available");
+      return;
+    }
+
+    console.log("ADDING TO CART", cartId, productId);
+
+    const res = await apiFetch(`/cart/${cartId}/items`, {
+      method: "POST",
+      body: JSON.stringify({
+        productId,
+        quantity,
+      }),
     });
+
+    if (!res || !res.ok) {
+      console.error("Failed to add item");
+      return;
+    }
+
+    const cart = await res.json();
+
+    /* sincronizar cartId si backend creó uno nuevo */
+
+    if (cart.id && cart.id !== cartId) {
+      localStorage.setItem(CART_KEY, cart.id);
+      cartId = cart.id;
+    }
+
+    const mappedItems: CartItem[] = (cart.items ?? []).map((item: any) => ({
+      id: item.id,
+      productId: item.productId,
+      name: item.product?.name ?? "Producto",
+      price: item.price,
+      quantity: item.quantity,
+    }));
+
+    setItems(mappedItems);
+
+    setOpen(true);
   };
 
-  /* =========================
+  /* ============================================
      REMOVE ITEM
-  ========================= */
+  ============================================ */
 
-  const removeItem = (id: string) => {
-    setItems((prev) =>
-      prev.filter((item) => item.id !== id)
-    );
+  const removeItem = async (itemId: string) => {
+
+    const cartId = localStorage.getItem(CART_KEY);
+
+    if (!cartId) return;
+
+    /* actualización optimista */
+
+    setItems((prev) => prev.filter((item) => item.id !== itemId));
+
+    const res = await apiFetch(`/cart/items/${itemId}`, {
+      method: "DELETE",
+    });
+
+    if (!res || !res.ok) {
+      console.error("Failed to remove item");
+    }
   };
 
-  /* =========================
+  /* ============================================
      CLEAR CART
-  ========================= */
+  ============================================ */
 
   const clearCart = () => {
+
     setItems([]);
-    localStorage.removeItem("cart");
+
+    localStorage.removeItem(CART_KEY);
   };
 
-  /* =========================
+  /* ============================================
      TOTALS
-  ========================= */
+  ============================================ */
 
   const totalItems = items.reduce(
     (acc, item) => acc + item.quantity,
@@ -103,30 +235,6 @@ export function CartProvider({
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-
-  /* =========================
-     GLOBAL ADD EVENT
-  ========================= */
-
-  useEffect(() => {
-    const handler = (e: any) => {
-      addItem({
-        ...e.detail,
-        quantity: 1,
-      });
-
-      setOpen(true);
-    };
-
-    window.addEventListener("add-to-cart", handler);
-
-    return () =>
-      window.removeEventListener("add-to-cart", handler);
-  }, []);
-
-  /* =========================
-     PROVIDER VALUE
-  ========================= */
 
   return (
     <CartContext.Provider
@@ -146,17 +254,16 @@ export function CartProvider({
   );
 }
 
-/* =========================
+/* ============================================
    HOOK
-========================= */
+============================================ */
 
 export function useCart() {
+
   const context = useContext(CartContext);
 
   if (!context) {
-    throw new Error(
-      "useCart must be used inside CartProvider"
-    );
+    throw new Error("useCart must be used inside CartProvider");
   }
 
   return context;

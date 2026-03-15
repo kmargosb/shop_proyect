@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
 import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
-import { InventoryService } from "@/modules/inventory/inventory.service"
+import { InventoryService } from "@/modules/inventory/inventory.service";
 
 /* =========================================================
    UTIL
@@ -45,67 +45,57 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     return;
   }
 
-  if (order.status === "PAID") {
+  /* =========================
+     PROCESS PAYMENT (ONCE)
+  ========================= */
 
-    console.log("⚠ Duplicate payment webhook:", paymentIntent.id)
-
-    const existingEvent = await prisma.orderEvent.findFirst({
-      where: {
-        orderId: order.id,
-        type: "PAYMENT_SUCCEEDED",
+  if (order.status !== "PAID") {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+        stripePaymentIntentId: paymentIntent.id,
       },
     });
 
-    if (!existingEvent) {
-      await prisma.orderEvent.create({
-        data: {
-          orderId: order.id,
-          type: "PAYMENT_SUCCEEDED",
-          message: "Payment confirmed",
-        },
-      });
-    }
+    await InventoryService.validateReservation(order.id);
+    await InventoryService.confirmReservation(order.id);
 
-    console.log("⚠ Duplicate webhook ignored.");
-    return;
+    await prisma.orderTransaction.create({
+      data: {
+        orderId: order.id,
+        type: "PAYMENT",
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        stripePaymentIntentId: paymentIntent.id,
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: order.id,
+        type: "PAYMENT_SUCCEEDED",
+        message: "Payment confirmed",
+      },
+    });
+
+    await PaymentSessionService.markSessionCompleted(paymentIntent.id);
+
+    console.log("✅ Order marked as PAID:", order.id);
+  } else {
+    console.log("⚠ Duplicate payment webhook:", paymentIntent.id);
   }
 
-  await prisma.order.update({
-    where: { id: order.id },
-    data: {
-      status: "PAID",
-      paidAt: new Date(),
-      stripePaymentIntentId: paymentIntent.id,
-    },
+  /* =========================
+     ENSURE INVOICE EXISTS
+  ========================= */
+
+  const existingInvoice = await prisma.invoice.findUnique({
+    where: { orderId: order.id },
   });
 
-  await InventoryService.validateReservation(order.id)
-
-  await InventoryService.confirmReservation(order.id)
-
-  await prisma.orderTransaction.create({
-    data: {
-      orderId: order.id,
-      type: "PAYMENT",
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      stripePaymentIntentId: paymentIntent.id,
-    },
-  });
-
-  await prisma.orderEvent.create({
-    data: {
-      orderId: order.id,
-      type: "PAYMENT_SUCCEEDED",
-      message: "Payment confirmed",
-    },
-  });
-
-  await PaymentSessionService.markSessionCompleted(paymentIntent.id);
-
-  console.log("✅ Order marked as PAID:", order.id);
-
-  if (!order.invoice) {
+  if (!existingInvoice) {
     await prisma.invoice.create({
       data: {
         orderId: order.id,
@@ -114,11 +104,35 @@ async function handlePaymentSucceeded(paymentIntent: any) {
         customerEmail: order.email,
       },
     });
+
+    console.log("🧾 Invoice created.");
   }
 
-  await sendOrderConfirmationEmail(order.id);
+  /* =========================
+     SEND EMAIL (SAFE)
+  ========================= */
 
-  console.log("📧 Confirmation email sent.");
+  const emailEvent = await prisma.orderEvent.findFirst({
+    where: {
+      orderId: order.id,
+      type: "ORDER_UPDATED",
+      message: "Confirmation email sent",
+    },
+  });
+
+  if (!emailEvent) {
+    await sendOrderConfirmationEmail(order.id);
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: order.id,
+        type: "ORDER_UPDATED",
+        message: "Confirmation email sent",
+      },
+    });
+
+    console.log("📧 Confirmation email sent.");
+  }
 }
 
 /* =========================================================
@@ -149,7 +163,7 @@ async function handlePaymentFailed(paymentIntent: any) {
     },
   });
 
-  await InventoryService.releaseReservation(order.id)
+  await InventoryService.releaseReservation(order.id);
 
   await PaymentSessionService.markSessionFailed(paymentIntent.id);
 
@@ -166,7 +180,7 @@ async function handleRefundCreated(refund: any) {
   });
 
   if (existingRefund) {
-    console.log("⚠ Refund already exists, skipping:", refund.id);
+    console.log("⚠ Refund already exists:", refund.id);
     return;
   }
 
@@ -206,7 +220,7 @@ async function handleRefundCreated(refund: any) {
     },
   });
 
-  console.log("💸 Refund created from webhook:", refund.id);
+  console.log("💸 Refund created:", refund.id);
 }
 
 /* =========================================================
@@ -216,22 +230,22 @@ async function handleRefundCreated(refund: any) {
 async function handleRefundUpdated(refund: any) {
   const dbRefund = await prisma.refund.findUnique({
     where: { stripeRefundId: refund.id },
-    include: { order: true }
+    include: { order: true },
   });
 
   if (!dbRefund) return;
 
   if (dbRefund.status === "SUCCEEDED") {
-    console.log("⚠ Refund already processed:", refund.id)
-    return
+    console.log("⚠ Refund already processed:", refund.id);
+    return;
   }
 
   const status =
     refund.status === "succeeded"
       ? "SUCCEEDED"
       : refund.status === "failed"
-        ? "FAILED"
-        : "PENDING";
+      ? "FAILED"
+      : "PENDING";
 
   await prisma.refund.update({
     where: { stripeRefundId: refund.id },
@@ -255,21 +269,37 @@ async function handleRefundUpdated(refund: any) {
     include: { orderItem: true },
   });
 
-  for (const item of refundItems) {
-    await prisma.product.update({
-      where: {
-        id: item.orderItem.productId,
-      },
-      data: {
-        stock: {
-          increment: item.quantity,
+  if (refundItems.length > 0) {
+    for (const item of refundItems) {
+      await prisma.product.update({
+        where: { id: item.orderItem.productId },
+        data: {
+          stock: {
+            increment: item.quantity,
+          },
         },
-      },
+      });
+    }
+  } else {
+    /* fallback: refund total */
+    const orderItems = await prisma.orderItem.findMany({
+      where: { orderId: order.id },
     });
+
+    for (const item of orderItems) {
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            increment: item.quantity,
+          },
+        },
+      });
+    }
   }
 
   /* =========================
-     CALCULATE TOTAL REFUND
+     CALCULATE ORDER STATUS
   ========================= */
 
   const refundAggregate = await prisma.refund.aggregate({
@@ -302,7 +332,7 @@ async function handleRefundUpdated(refund: any) {
     },
   });
 
-  console.log(`💰 Order refund processed: ${order.id} → ${newStatus}`);
+  console.log(`💰 Refund processed: ${order.id} → ${newStatus}`);
 }
 
 /* =========================================================
@@ -326,6 +356,28 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   }
 
   try {
+
+    /* =========================
+       IDEMPOTENCY
+    ========================= */
+
+    const existingEvent = await prisma.stripeWebhookEvent.findUnique({
+      where: { id: event.id },
+    });
+
+    if (existingEvent) {
+      console.log("⚠ Duplicate webhook ignored:", event.id);
+      return res.json({ received: true });
+    }
+
+    await prisma.stripeWebhookEvent.create({
+      data: { id: event.id },
+    });
+
+    /* =========================
+       HANDLE EVENTS
+    ========================= */
+
     switch (event.type) {
       case "payment_intent.succeeded":
         await handlePaymentSucceeded(event.data.object);
@@ -348,6 +400,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     }
 
     return res.json({ received: true });
+
   } catch (err) {
     console.error("🔥 Stripe webhook error:", err);
     return res.json({ received: true });

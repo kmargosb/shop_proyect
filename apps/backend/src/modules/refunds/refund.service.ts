@@ -1,6 +1,7 @@
 import Stripe from "stripe"
 import { prisma } from "@/lib/prisma"
 import { RefundRepository } from "./refund.repository"
+import { RefundReason } from "@prisma/client"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover"
@@ -11,7 +12,7 @@ export const RefundService = {
   async createRefund(
     orderId: string,
     items: { orderItemId: string; quantity: number }[],
-    reason?: string
+    reason?: RefundReason
   ) {
 
     /* =========================
@@ -77,7 +78,6 @@ export const RefundService = {
 
     /* =========================
        PROTECCIÓN 2
-       Evitar refund de 0 o negativo
     ========================= */
 
     if (refundAmount <= 0) {
@@ -86,7 +86,6 @@ export const RefundService = {
 
     /* =========================
        PROTECCIÓN 3
-       Evitar devolver más que el total
     ========================= */
 
     const refundAggregate = await prisma.refund.aggregate({
@@ -105,11 +104,19 @@ export const RefundService = {
       throw new Error("Refund exceeds order total")
     }
 
+    /* =========================
+       STRIPE REFUND
+    ========================= */
+
     const stripeRefund = await stripe.refunds.create({
       payment_intent: order.stripePaymentIntentId,
       amount: refundAmount,
       reason: reason as any
     })
+
+    /* =========================
+       DB REFUND
+    ========================= */
 
     const dbRefund = await RefundRepository.create({
       orderId,
@@ -125,7 +132,11 @@ export const RefundService = {
         type: "REFUND_CREATED",
         message: "Refund created",
       },
-    });
+    })
+
+    /* =========================
+       REFUND ITEMS
+    ========================= */
 
     for (const item of items) {
 

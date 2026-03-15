@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { useCart } from "@/features/cart/CartContext";
-import { createOrder } from "@/features/orders/api/orders.api";
+import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
 
 export default function CheckoutForm() {
   const { items, clearCart, totalPrice } = useCart();
-  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
 
@@ -27,9 +25,7 @@ export default function CheckoutForm() {
      INPUT CHANGE
   ========================= */
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -40,9 +36,7 @@ export default function CheckoutForm() {
      SUBMIT ORDER
   ========================= */
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (items.length === 0) return;
@@ -50,50 +44,51 @@ export default function CheckoutForm() {
     setLoading(true);
 
     try {
-      const response = await createOrder({
-        fullName: form.fullName,
-        email: form.email,
-        phone: form.phone,
-        addressLine1: form.addressLine1,
-        city: form.city,
-        postalCode: form.postalCode,
-        country: form.country,
+      const cartId = localStorage.getItem("cartId");
 
-        items: items.map((i) => ({
-          productId: i.id,
-          quantity: i.quantity,
-        })),
+      if (!cartId) {
+        throw new Error("Cart not found");
+      }
+
+      const res = await apiFetch(`/cart/${cartId}/checkout`, {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          addressLine1: form.addressLine1,
+          city: form.city,
+          postalCode: form.postalCode,
+          country: form.country,
+        }),
       });
 
-      console.log("✅ ORDER RESPONSE:", response);
+      if (!res) {
+        throw new Error("Checkout failed");
+      }
 
-      const orderId =
-        response?.id ||
-        response?.order?.id ||
-        response?.data?.id;
+      const order = await res.json();
+
+      const orderId = order?.id || order?.order?.id || order?.data?.id;
 
       if (!orderId) {
         throw new Error("Order ID not received");
       }
 
+      /* =========================
+         SAVE ORDER DATA
+      ========================= */
+
+      localStorage.setItem("orderEmail", form.email);
+      localStorage.setItem("lastOrderId", orderId);
+
       const redirectUrl = `/orders/${orderId}?email=${form.email}`;
 
-      console.log("🚀 REDIRECTING TO:", redirectUrl);
+      clearCart();
 
-      /**
-       * IMPORTANTE:
-       * primero navegar
-       * luego limpiar carrito
-       */
       window.location.href = redirectUrl;
-
-      // limpiar después del redirect
-      setTimeout(() => {
-        clearCart();
-      }, 200);
-
-    } catch (err) {
-      console.error("Checkout error:", err);
+    } catch (error) {
+      console.error("Checkout error:", error);
       alert("Error creando pedido");
     } finally {
       setLoading(false);
@@ -107,10 +102,8 @@ export default function CheckoutForm() {
   return (
     <div className="grid md:grid-cols-2 gap-10">
       {/* FORM */}
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
+
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           name="fullName"
           placeholder="Nombre completo"
@@ -161,43 +154,29 @@ export default function CheckoutForm() {
           onChange={handleChange}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={loading}
-        >
-          {loading
-            ? "Procesando pedido..."
-            : "Confirmar pedido"}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Procesando pedido..." : "Confirmar pedido"}
         </Button>
       </form>
 
       {/* ORDER SUMMARY */}
+
       <div className="bg-neutral-900 p-6 rounded-xl">
-        <h2 className="font-bold mb-4">
-          Resumen del pedido
-        </h2>
+        <h2 className="font-bold mb-4">Resumen del pedido</h2>
 
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex justify-between mb-2"
-          >
+          <div key={item.id} className="flex justify-between mb-2">
             <span>
               {item.name} × {item.quantity}
             </span>
 
-            <span>
-              ${(item.price * item.quantity).toFixed(2)}
-            </span>
+            <span>${(item.price * item.quantity).toFixed(2)}</span>
           </div>
         ))}
 
         <hr className="my-4 border-neutral-700" />
 
-        <p className="text-xl font-bold">
-          Total: ${totalPrice.toFixed(2)}
-        </p>
+        <p className="text-xl font-bold">Total: ${totalPrice.toFixed(2)}</p>
       </div>
     </div>
   );

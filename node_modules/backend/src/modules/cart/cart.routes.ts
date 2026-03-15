@@ -5,8 +5,9 @@ import {
   getCartController,
   addItemController,
   removeItemController,
-  getTotalsController,
-  mergeCartController
+  mergeCartController,
+  checkoutCartController,
+  getCartTotalsController,
 } from "./cart.controller"
 
 const router = Router()
@@ -17,10 +18,14 @@ router.get("/:cartId", getCartController)
 
 router.post("/:cartId/items", addItemController)
 
-router.delete("/items/:cartItemId", removeItemController)
+router.delete("/items/:itemId", removeItemController)
 
-router.get("/:cartId/totals", getTotalsController)
+router.get("/:cartId/totals", getCartTotalsController)
 
 router.post("/merge", mergeCartController)
+
+router.post("/:cartId/checkout", checkoutCartController)
+
+
 
 export default router

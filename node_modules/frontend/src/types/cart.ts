@@ -1,8 +1,9 @@
 export type CartItem = {
-  id: string;
+  productId: string;
   name: string;
   price: number;
   quantity: number;
+  image?: string;
 };
 
 export type CartContextType = {
@@ -16,3 +17,4 @@ export type CartContextType = {
   totalItems: number;
   totalPrice: number;
 };
+

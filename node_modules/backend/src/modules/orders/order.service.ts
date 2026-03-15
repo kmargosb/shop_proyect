@@ -1,29 +1,28 @@
-import { prisma } from "@/lib/prisma"
-import { Prisma, OrderStatus } from "@prisma/client"
+import { prisma } from "@/lib/prisma";
+import { Prisma, OrderStatus } from "@prisma/client";
 
 type CreateOrderInput = {
-  userId?: string
+  userId?: string;
   items: {
-    productId: string
-    quantity: number
-  }[]
+    productId: string;
+    quantity: number;
+  }[];
 
-  fullName: string
-  email: string
-  phone: string
-  addressLine1: string
-  addressLine2?: string
-  city: string
-  postalCode: string
-  country: string
-}
+  fullName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+};
 
 /* =========================================================
    CREATE ORDER
 ========================================================= */
 
 export async function createOrder(data: CreateOrderInput) {
-
   const {
     userId,
     items,
@@ -34,24 +33,28 @@ export async function createOrder(data: CreateOrderInput) {
     addressLine2,
     city,
     postalCode,
-    country
-  } = data
+    country,
+  } = data;
 
   if (!items || items.length === 0) {
-    throw new Error("La orden debe contener productos")
+    throw new Error("La orden debe contener productos");
   }
 
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 
-    let totalAmount = 0
+    let totalAmount = 0;
 
     const orderItemsData: {
-      productId: string
-      productName: string
-      productSku?: string | null
-      quantity: number
-      price: number
-    }[] = []
+      productId: string;
+      productName: string;
+      productSku?: string | null;
+      quantity: number;
+      price: number;
+    }[] = [];
+
+    /* =========================
+       VALIDATE STOCK
+    ========================= */
 
     for (const item of items) {
 
@@ -62,41 +65,35 @@ export async function createOrder(data: CreateOrderInput) {
           name: true,
           price: true,
           stock: true,
-          reservedStock: true
-        }
-      })
+          reservedStock: true,
+        },
+      });
 
       if (!product) {
-        throw new Error("Producto no encontrado")
+        throw new Error("Producto no encontrado");
       }
 
-      const availableStock = product.stock - product.reservedStock
+      const availableStock = product.stock - product.reservedStock;
 
       if (availableStock < item.quantity) {
-        throw new Error(`Stock insuficiente para ${product.name}`)
+        throw new Error(`Stock insuficiente para ${product.name}`);
       }
 
-      totalAmount += product.price * item.quantity
+      totalAmount += product.price * item.quantity;
 
       orderItemsData.push({
         productId: product.id,
         productName: product.name,
         productSku: null,
         quantity: item.quantity,
-        price: product.price
-      })
-
-      // reservar stock
-      await tx.product.update({
-        where: { id: product.id },
-        data: {
-          reservedStock: {
-            increment: item.quantity
-          }
-        }
-      })
+        price: product.price,
+      });
 
     }
+
+    /* =========================
+       CREATE ORDER
+    ========================= */
 
     const order = await tx.order.create({
       data: {
@@ -109,39 +106,35 @@ export async function createOrder(data: CreateOrderInput) {
         city,
         postalCode,
         country,
-
         totalAmount,
         currency: "eur",
-
         status: OrderStatus.PENDING,
-
         items: {
-          create: orderItemsData
-        }
+          create: orderItemsData,
+        },
       },
       include: {
-        items: true
-      }
-    })
+        items: true,
+      },
+    });
 
     /* =========================
-       CREATE INVENTORY RESERVATION
+       RESERVE INVENTORY
     ========================= */
 
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000)
+    const { InventoryService } =
+      await import("@/modules/inventory/inventory.service");
 
     for (const item of order.items) {
 
-      await tx.inventoryReservation.create({
-        data: {
-          orderId: order.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          expiresAt
-        }
-      })
+  await InventoryService.reserveStock(
+    tx,
+    item.productId,
+    order.id,
+    item.quantity
+  );
 
-    }
+}
 
     /* =========================
        ORDER TIMELINE
@@ -151,14 +144,13 @@ export async function createOrder(data: CreateOrderInput) {
       data: {
         orderId: order.id,
         type: "ORDER_CREATED",
-        message: "Order created"
-      }
-    })
+        message: "Order created",
+      },
+    });
 
-    return order
+    return order;
 
-  })
-
+  });
 }
 
 /* =========================================================
@@ -166,23 +158,21 @@ export async function createOrder(data: CreateOrderInput) {
 ========================================================= */
 
 export async function getOrders(params: {
-  page?: number
-  limit?: number
-  status?: string
+  page?: number;
+  limit?: number;
+  status?: string;
 }) {
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 10;
+  const skip = (page - 1) * limit;
 
-  const page = params.page ?? 1
-  const limit = params.limit ?? 10
-  const skip = (page - 1) * limit
-
-  const where: Prisma.OrderWhereInput = {}
+  const where: Prisma.OrderWhereInput = {};
 
   if (params.status) {
-    where.status = params.status as OrderStatus
+    where.status = params.status as OrderStatus;
   }
 
   const [orders, total] = await prisma.$transaction([
-
     prisma.order.findMany({
       where,
       include: {
@@ -191,30 +181,29 @@ export async function getOrders(params: {
             product: {
               select: {
                 id: true,
-                name: true
-              }
-            }
-          }
+                name: true,
+              },
+            },
+          },
         },
         invoice: {
           select: {
             id: true,
-            invoiceNumber: true
-          }
+            invoiceNumber: true,
+          },
         },
         refunds: true,
-        transactions: true
+        transactions: true,
       },
       orderBy: {
-        createdAt: "desc"
+        createdAt: "desc",
       },
       skip,
-      take: limit
+      take: limit,
     }),
 
-    prisma.order.count({ where })
-
-  ])
+    prisma.order.count({ where }),
+  ]);
 
   return {
     data: orders,
@@ -222,10 +211,9 @@ export async function getOrders(params: {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
-    }
-  }
-
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 /* =========================================================
@@ -234,27 +222,24 @@ export async function getOrders(params: {
 
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: OrderStatus
+  newStatus: OrderStatus,
 ) {
-
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: {
         items: true,
-        invoice: true
-      }
-    })
+        invoice: true,
+      },
+    });
 
     if (!order) {
-      throw new Error("Orden no encontrada")
+      throw new Error("Orden no encontrada");
     }
 
-    const currentStatus = order.status
+    const currentStatus = order.status;
 
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-
       PENDING: ["PAYMENT_PROCESSING", "PAID", "CANCELLED"],
 
       PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
@@ -269,14 +254,13 @@ export async function updateOrderStatus(
 
       CANCELLED: [],
 
-      REFUNDED: []
-
-    }
+      REFUNDED: [],
+    };
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
       throw new Error(
-        `No se puede cambiar estado de ${currentStatus} a ${newStatus}`
-      )
+        `No se puede cambiar estado de ${currentStatus} a ${newStatus}`,
+      );
     }
 
     /* =========================
@@ -284,50 +268,32 @@ export async function updateOrderStatus(
     ========================= */
 
     if (newStatus === "CANCELLED") {
-
       // si estaba pagada → iniciar refund
       if (order.status === "PAID") {
-
-        const { stripe } = await import("@/lib/stripe")
+        const { stripe } = await import("@/lib/stripe");
 
         if (!order.stripePaymentIntentId) {
-          throw new Error("PaymentIntent missing")
+          throw new Error("PaymentIntent missing");
         }
 
         await stripe.refunds.create({
-          payment_intent: order.stripePaymentIntentId
-        })
+          payment_intent: order.stripePaymentIntentId,
+        });
 
         await tx.orderEvent.create({
           data: {
             orderId: order.id,
             type: "ORDER_UPDATED",
-            message: "Refund initiated by admin"
-          }
-        })
+            message: "Refund initiated by admin",
+          },
+        });
 
-        return order
-      }
-
-      // liberar stock si no estaba pagada
-
-      for (const item of order.items) {
-
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            reservedStock: {
-              decrement: item.quantity
-            }
-          }
-        })
-
+        return order;
       }
 
       await tx.inventoryReservation.deleteMany({
-        where: { orderId }
-      })
-
+        where: { orderId },
+      });
     }
 
     /* =========================
@@ -336,8 +302,8 @@ export async function updateOrderStatus(
 
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
-      data: { status: newStatus }
-    })
+      data: { status: newStatus },
+    });
 
     /* =========================
        ORDER TIMELINE
@@ -350,34 +316,30 @@ export async function updateOrderStatus(
           newStatus === "SHIPPED"
             ? "ORDER_SHIPPED"
             : newStatus === "CANCELLED"
-            ? "ORDER_CANCELLED"
-            : "ORDER_UPDATED",
-        message: `Order status changed to ${newStatus}`
-      }
-    })
+              ? "ORDER_CANCELLED"
+              : "ORDER_UPDATED",
+        message: `Order status changed to ${newStatus}`,
+      },
+    });
 
     /* =========================
        INVOICE + EMAIL
     ========================= */
 
     if (newStatus === "PAID" && !order.invoice) {
-
       const { createInvoiceFromOrder } =
-        await import("@/modules/invoices/invoice.service")
+        await import("@/modules/invoices/invoice.service");
 
       const { sendOrderConfirmationEmail } =
-        await import("@/modules/email/sendOrderEmail")
+        await import("@/modules/email/sendOrderEmail");
 
-      await createInvoiceFromOrder(orderId)
+      await createInvoiceFromOrder(orderId);
 
-      await sendOrderConfirmationEmail(orderId)
-
+      await sendOrderConfirmationEmail(orderId);
     }
 
-    return updatedOrder
-
-  })
-
+    return updatedOrder;
+  });
 }
 
 /* =========================================================
@@ -385,69 +347,62 @@ export async function updateOrderStatus(
 ========================================================= */
 
 export async function searchOrders(params: {
-  query?: string
-  status?: OrderStatus
-  page?: number
-  limit?: number
+  query?: string;
+  status?: OrderStatus;
+  page?: number;
+  limit?: number;
 }) {
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 10;
+  const skip = (page - 1) * limit;
 
-  const page = params.page ?? 1
-  const limit = params.limit ?? 10
-  const skip = (page - 1) * limit
-
-  const where: Prisma.OrderWhereInput = {}
+  const where: Prisma.OrderWhereInput = {};
 
   if (params.status) {
-    where.status = params.status
+    where.status = params.status;
   }
 
   if (params.query) {
-
     where.OR = [
-
       {
         id: {
           contains: params.query,
-          mode: "insensitive"
-        }
+          mode: "insensitive",
+        },
       },
 
       {
         email: {
           contains: params.query,
-          mode: "insensitive"
-        }
+          mode: "insensitive",
+        },
       },
 
       {
         fullName: {
           contains: params.query,
-          mode: "insensitive"
-        }
-      }
-
-    ]
-
+          mode: "insensitive",
+        },
+      },
+    ];
   }
 
   const [orders, total] = await prisma.$transaction([
-
     prisma.order.findMany({
       where,
       include: {
         items: true,
-        invoice: true
+        invoice: true,
       },
       orderBy: {
-        createdAt: "desc"
+        createdAt: "desc",
       },
       skip,
-      take: limit
+      take: limit,
     }),
 
-    prisma.order.count({ where })
-
-  ])
+    prisma.order.count({ where }),
+  ]);
 
   return {
     data: orders,
@@ -455,8 +410,7 @@ export async function searchOrders(params: {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
-    }
-  }
-
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }

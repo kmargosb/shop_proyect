@@ -5,6 +5,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ export default function CartDrawer() {
 
       const order = await createOrder({
         items: items.map((i) => ({
-          productId: i.id,
+          productId: i.productId,
           quantity: i.quantity,
         })),
 
@@ -72,6 +73,7 @@ export default function CartDrawer() {
       <SheetContent side="right" className="w-[400px]">
         <SheetHeader>
           <SheetTitle>Carrito</SheetTitle>
+          <SheetDescription>Productos añadidos al carrito</SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-4">

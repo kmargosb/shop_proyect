@@ -13,41 +13,60 @@ export default function PublicOrderPage() {
 
   const id = typeof params?.id === "string" ? params.id : undefined;
 
-  const email = searchParams.get("email");
+  const queryEmail = searchParams.get("email");
+
+  const [email, setEmail] = useState<string | null>(null);
 
   const [order, setOrder] = useState<Order | null>(null);
-
   const [loading, setLoading] = useState(true);
 
+  /* =========================
+     RESOLVE EMAIL
+  ========================= */
+
   useEffect(() => {
-  if (!id) return;
-
-  async function fetchOrder() {
-    try {
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/orders/public/${id}`;
-
-      if (email) {
-        url += `?email=${email}`;
-      }
-
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        setOrder(null);
-        return;
-      }
-
-      const data = await res.json();
-      setOrder(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (queryEmail) {
+      localStorage.setItem("orderEmail", queryEmail);
+      setEmail(queryEmail);
+      return;
     }
-  }
 
-  fetchOrder();
-}, [id, email]);
+    const storedEmail = localStorage.getItem("orderEmail");
+
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
+  }, [queryEmail]);
+
+  /* =========================
+     FETCH ORDER
+  ========================= */
+
+  useEffect(() => {
+    if (!id || !email) return;
+
+    async function fetchOrder() {
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/orders/public/${id}?email=${email}`;
+
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          setOrder(null);
+          return;
+        }
+
+        const data = await res.json();
+        setOrder(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOrder();
+  }, [id, email]);
 
   if (!id) return <div className="p-10">Cargando...</div>;
 

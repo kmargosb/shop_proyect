@@ -1,58 +1,58 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma";
 
-const RESERVATION_TIME_MINUTES = 15
+const RESERVATION_TIME_MINUTES = 15;
 
 export const InventoryService = {
-
   /* =========================================================
-     RESERVE STOCK
-  ========================================================= */
+   RESERVE STOCK
+========================================================= */
 
-  async reserveStock(productId: string, orderId: string, quantity: number) {
+  async reserveStock(
+    tx: any,
+    productId: string,
+    orderId: string,
+    quantity: number,
+  ) {
+    const product = await tx.product.findUnique({
+      where: { id: productId },
+      select: {
+        id: true,
+        stock: true,
+        reservedStock: true,
+      },
+    });
 
-    return prisma.$transaction(async (tx) => {
+    if (!product) {
+      throw new Error("Product not found");
+    }
 
-      const product = await tx.product.findUnique({
-        where: { id: productId },
-        select: {
-          id: true,
-          stock: true,
-          reservedStock: true
-        }
-      })
+    const availableStock = product.stock - product.reservedStock;
 
-      if (!product) {
-        throw new Error("Product not found")
-      }
+    if (availableStock < quantity) {
+      throw new Error("Not enough stock available");
+    }
 
-      const availableStock = product.stock - product.reservedStock
+    /* create reservation */
 
-      if (availableStock < quantity) {
-        throw new Error("Not enough stock available")
-      }
+    await tx.inventoryReservation.create({
+      data: {
+        productId,
+        orderId,
+        quantity,
+        expiresAt: new Date(Date.now() + RESERVATION_TIME_MINUTES * 60 * 1000),
+      },
+    });
 
-      await tx.inventoryReservation.create({
-        data: {
-          productId,
-          orderId,
-          quantity,
-          expiresAt: new Date(
-            Date.now() + RESERVATION_TIME_MINUTES * 60 * 1000
-          )
-        }
-      })
+    /* reserve stock */
 
-      await tx.product.update({
-        where: { id: productId },
-        data: {
-          reservedStock: {
-            increment: quantity
-          }
-        }
-      })
-
-    })
-
+    await tx.product.update({
+      where: { id: productId },
+      data: {
+        reservedStock: {
+          increment: quantity,
+        },
+      },
+    });
   },
 
   /* =========================================================
@@ -60,49 +60,42 @@ export const InventoryService = {
   ========================================================= */
 
   async validateReservation(orderId: string) {
-
     const reservations = await prisma.inventoryReservation.findMany({
       where: { orderId },
       include: {
         product: {
           select: {
             id: true,
-            stock: true
-          }
-        }
-      }
-    })
+            stock: true,
+          },
+        },
+      },
+    });
 
-    if (reservations.length === 0) {
-      return
-    }
+    if (reservations.length === 0) return;
 
-    const now = new Date()
+    const now = new Date();
 
     for (const reservation of reservations) {
-
-      const reservationAggregate = await prisma.inventoryReservation.aggregate({
+      const aggregate = await prisma.inventoryReservation.aggregate({
         where: {
           productId: reservation.productId,
-          expiresAt: {
-            gt: now
-          }
+          expiresAt: { gt: now },
         },
         _sum: {
-          quantity: true
-        }
-      })
+          quantity: true,
+        },
+      });
 
-      const reserved = reservationAggregate._sum.quantity ?? 0
-      const availableStock = reservation.product.stock - reserved
+      const reserved = aggregate._sum.quantity ?? 0;
+      const availableStock = reservation.product.stock - reserved;
 
       if (availableStock < reservation.quantity) {
         throw new Error(
-          `Stock mismatch detected for product ${reservation.productId}`
-        )
+          `Stock mismatch detected for product ${reservation.productId}`,
+        );
       }
     }
-
   },
 
   /* =========================================================
@@ -110,37 +103,40 @@ export const InventoryService = {
   ========================================================= */
 
   async confirmReservation(orderId: string) {
-
     const reservations = await prisma.inventoryReservation.findMany({
-      where: { orderId }
-    })
+      where: { orderId },
+    });
 
-    if (reservations.length === 0) return
+    if (reservations.length === 0) return;
 
     await prisma.$transaction(async (tx) => {
-
       for (const reservation of reservations) {
+        const product = await tx.product.findUnique({
+          where: { id: reservation.productId },
+          select: { reservedStock: true },
+        });
+
+        if (!product || product.reservedStock < reservation.quantity) {
+          throw new Error("Inventory inconsistency detected");
+        }
 
         await tx.product.update({
           where: { id: reservation.productId },
           data: {
             stock: {
-              decrement: reservation.quantity
+              decrement: reservation.quantity,
             },
             reservedStock: {
-              decrement: reservation.quantity
-            }
-          }
-        })
-
+              decrement: reservation.quantity,
+            },
+          },
+        });
       }
 
       await tx.inventoryReservation.deleteMany({
-        where: { orderId }
-      })
-
-    })
-
+        where: { orderId },
+      });
+    });
   },
 
   /* =========================================================
@@ -148,34 +144,36 @@ export const InventoryService = {
   ========================================================= */
 
   async releaseReservation(orderId: string) {
-
     const reservations = await prisma.inventoryReservation.findMany({
-      where: { orderId }
-    })
+      where: { orderId },
+    });
 
-    if (reservations.length === 0) return
+    if (reservations.length === 0) return;
 
     await prisma.$transaction(async (tx) => {
-
       for (const reservation of reservations) {
+        const product = await tx.product.findUnique({
+          where: { id: reservation.productId },
+          select: { reservedStock: true },
+        });
+
+        if (!product) continue;
+
+        const decrement = Math.min(reservation.quantity, product.reservedStock);
 
         await tx.product.update({
           where: { id: reservation.productId },
           data: {
             reservedStock: {
-              decrement: reservation.quantity
-            }
-          }
-        })
-
+              decrement,
+            },
+          },
+        });
       }
 
       await tx.inventoryReservation.deleteMany({
-        where: { orderId }
-      })
-
-    })
-
-  }
-
-}
+        where: { orderId },
+      });
+    });
+  },
+};

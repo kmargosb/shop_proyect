@@ -1,63 +1,167 @@
-import { Request, Response } from "express"
-import { CartService } from "./cart.service"
+import { Request, Response } from "express";
+import { CartService } from "./cart.service";
+import { getStringParam } from "@/common/utils/request";
+
+/* =========================================================
+   CREATE CART
+========================================================= */
 
 export const createCartController = async (req: Request, res: Response) => {
+  try {
 
-  const { userId } = req.body
+    const userId = req.body?.userId;
 
-  const cart = await CartService.getOrCreateCart(userId)
+    const cart = await CartService.getOrCreateCart(userId);
 
-  res.json(cart)
+    res.json(cart);
 
-}
+  } catch (error) {
+
+    console.error("Create cart error:", error);
+
+    res.status(500).json({
+      error: "Failed to create cart",
+    });
+
+  }
+};
+
+
+/* =========================================================
+   GET CART
+========================================================= */
 
 export const getCartController = async (req: Request, res: Response) => {
+  try {
 
-  const cartId = req.params.cartId as string
+    const cartId = getStringParam(req.params.cartId);
 
-  const cart = await CartService.getCart(cartId)
+    if (!cartId) {
+      return res.status(400).json({
+        error: "Cart ID is required",
+      });
+    }
 
-  res.json(cart)
+    const cart = await CartService.getCart(cartId);
 
-}
+    res.json(cart);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Failed to get cart",
+    });
+
+  }
+};
+
+
+/* =========================================================
+   GET CART TOTALS
+========================================================= */
+
+export const getCartTotalsController = async (req: Request, res: Response) => {
+
+  const cartId = getStringParam(req.params.cartId);
+
+  if (!cartId) {
+    return res.status(400).json({
+      error: "Cart ID is required",
+    });
+  }
+
+  const totals = await CartService.calculateTotals(cartId);
+
+  res.json(totals);
+
+};
+
+
+/* =========================================================
+   ADD ITEM
+========================================================= */
 
 export const addItemController = async (req: Request, res: Response) => {
 
-  const cartId = req.params.cartId as string
-  const { productId, quantity } = req.body
+  const cartId = getStringParam(req.params.cartId);
 
-  const item = await CartService.addItem(cartId, productId, quantity)
+  if (!cartId) {
+    return res.status(400).json({
+      error: "Cart ID is required",
+    });
+  }
 
-  res.json(item)
+  const { productId, quantity } = req.body;
 
-}
+  const cart = await CartService.addItem(cartId, productId, quantity);
+
+  res.json(cart);
+
+};
+
+
+/* =========================================================
+   REMOVE ITEM
+========================================================= */
 
 export const removeItemController = async (req: Request, res: Response) => {
 
-  const cartItemId = req.params.cartItemId as string
+  const itemId = getStringParam(req.params.itemId);
 
-  const item = await CartService.removeItem(cartItemId)
+  if (!itemId) {
+    return res.status(400).json({
+      error: "Item ID is required",
+    });
+  }
 
-  res.json(item)
+  const item = await CartService.removeItem(itemId);
 
-}
+  res.json(item);
 
-export const getTotalsController = async (req: Request, res: Response) => {
+};
 
-  const cartId = req.params.cartId as string
 
-  const totals = await CartService.calculateTotals(cartId)
-
-  res.json(totals)
-
-}
+/* =========================================================
+   MERGE CART
+========================================================= */
 
 export const mergeCartController = async (req: Request, res: Response) => {
 
-  const { guestCartId, userId } = req.body
+  const { guestCartId, userId } = req.body;
 
-  const cart = await CartService.mergeCart(guestCartId, userId)
+  const cart = await CartService.mergeCart(guestCartId, userId);
 
-  res.json(cart)
+  res.json(cart);
 
-}
+};
+
+
+/* =========================================================
+   CHECKOUT CART
+========================================================= */
+
+export const checkoutCartController = async (req: Request, res: Response) => {
+
+  const cartId = getStringParam(req.params.cartId);
+
+  if (!cartId) {
+    return res.status(400).json({
+      error: "Cart ID is required",
+    });
+  }
+
+  const checkoutData = req.body;
+
+  const order = await CartService.convertCartToOrder(
+    cartId,
+    checkoutData
+  );
+
+  res.json({
+    success: true,
+    order,
+  });
+
+};
