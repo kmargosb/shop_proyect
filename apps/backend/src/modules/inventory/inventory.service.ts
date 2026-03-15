@@ -4,8 +4,8 @@ const RESERVATION_TIME_MINUTES = 15;
 
 export const InventoryService = {
   /* =========================================================
-   RESERVE STOCK
-========================================================= */
+     RESERVE STOCK (RACE CONDITION SAFE)
+  ========================================================= */
 
   async reserveStock(
     tx: any,
@@ -13,16 +13,14 @@ export const InventoryService = {
     orderId: string,
     quantity: number,
   ) {
-    /* =========================
-     LOCK PRODUCT ROW
-  ========================= */
+    /* lock product row */
 
     const rows: any[] = await tx.$queryRaw`
-    SELECT id, stock, "reservedStock"
-    FROM "Product"
-    WHERE id = ${productId}
-    FOR UPDATE
-  `;
+      SELECT id, stock, "reservedStock"
+      FROM "Product"
+      WHERE id = ${productId}
+      FOR UPDATE
+    `;
 
     const product = rows[0];
 
@@ -36,9 +34,7 @@ export const InventoryService = {
       throw new Error("Not enough stock available");
     }
 
-    /* =========================
-     CREATE RESERVATION
-  ========================= */
+    /* create reservation */
 
     await tx.inventoryReservation.create({
       data: {
@@ -49,9 +45,7 @@ export const InventoryService = {
       },
     });
 
-    /* =========================
-     UPDATE RESERVED STOCK
-  ========================= */
+    /* update reserved stock */
 
     await tx.product.update({
       where: { id: productId },
@@ -88,7 +82,9 @@ export const InventoryService = {
       const aggregate = await prisma.inventoryReservation.aggregate({
         where: {
           productId: reservation.productId,
-          expiresAt: { gt: now },
+          expiresAt: {
+            gt: now,
+          },
         },
         _sum: {
           quantity: true,
@@ -96,6 +92,7 @@ export const InventoryService = {
       });
 
       const reserved = aggregate._sum.quantity ?? 0;
+
       const availableStock = reservation.product.stock - reserved;
 
       if (availableStock < reservation.quantity) {
@@ -183,5 +180,67 @@ export const InventoryService = {
         where: { orderId },
       });
     });
+  },
+
+  /* =========================================================
+     INVENTORY CONSISTENCY GUARD (REPAIR SINGLE PRODUCT)
+  ========================================================= */
+
+  async repairReservedStock(productId: string) {
+    const aggregate = await prisma.inventoryReservation.aggregate({
+      where: {
+        productId,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      _sum: {
+        quantity: true,
+      },
+    });
+
+    const realReserved = aggregate._sum.quantity ?? 0;
+
+    await prisma.product.update({
+      where: { id: productId },
+      data: {
+        reservedStock: realReserved,
+      },
+    });
+  },
+
+  /* =========================================================
+     INVENTORY CONSISTENCY GUARD (ALL PRODUCTS)
+  ========================================================= */
+
+  async repairAllReservedStock() {
+    const products = await prisma.product.findMany({
+      select: { id: true },
+    });
+
+    for (const product of products) {
+      const aggregate = await prisma.inventoryReservation.aggregate({
+        where: {
+          productId: product.id,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+        _sum: {
+          quantity: true,
+        },
+      });
+
+      const realReserved = aggregate._sum.quantity ?? 0;
+
+      await prisma.product.update({
+        where: { id: product.id },
+        data: {
+          reservedStock: realReserved,
+        },
+      });
+    }
+
+    console.log("🔧 Inventory consistency repaired");
   },
 };
