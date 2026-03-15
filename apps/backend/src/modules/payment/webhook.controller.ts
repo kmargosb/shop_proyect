@@ -244,8 +244,8 @@ async function handleRefundUpdated(refund: any) {
     refund.status === "succeeded"
       ? "SUCCEEDED"
       : refund.status === "failed"
-      ? "FAILED"
-      : "PENDING";
+        ? "FAILED"
+        : "PENDING";
 
   await prisma.refund.update({
     where: { stripeRefundId: refund.id },
@@ -261,8 +261,11 @@ async function handleRefundUpdated(refund: any) {
   if (!order) return;
 
   /* =========================
-     RESTORE STOCK
-  ========================= */
+   RESTORE STOCK
+========================= */
+
+  const { InventoryCache } =
+    await import("@/modules/inventory/inventory.cache");
 
   const refundItems = await prisma.refundItem.findMany({
     where: { refundId: dbRefund.id },
@@ -279,9 +282,21 @@ async function handleRefundUpdated(refund: any) {
           },
         },
       });
+
+      /* sync redis */
+
+      try {
+        await InventoryCache.incrementStock(
+          item.orderItem.productId,
+          item.quantity,
+        );
+      } catch (error) {
+        console.error("Redis stock restore error:", error);
+      }
     }
   } else {
-    /* fallback: refund total */
+    /* fallback: full order refund */
+
     const orderItems = await prisma.orderItem.findMany({
       where: { orderId: order.id },
     });
@@ -295,12 +310,20 @@ async function handleRefundUpdated(refund: any) {
           },
         },
       });
+
+      /* sync redis */
+
+      try {
+        await InventoryCache.incrementStock(item.productId, item.quantity);
+      } catch (error) {
+        console.error("Redis stock restore error:", error);
+      }
     }
   }
 
   /* =========================
-     CALCULATE ORDER STATUS
-  ========================= */
+   CALCULATE ORDER STATUS
+========================= */
 
   const refundAggregate = await prisma.refund.aggregate({
     where: {
@@ -315,9 +338,7 @@ async function handleRefundUpdated(refund: any) {
   const totalRefunded = refundAggregate._sum.amount ?? 0;
 
   const newStatus =
-    totalRefunded >= order.totalAmount
-      ? "REFUNDED"
-      : "PARTIALLY_REFUNDED";
+    totalRefunded >= order.totalAmount ? "REFUNDED" : "PARTIALLY_REFUNDED";
 
   await prisma.order.update({
     where: { id: order.id },
@@ -348,7 +369,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET as string
+      process.env.STRIPE_WEBHOOK_SECRET as string,
     );
   } catch (err) {
     console.error("❌ Webhook signature verification failed.");
@@ -356,7 +377,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   }
 
   try {
-
     /* =========================
        IDEMPOTENCY
     ========================= */
@@ -400,7 +420,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     }
 
     return res.json({ received: true });
-
   } catch (err) {
     console.error("🔥 Stripe webhook error:", err);
     return res.json({ received: true });

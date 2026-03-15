@@ -114,6 +114,9 @@ export const InventoryService = {
 
     if (reservations.length === 0) return;
 
+    const { InventoryCache } =
+      await import("@/modules/inventory/inventory.cache");
+
     await prisma.$transaction(async (tx) => {
       for (const reservation of reservations) {
         const product = await tx.product.findUnique({
@@ -136,6 +139,17 @@ export const InventoryService = {
             },
           },
         });
+
+        /* sync redis stock cache */
+
+        try {
+          await InventoryCache.decrementStock(
+            reservation.productId,
+            reservation.quantity,
+          );
+        } catch (error) {
+          console.error("Redis stock sync error:", error);
+        }
       }
 
       await tx.inventoryReservation.deleteMany({
