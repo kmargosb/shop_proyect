@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "reset:orders": "ts-node -r tsconfig-paths/register src/scripts/resetOrders.ts",
+    "clear:db": "ts-node -r tsconfig-paths/register src/scripts/clearDatabase.ts"
   },
   "keywords": [],
   "author": "",

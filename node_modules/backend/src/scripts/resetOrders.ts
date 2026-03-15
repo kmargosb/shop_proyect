@@ -1,8 +1,8 @@
 import { prisma } from "../lib/prisma"
 
-async function clearDatabase() {
+async function resetOrders() {
 
-  console.log("🧹 Clearing database...")
+  console.log("🧹 Resetting orders...")
 
   /* =========================
      REFUNDS
@@ -25,37 +25,24 @@ async function clearDatabase() {
   await prisma.paymentSession.deleteMany()
 
   /* =========================
-     INVENTORY
+     INVENTORY RESERVATIONS
   ========================= */
 
   await prisma.inventoryReservation.deleteMany()
 
   /* =========================
-     ORDERS
+     ORDER DATA
   ========================= */
 
   await prisma.orderItem.deleteMany()
   await prisma.invoice.deleteMany()
   await prisma.order.deleteMany()
 
-  /* =========================
-     CART
-  ========================= */
-
-  await prisma.cartItem.deleteMany()
-  await prisma.cart.deleteMany()
-
-  /* =========================
-     AUTH
-  ========================= */
-
-  await prisma.refreshToken.deleteMany()
-
-  console.log("✅ Database cleaned")
+  console.log("✅ Orders reset completed")
 
 }
 
-clearDatabase()
+resetOrders()
   .catch(console.error)
   .finally(async () => {
     await prisma.$disconnect()
