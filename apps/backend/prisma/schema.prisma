@@ -32,7 +32,23 @@ model User {
   createdAt DateTime @default(now())
 }
 
-/**
+/*
+ * ============================
+ * BRAND
+ * ============================
+ */
+
+model Brand {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+}
+
+/*
  * ============================
  * PRODUCT
  * ============================
@@ -52,11 +68,24 @@ model Product {
 
   isActive Boolean @default(true)
 
+  /* ============================
+     BRAND (NEW - SAFE)
+  ============================ */
+
+  brandId String?
+  brand   Brand? @relation(fields: [brandId], references: [id])
+
+  /* ============================
+     RELATIONS
+  ============================ */
+
   images     ProductImage[]
   orderItems OrderItem[]
   cartItems  CartItem[]
 
   createdAt DateTime @default(now())
+
+  @@index([brandId])
 }
 
 /**
@@ -106,7 +135,6 @@ model Cart {
  */
 
 model CartItem {
-
   id String @id @default(uuid())
 
   cartId String
@@ -248,7 +276,7 @@ model OrderItem {
 
 /**
  * ============================
- * PaymnentSession
+ * PaymentSession
  * ============================
  */
 

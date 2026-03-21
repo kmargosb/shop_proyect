@@ -1,75 +1,92 @@
-import { Request, Response } from "express";
-import * as productService from "./product.service";
-import { getProductById } from "./product.service";
 import { asyncHandler } from "@/common/utils/asyncHandler";
+import * as productService from "./product.service";
 
-export const getProducts = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const products = await productService.getProducts();
-    res.json(products);
-  },
-);
+/* ===============================
+   GET ALL
+=============================== */
 
-export const createProduct = asyncHandler(
-  async (req: Request, res: Response) => {
-    const files = (req.files as Express.Multer.File[]) || [];
+export const getProducts = asyncHandler(async (_req, res) => {
+  const products = await productService.getProducts();
+  res.json(products);
+});
 
-    const product = await productService.createProduct(req.body, files);
+/* ===============================
+   FILTERED (🔥 SHOP)
+=============================== */
 
-    res.status(201).json(product);
-  },
-);
+export const getProductsFiltered = asyncHandler(async (req, res) => {
+  const products = await productService.getProductsWithFilters(req.query);
+  res.json(products);
+});
 
-export const updateProduct = asyncHandler(
-  async (req: Request<{ id: string }>, res: Response) => {
-    const files = (req.files as Express.Multer.File[]) || [];
+/* ===============================
+   BY BRAND
+=============================== */
 
-    const updated = await productService.updateProduct(
-      req.params.id as string,
-      req.body,
-      files,
-    );
-    res.json(updated);
-  },
-);
+export const getProductsByBrand = asyncHandler(async (req, res) => {
+  const { brand } = req.params as { brand: string };
+  const products = await productService.getProductsByBrand(brand);
+  res.json(products);
+});
 
-export const deleteProduct = asyncHandler(
-  async (req: Request<{ id: string }>, res: Response) => {
-    await productService.deleteProduct(req.params.id as string);
-    res.json({ message: "Producto eliminado correctamente" });
-  },
-);
+/* ===============================
+   GET ONE
+=============================== */
 
-export const getProduct = async (req: Request, res: Response) => {
-  try {
+export const getProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params as { id: string };
 
-    const id = req.params.id as string;
+  const product = await productService.getProductById(id);
 
-    const product = await getProductById(id);
-
-    if (!product) {
-      return res.status(404).json({
-        error: "Product not found",
-      });
-    }
-
-    return res.json(product);
-
-  } catch (error) {
-
-    console.error("Get product error:", error);
-
-    return res.status(500).json({
-      error: "Failed to fetch product",
-    });
-
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
   }
-};
+
+  res.json(product);
+});
+
+/* ===============================
+   RELATED
+=============================== */
 
 export const getRelatedProducts = asyncHandler(async (req, res) => {
   const { id } = req.params as { id: string };
 
   const products = await productService.getRelatedProducts(id);
-
   res.json(products);
+});
+
+/* ===============================
+   CREATE
+=============================== */
+
+export const createProduct = asyncHandler(async (req, res) => {
+  const files = (req.files as Express.Multer.File[]) || [];
+  const product = await productService.createProduct(req.body, files);
+  res.status(201).json(product);
+});
+
+/* ===============================
+   UPDATE
+=============================== */
+
+export const updateProduct = asyncHandler(async (req, res) => {
+  const files = (req.files as Express.Multer.File[]) || [];
+
+  const updated = await productService.updateProduct(
+    req.params.id as string,
+    req.body,
+    files,
+  );
+
+  res.json(updated);
+});
+
+/* ===============================
+   DELETE
+=============================== */
+
+export const deleteProduct = asyncHandler(async (req, res) => {
+  await productService.deleteProduct(req.params.id as string);
+  res.json({ message: "Producto eliminado correctamente" });
 });

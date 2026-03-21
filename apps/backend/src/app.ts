@@ -17,6 +17,7 @@ import shippingRoutes from "@/modules/shipping/shipping.routes"
 import couponRoutes from "@/modules/coupon/coupon.routes"
 import cartRoutes from "@/modules/cart/cart.routes"
 import checkoutRoutes from "@/modules/checkout/checkout.routes"
+import brandRoutes from "@/modules/brands/brands.routes"
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.get("/", (_, res) => {
 
 /* ROUTES */
 app.use("/auth", authRoutes);
+app.use("/brands", brandRoutes);
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
 app.use("/payment-sessions", paymentSessionRoutes);

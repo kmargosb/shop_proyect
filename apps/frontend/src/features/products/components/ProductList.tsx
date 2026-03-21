@@ -7,30 +7,50 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Product } from "@/types/product";
 
-export default function ProductList() {
+/* ===============================
+   PROPS (NEW)
+=============================== */
+
+interface Props {
+  brand?: string;
+}
+
+export default function ProductList({ brand }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProducts = async () => {
-      const res = await apiFetch("/products");
+      try {
+        const url = brand ? `/products/brand/${brand}` : "/products";
 
-      if (!res) return;
+        const res = await apiFetch(url);
 
-      const data = await res.json();
+        if (!res || !res.ok) {
+          console.error("Products fetch failed");
+          return;
+        }
 
-      setProducts(data);
-      setLoading(false);
+        const data = await res.json();
+
+        setProducts(data);
+      } catch (error) {
+        console.error("Error loading products:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadProducts();
-  }, []);
+  }, [brand]);
 
   const skeletons = Array.from({ length: 8 });
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold mb-10">Productos</h1>
+      <h1 className="text-3xl font-bold mb-10">
+        {brand ? `Productos de ${brand}` : "Latest Drops"}
+      </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {loading
@@ -46,10 +66,7 @@ export default function ProductList() {
               </div>
             ))
           : products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
+              <ProductCard key={product.id} product={product} />
             ))}
       </div>
     </section>
