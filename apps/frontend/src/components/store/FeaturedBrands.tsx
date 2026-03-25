@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 
 export default async function FeaturedBrands() {
   const res = await apiFetch("/brands");

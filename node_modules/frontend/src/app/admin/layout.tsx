@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 

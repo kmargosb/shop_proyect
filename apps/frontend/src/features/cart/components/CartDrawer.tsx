@@ -6,9 +6,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from "@/components/ui/sheet";
+} from "@/shared/ui/sheet";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { useCart } from "@/features/cart/CartContext";
 import { createOrder } from "@/features/orders/api/orders.api";
 import { useRouter } from "next/navigation";

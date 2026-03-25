@@ -1,5 +1,5 @@
 import ProductList from "@/features/products/components/ProductList";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 import { notFound } from "next/navigation";
 
 export default async function BrandPage({

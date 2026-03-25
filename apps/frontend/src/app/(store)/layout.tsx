@@ -9,7 +9,6 @@ export default function StoreLayout({
   return (
     <StoreProviders>
       <Navbar />
-
       <main className="pt-16">
         {children}
       </main>

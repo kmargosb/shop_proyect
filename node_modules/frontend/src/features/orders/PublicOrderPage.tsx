@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { downloadInvoice } from "@/lib/api";
+import { downloadInvoice } from "@/shared/lib/api";
 
 type Order = any;
 

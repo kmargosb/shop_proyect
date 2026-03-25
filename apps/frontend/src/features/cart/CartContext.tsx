@@ -8,7 +8,7 @@ import {
   useEffect,
 } from "react";
 
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 
 const CART_KEY = "cartId";
 

@@ -1,17 +1,22 @@
 {
   "name": "proyecto",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "devDependencies": {
-    "turbo": "^2.8.9",
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "turbo": "^2.8.9"
   },
   "scripts": {
     "dev": "concurrently -n FRONTEND,BACKEND,STRIPE,REDIS -c blue,green,yellow,magenta \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:stripe\" \"npm run dev:redis\"",
     "dev:frontend": "npm --workspace=frontend run dev",
     "dev:backend": "npm --workspace=backend run dev",
-    "dev:stripe": "stripe listen --forward-to localhost:4000/api/webhook",
+    "dev:stripe": "stripe listen --forward-to localhost:4000/api/payments/webhook",
     "dev:redis": "docker run -d -p 6379:6379 redis || docker start redis",
     "dev:prisma": "npm --workspace=backend exec prisma studio"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.94.5"
   }
 }

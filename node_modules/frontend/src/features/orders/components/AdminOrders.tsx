@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 import { toast } from "sonner";
 import OrderDetailModal from "@/features/orders/components/OrderDetailModal";
 import type { Order } from "@/types/order";

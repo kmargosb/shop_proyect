@@ -3,10 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-
-import { Button } from "@/components/ui/button";
 import { useCart } from "@/features/cart/CartContext";
-
 import type { Product } from "@/types/product";
 
 type Props = {

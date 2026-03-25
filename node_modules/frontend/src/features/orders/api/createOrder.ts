@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 
 export async function createOrder(data: any) {
   const res = await apiFetch("/orders", {

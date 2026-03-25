@@ -1,7 +1,7 @@
 "use client";
 
 import type { Order } from "@/types/order";
-import { downloadInvoice } from "@/lib/api";
+import { downloadInvoice } from "@/shared/lib/api";
 
 type Props = {
   order: Order;

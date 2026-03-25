@@ -2,7 +2,7 @@
 
 import { Trash2, Pencil, Plus, Search } from "lucide-react"
 import { useMemo, useEffect, useState } from "react"
-import { apiFetch } from "@/lib/api"
+import { apiFetch } from "@/shared/lib/api"
 import EditProductModal from "./EditProductModal"
 import CreateProductModal from "./CreateProductModal"
 import { toast } from "sonner"

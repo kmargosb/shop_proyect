@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { apiFetch } from "@/lib/api"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { apiFetch } from "@/shared/lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 
 type Stats = {
   revenueToday: number

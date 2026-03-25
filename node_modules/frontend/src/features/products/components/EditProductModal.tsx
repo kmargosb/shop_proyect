@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { apiFetch } from "@/lib/api"
+import { apiFetch } from "@/shared/lib/api"
 import { toast } from "sonner"
 import { Star } from "lucide-react"
 

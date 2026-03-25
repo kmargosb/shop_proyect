@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/shared/lib/api";
 
 export async function getBrandBySlug(slug: string) {
   const res = await apiFetch(`/brands/${slug}`);

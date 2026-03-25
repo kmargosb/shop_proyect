@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PaymentWrapper from "../components/PaymentWrapper";
-import CheckoutForm from "../components/CheckoutForm";
+import StripePaymentForm from "../components/StripePaymentForm";
 
 type Props = {
   orderId: string;
@@ -43,7 +43,7 @@ export default function PayOrderPage({ orderId }: Props) {
 
   return (
     <PaymentWrapper clientSecret={clientSecret}>
-      <CheckoutForm orderId={orderId} />
+      <StripePaymentForm orderId={orderId} />
     </PaymentWrapper>
   );
 }

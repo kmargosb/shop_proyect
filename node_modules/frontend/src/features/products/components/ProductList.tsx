@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
 import ProductCard from "./ProductCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/shared/ui/skeleton";
+
+import { productsApi } from "@/features/products/api/products.api"; // ✅ NEW
 
 import type { Product } from "@/types/product";
-
-/* ===============================
-   PROPS (NEW)
-=============================== */
 
 interface Props {
   brand?: string;
@@ -22,16 +19,9 @@ export default function ProductList({ brand }: Props) {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const url = brand ? `/products/brand/${brand}` : "/products";
-
-        const res = await apiFetch(url);
-
-        if (!res || !res.ok) {
-          console.error("Products fetch failed");
-          return;
-        }
-
-        const data = await res.json();
+        const data = brand
+          ? await productsApi.getByBrand(brand)
+          : await productsApi.getAll();
 
         setProducts(data);
       } catch (error) {

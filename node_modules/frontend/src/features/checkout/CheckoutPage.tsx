@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/features/cart/CartContext";
-import CheckoutForm from "./CheckoutForm";
+import CreateOrderForm from "./CreateOrderForm";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -22,7 +22,7 @@ export default function CheckoutPage() {
         Finalizar compra
       </h1>
 
-      <CheckoutForm />
+      <CreateOrderForm />
     </main>
   );
 }
