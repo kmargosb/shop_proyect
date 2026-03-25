@@ -15,7 +15,7 @@ import ShopFilters from "@/features/products/components/ShopFilters";
 import ShopFilterBar from "@/features/products/components/ShopFilterBar";
 import FilterDrawer from "@/features/products/components/FilterDrawer";
 
-export function ShopPage() {
+export function ShopView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const navbarVisible = useNavbar((s) => s.visible);

@@ -1,5 +1,5 @@
-import CheckoutPage from "@/features/checkout/CheckoutPage";
+import CheckoutView from "@/features/checkout/CheckoutView";
 
 export default function Page() {
-  return <CheckoutPage />;
+  return <CheckoutView />;
 }

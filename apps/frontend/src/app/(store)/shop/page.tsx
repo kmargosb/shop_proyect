@@ -1,5 +1,5 @@
-import { ShopPage } from "@/features/shop/ShopPage";
+import { ShopView } from "@/features/shop/components/ShopView";
 
 export default function Page() {
-  return <ShopPage />;
+  return <ShopView />;
 }

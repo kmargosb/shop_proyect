@@ -5,7 +5,7 @@ import CreateOrderForm from "./CreateOrderForm";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function CheckoutPage() {
+export default function CheckoutView() {
   const { items } = useCart();
   const router = useRouter();
 

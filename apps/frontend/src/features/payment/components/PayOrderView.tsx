@@ -1,15 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import PaymentWrapper from "../components/PaymentWrapper";
-import StripePaymentForm from "../components/StripePaymentForm";
+import PaymentWrapper from "./PaymentWrapper";
+import StripePaymentForm from "./StripePaymentForm";
 
 type Props = {
   orderId: string;
   clientSecret: string;
 };
 
-export default function PayOrderPage({
+export default function PayOrderView({
   orderId,
   clientSecret,
 }: Props) {

@@ -1,4 +1,4 @@
-import PayOrderPage from "@/features/payment/pages/PayOrderPage";
+import PayOrderView from "@/features/payment/components/PayOrderView";
 
 export default async function Page({
   params,
@@ -15,7 +15,7 @@ export default async function Page({
   }
 
   return (
-    <PayOrderPage
+    <PayOrderView
       orderId={id}
       clientSecret={clientSecret}
     />

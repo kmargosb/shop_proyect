@@ -1,5 +1,5 @@
 import HeroCarousel from "@/components/store/HeroCarousel";
-import ProductsPage from "@/features/products/ProductsPage";
+import ProductsView from "@/features/products/components/ProductsView";
 import FeaturedBrands from "@/components/store/FeaturedBrands";
 import HomeCTA from "@/components/store/HomeCTA";
 import Footer from "@/components/store/Footer";
@@ -15,7 +15,7 @@ export default function Home() {
 
       {/* PRODUCTS */}
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <ProductsPage />
+        <ProductsView />
       </div>
 
       {/* CTA */}
