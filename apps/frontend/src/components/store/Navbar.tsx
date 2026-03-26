@@ -5,9 +5,11 @@ import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/cart/CartContext";
 import { useEffect, useState } from "react";
 import { useNavbar } from "@/hooks/useNavbar";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Navbar() {
   const { items, setOpen } = useCart();
+  const { user, isAuthenticated } = useAuth();
 
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -32,7 +34,7 @@ export default function Navbar() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScroll]);
+  }, [lastScroll, setNavbarVisible]);
 
   return (
     <header
@@ -48,25 +50,52 @@ export default function Navbar() {
 
         {/* NAV */}
         <nav className="hidden md:flex items-center gap-8 text-sm text-black">
-          <Link href="/shop" className="hover:text-white">
+          <Link href="/shop" className="hover:text-neutral-500">
             Shop
           </Link>
 
-          <Link href="/brands" className="hover:text-white">
+          <Link href="/brands" className="hover:text-neutral-500">
             Brands
           </Link>
         </nav>
 
-        {/* CART */}
-        <button onClick={() => setOpen(true)} className="relative">
-          <ShoppingCart size={24} />
+        {/* RIGHT SIDE */}
+        <div className="flex items-center gap-6">
+          {/* USER */}
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3 text-sm text-black">
+              <span className="hidden sm:block">
+                Hola, {user?.name?.split(" ")[0]}
+              </span>
 
-          {totalItems > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-xs px-2 py-1 rounded-full">
-              {totalItems}
-            </span>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("user");
+                  window.location.href = "/";
+                }}
+                className="text-xs text-neutral-500 hover:text-black"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="text-sm hover:text-neutral-500">
+              Login
+            </Link>
           )}
-        </button>
+
+          {/* CART */}
+          <button onClick={() => setOpen(true)} className="relative">
+            <ShoppingCart size={24} />
+
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-black text-white text-xs px-2 py-1 rounded-full">
+                {totalItems}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );

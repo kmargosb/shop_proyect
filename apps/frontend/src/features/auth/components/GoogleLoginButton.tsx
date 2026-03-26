@@ -8,8 +8,6 @@ export default function GoogleLoginButton() {
   console.log("🔥 GoogleLoginButton RENDERED");
 
   const handleSuccess = async (credentialResponse: any) => {
-    console.log("✅ GOOGLE RAW RESPONSE:", credentialResponse);
-
     try {
       if (!credentialResponse?.credential) {
         console.error("❌ No credential received");
@@ -18,8 +16,6 @@ export default function GoogleLoginButton() {
 
       const idToken = credentialResponse.credential;
 
-      console.log("📦 Sending token to backend...");
-
       const res = await fetch(`${API_URL}/auth/google`, {
         method: "POST",
         headers: {
@@ -27,8 +23,6 @@ export default function GoogleLoginButton() {
         },
         body: JSON.stringify({ idToken }),
       });
-
-      console.log("📡 Response status:", res.status);
 
       const text = await res.text();
       console.log("📥 Raw response:", text);
@@ -41,8 +35,6 @@ export default function GoogleLoginButton() {
         console.error("❌ Response is NOT JSON");
         return;
       }
-
-      console.log("📦 Parsed response:", data);
 
       if (!res.ok) {
         console.error("❌ Backend error:", data);
@@ -63,11 +55,7 @@ export default function GoogleLoginButton() {
 
       console.log("✅ LOGIN SUCCESS → redirecting...");
 
-      // window.location.href = "/"; // mejor que reload
-
-      console.log("🛑 STOP REDIRECT (debug mode)");
-
-      
+      window.location.href = "/";
     } catch (error) {
       console.error("🔥 Google login error:", error);
     }
