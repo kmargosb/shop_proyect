@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { CheckoutService } from "@/modules/checkout/checkout.service";
 import { CartService } from "./cart.service";
 import { getStringParam } from "@/common/utils/request";
 
@@ -142,26 +143,39 @@ export const mergeCartController = async (req: Request, res: Response) => {
    CHECKOUT CART
 ========================================================= */
 
-export const checkoutCartController = async (req: Request, res: Response) => {
+export const checkoutCartController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { cartId } = req.params;
 
-  const cartId = getStringParam(req.params.cartId);
+    if (!cartId) {
+      return res.status(400).json({
+        error: "Cart ID is required",
+      });
+    }
 
-  if (!cartId) {
-    return res.status(400).json({
-      error: "Cart ID is required",
+    /* =========================
+       CALL NEW CHECKOUT SERVICE
+    ========================= */
+
+    const result = await CheckoutService.checkout({
+      cartId,
+      method: "CARD", // 🔥 default por ahora
+      ...req.body,
+    });
+
+    /* =========================
+       RETURN CLEAN RESPONSE
+    ========================= */
+
+    return res.json(result);
+  } catch (error: any) {
+    console.error("Checkout error:", error);
+
+    return res.status(500).json({
+      error: error.message || "Checkout failed",
     });
   }
-
-  const checkoutData = req.body;
-
-  const order = await CartService.convertCartToOrder(
-    cartId,
-    checkoutData
-  );
-
-  res.json({
-    success: true,
-    order,
-  });
-
 };

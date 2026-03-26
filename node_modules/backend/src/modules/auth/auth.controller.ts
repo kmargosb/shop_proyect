@@ -6,6 +6,7 @@ import { generateAccessToken, generateRefreshToken } from "@/common/utils/genera
 import jwt from "jsonwebtoken";
 import * as authService from "./auth.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
+import { loginWithGoogle } from "./google.service";
 
 /**
  * 🔐 Opciones de cookie CONSISTENTES
@@ -231,3 +232,32 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     message: "Tokens renovados correctamente",
   });
 });
+
+/* ============================
+   Google auth
+============================ */
+
+export const googleAuthController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        error: "Google token is required",
+      });
+    }
+
+    const result = await loginWithGoogle(idToken);
+
+    return res.json(result);
+  } catch (error: any) {
+    console.error("Google auth error:", error);
+
+    return res.status(500).json({
+      error: "Google authentication failed",
+    });
+  }
+};

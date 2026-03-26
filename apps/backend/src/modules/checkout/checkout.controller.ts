@@ -1,25 +1,23 @@
-import { Request, Response } from "express"
-import { CheckoutService } from "./checkout.service"
+import { Request, Response } from "express";
+import { CheckoutService } from "./checkout.service";
 
 export const checkoutController = async (
   req: Request,
   res: Response
 ) => {
-
   try {
+    const result = await CheckoutService.checkout({
+      cartId: req.params.cartId, // 🔥 CLAVE
+      method: "CARD",
+      ...req.body,
+    });
 
-    const result = await CheckoutService.checkout(req.body)
-
-    res.json(result)
-
+    return res.json(result);
   } catch (error: any) {
+    console.error("Checkout error:", error);
 
-    console.error("Checkout error:", error)
-
-    res.status(500).json({
-      error: error.message
-    })
-
+    return res.status(500).json({
+      error: error.message,
+    });
   }
-
-}
+};

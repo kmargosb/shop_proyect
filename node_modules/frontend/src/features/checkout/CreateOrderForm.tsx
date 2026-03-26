@@ -21,20 +21,12 @@ export default function CreateOrderForm() {
     country: "",
   });
 
-  /* =========================
-     INPUT CHANGE
-  ========================= */
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
   };
-
-  /* =========================
-     SUBMIT ORDER
-  ========================= */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +45,9 @@ export default function CreateOrderForm() {
       const res = await apiFetch(`/cart/${cartId}/checkout`, {
         method: "POST",
         body: JSON.stringify({
+          cartId, // ✅ AÑADIR
+          method: "CARD", // ✅ AÑADIR
+
           fullName: form.fullName,
           email: form.email,
           phone: form.phone,
@@ -63,30 +58,40 @@ export default function CreateOrderForm() {
         }),
       });
 
-      if (!res) {
+      if (!res || !res.ok) {
         throw new Error("Checkout failed");
       }
 
-      const order = await res.json();
+      const data = await res.json();
 
-      const orderId = order?.id || order?.order?.id || order?.data?.id;
+      console.log("🔥 CHECKOUT RESPONSE:", data); // 👈 AQUÍ
 
-      if (!orderId) {
-        throw new Error("Order ID not received");
+      /* =========================
+         🔥 NEW BACKEND RESPONSE
+      ========================= */
+
+      const orderId = data?.orderId;
+      const clientSecret = data?.payment?.clientSecret;
+
+      if (!orderId || !clientSecret) {
+        console.error("Invalid checkout response:", data);
+        throw new Error("Invalid checkout response");
       }
 
       /* =========================
-         SAVE ORDER DATA
+         SAVE DATA
       ========================= */
 
       localStorage.setItem("orderEmail", form.email);
       localStorage.setItem("lastOrderId", orderId);
 
-      const redirectUrl = `/orders/${orderId}?email=${form.email}`;
-
       clearCart();
 
-      window.location.href = redirectUrl;
+      /* =========================
+         🔥 REDIRECT TO PAYMENT
+      ========================= */
+
+      window.location.href = `/orders/${orderId}/pay?clientSecret=${clientSecret}`;
     } catch (error) {
       console.error("Checkout error:", error);
       alert("Error creando pedido");
@@ -95,14 +100,8 @@ export default function CreateOrderForm() {
     }
   };
 
-  /* =========================
-     UI
-  ========================= */
-
   return (
     <div className="grid md:grid-cols-2 gap-10">
-      {/* FORM */}
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           name="fullName"
@@ -110,7 +109,6 @@ export default function CreateOrderForm() {
           required
           onChange={handleChange}
         />
-
         <Input
           name="email"
           type="email"
@@ -118,35 +116,30 @@ export default function CreateOrderForm() {
           required
           onChange={handleChange}
         />
-
         <Input
           name="phone"
           placeholder="Teléfono"
           required
           onChange={handleChange}
         />
-
         <Input
           name="addressLine1"
           placeholder="Dirección"
           required
           onChange={handleChange}
         />
-
         <Input
           name="city"
           placeholder="Ciudad"
           required
           onChange={handleChange}
         />
-
         <Input
           name="postalCode"
           placeholder="Código postal"
           required
           onChange={handleChange}
         />
-
         <Input
           name="country"
           placeholder="País"
@@ -159,8 +152,6 @@ export default function CreateOrderForm() {
         </Button>
       </form>
 
-      {/* ORDER SUMMARY */}
-
       <div className="bg-neutral-900 p-6 rounded-xl">
         <h2 className="font-bold mb-4">Resumen del pedido</h2>
 
@@ -169,7 +160,6 @@ export default function CreateOrderForm() {
             <span>
               {item.name} × {item.quantity}
             </span>
-
             <span>${(item.price * item.quantity).toFixed(2)}</span>
           </div>
         ))}

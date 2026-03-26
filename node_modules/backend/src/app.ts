@@ -58,6 +58,7 @@ app.use("/shipping", shippingRoutes);
 app.use("/coupons", couponRoutes);
 app.use("/cart", cartRoutes);
 app.use("/checkout", checkoutRoutes);
+app.use("/api/auth", authRoutes);
 
 
 /* ERROR HANDLER */
