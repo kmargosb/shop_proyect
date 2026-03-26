@@ -247,3 +247,29 @@ export const searchOrdersController = asyncHandler(
     res.json(result);
   }
 );
+
+// ===============================
+// Obtener pedidos del usuario logueado
+// ===============================
+
+export const getMyOrdersController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const orders = await prisma.order.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        items: true,
+      },
+    });
+
+    res.json(orders);
+  }
+);

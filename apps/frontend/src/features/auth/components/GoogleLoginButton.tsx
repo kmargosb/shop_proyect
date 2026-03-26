@@ -5,13 +5,10 @@ import { GoogleLogin } from "@react-oauth/google";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function GoogleLoginButton() {
-  console.log("🔥 GoogleLoginButton RENDERED");
-
   const handleSuccess = async (credentialResponse: any) => {
     try {
       if (!credentialResponse?.credential) {
-        console.error("❌ No credential received");
-        return;
+        throw new Error("No Google credential received");
       }
 
       const idToken = credentialResponse.credential;
@@ -21,18 +18,18 @@ export default function GoogleLoginButton() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // 🔥 CLAVE AHORA
         body: JSON.stringify({ idToken }),
       });
 
       const text = await res.text();
-      console.log("📥 Raw response:", text);
 
       let data;
 
       try {
         data = JSON.parse(text);
       } catch {
-        console.error("❌ Response is NOT JSON");
+        console.error("❌ Invalid JSON:", text);
         return;
       }
 
@@ -41,19 +38,20 @@ export default function GoogleLoginButton() {
         return;
       }
 
-      if (!data?.token || !data?.user) {
-        console.error("❌ Missing token or user:", data);
+      /* =========================
+         🔥 NUEVO SISTEMA
+      ========================= */
+
+      if (!data?.user) {
+        console.error("❌ Missing user:", data);
         return;
       }
 
-      /* =========================
-         SAVE SESSION
-      ========================= */
-
-      localStorage.setItem("token", data.token);
+      // ✔ solo guardamos user (opcional)
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      console.log("✅ LOGIN SUCCESS → redirecting...");
+      // 🔥 NO guardamos token
+      // 🔥 NO usamos localStorage para auth
 
       window.location.href = "/";
     } catch (error) {

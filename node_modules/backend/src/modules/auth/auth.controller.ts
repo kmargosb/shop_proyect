@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { asyncHandler } from "@/common/utils/asyncHandler";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
-import { generateAccessToken, generateRefreshToken } from "@/common/utils/generateToken";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "@/common/utils/generateToken";
 import jwt from "jsonwebtoken";
 import * as authService from "./auth.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
@@ -10,16 +13,13 @@ import { loginWithGoogle } from "./google.service";
 
 /**
  * 🔐 Opciones de cookie CONSISTENTES
- * Deben ser EXACTAMENTE iguales en:
- * - cookie()
- * - clearCookie()
  */
 const cookieOptions = {
   httpOnly: true,
-  secure: false, // desarrollo
+  secure: false, // en producción → true
   sameSite: "lax" as const,
   path: "/",
-  domain: "localhost", // 👈 obligatorio si se usa al crear
+  domain: "localhost",
 };
 
 /* ============================
@@ -56,7 +56,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
 
   res.cookie("accessToken", result.accessToken, {
     ...cookieOptions,
-    maxAge: 60 * 60 * 1000, // 1hora
+    maxAge: 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", result.refreshToken, {
@@ -90,29 +90,31 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
    LOGOUT ALL
 ============================ */
 
-export const logoutAll = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const userId = req.user?.id;
+export const logoutAll = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
 
-  if (!userId) {
-    return res.status(401).json({ error: "No autorizado" });
-  }
+    if (!userId) {
+      return res.status(401).json({ error: "No autorizado" });
+    }
 
-  await prisma.refreshToken.deleteMany({
-    where: { userId },
-  });
+    await prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      tokenVersion: { increment: 1 },
-    },
-  });
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        tokenVersion: { increment: 1 },
+      },
+    });
 
-  res.clearCookie("accessToken", cookieOptions);
-  res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
 
-  res.json({ message: "Sesión cerrada en todos los dispositivos" });
-});
+    res.json({ message: "Sesión cerrada en todos los dispositivos" });
+  },
+);
 
 /* ============================
    REFRESH
@@ -128,17 +130,13 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   let decoded: any;
 
   try {
-    decoded = jwt.verify(
-      token,
-      process.env.JWT_REFRESH_SECRET as string
-    );
+    decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
   } catch {
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);
     return res.status(403).json({ error: "Refresh inválido" });
   }
 
-  // ✅ buscar tokens del usuario
   const storedTokens = await prisma.refreshToken.findMany({
     where: { userId: decoded.id },
   });
@@ -154,7 +152,6 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  // 🚨 reuse attack protection
   if (!matchedToken) {
     await prisma.user.update({
       where: { id: decoded.id },
@@ -175,7 +172,6 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // ⏰ expirado
   if (matchedToken.expiresAt < new Date()) {
     await prisma.refreshToken.deleteMany({
       where: { id: matchedToken.id },
@@ -189,7 +185,6 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // ✅ ROTACIÓN SEGURA
   await prisma.refreshToken.deleteMany({
     where: { userId: decoded.id },
   });
@@ -206,9 +201,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     data: {
       token: hashedRefreshToken,
       userId: decoded.id,
-      expiresAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
-      ),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -234,14 +227,11 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /* ============================
-   Google auth
+   GOOGLE AUTH (PRO VERSION)
 ============================ */
 
-export const googleAuthController = async (
-  req: Request,
-  res: Response
-) => {
-  try {
+export const googleAuthController = asyncHandler(
+  async (req: Request, res: Response) => {
     const { idToken } = req.body;
 
     if (!idToken) {
@@ -250,14 +240,62 @@ export const googleAuthController = async (
       });
     }
 
-    const result = await loginWithGoogle(idToken);
+    /* =========================
+       GOOGLE LOGIN
+    ========================= */
 
-    return res.json(result);
-  } catch (error: any) {
-    console.error("Google auth error:", error);
+    const { user } = await loginWithGoogle(idToken);
 
-    return res.status(500).json({
-      error: "Google authentication failed",
+    /* =========================
+       GENERATE TOKENS
+    ========================= */
+
+    const accessToken = generateAccessToken({
+      id: user.id,
+      role: user.role,
+      tokenVersion: user.tokenVersion,
     });
-  }
-};
+
+    const refreshToken = generateRefreshToken({
+      id: user.id,
+      role: user.role,
+      tokenVersion: user.tokenVersion,
+    });
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+    /* =========================
+       SAVE REFRESH TOKEN
+    ========================= */
+
+    await prisma.refreshToken.create({
+      data: {
+        token: hashedRefreshToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    /* =========================
+       🍪 SET COOKIES (CLAVE)
+    ========================= */
+
+    res.cookie("accessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: 60 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    /* =========================
+       RESPONSE
+    ========================= */
+
+    return res.json({
+      user,
+    });
+  },
+);

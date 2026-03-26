@@ -63,10 +63,8 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           {/* USER */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-3 text-sm text-black">
-              <span className="hidden sm:block">
-                Hola, {user?.name?.split(" ")[0]}
-              </span>
+            <div className="flex items-center gap-4 text-sm text-black">
+              <Link href="/account">Hola, {user?.name?.split(" ")[0]}</Link>
 
               <button
                 onClick={() => {

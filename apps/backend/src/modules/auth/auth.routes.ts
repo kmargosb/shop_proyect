@@ -12,5 +12,6 @@ router.post("/login", loginRateLimiter, login)
 router.post("/logout-all", protect, logoutAll)
 router.get("/me", protect, me)
 router.post("/google", googleAuthController);
+router.post("/auth/google", googleAuthController);
 
 export default router

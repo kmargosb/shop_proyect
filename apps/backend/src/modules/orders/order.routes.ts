@@ -9,7 +9,8 @@ import {
    getPublicOrderController,
    downloadPublicInvoice,
    resendOrderEmailController,
-   getOrderTimelineController
+   getOrderTimelineController,
+   getMyOrdersController
 } from "./order.controller";
 import { getActivityFeedController } from "./order.activity.controller";
 import { getOrderAnalytics } from "@/modules/orders/order.analytics.controller";
@@ -41,6 +42,9 @@ router.get("/analytics", protect, adminOnly, getOrderAnalytics);
 
 //Filter Orders
 router.get("/search", protect, adminOnly, searchOrdersController);
+
+// USER ROUTES
+router.get("/me", protect, getMyOrdersController);
 
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);

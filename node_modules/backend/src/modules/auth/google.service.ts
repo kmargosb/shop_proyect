@@ -35,7 +35,7 @@ export async function loginWithGoogle(idToken: string) {
       data: {
         email,
         name: name || email.split("@")[0],
-        provider: "GOOGLE", // 🔥 importante
+        provider: "GOOGLE",
       },
     });
   }
@@ -45,10 +45,10 @@ export async function loginWithGoogle(idToken: string) {
   ========================= */
 
   const token = generateAccessToken({
-  id: user.id,
-  role: user.role,
-  tokenVersion: user.tokenVersion,
-});
+    id: user.id,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  });
 
   return {
     user,
