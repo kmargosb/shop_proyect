@@ -9,6 +9,7 @@ import {
   checkoutCartController,
   getCartTotalsController,
 } from "./cart.controller"
+import { protect } from "@/common/middleware/auth.middleware";
 
 const router = Router()
 
@@ -24,7 +25,9 @@ router.get("/:cartId/totals", getCartTotalsController)
 
 router.post("/merge", mergeCartController)
 
-router.post("/:cartId/checkout", checkoutCartController)
+// router.post("/:cartId/checkout", checkoutCartController)
+
+router.post("/:cartId/checkout", protect, checkoutCartController);
 
 
 

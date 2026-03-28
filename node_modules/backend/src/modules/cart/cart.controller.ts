@@ -162,8 +162,9 @@ export const checkoutCartController = async (
 
     const result = await CheckoutService.checkout({
       cartId,
-      method: "CARD", // 🔥 default por ahora
+      method: "CARD",
       ...req.body,
+      userId: (req as any).user?.id,
     });
 
     /* =========================

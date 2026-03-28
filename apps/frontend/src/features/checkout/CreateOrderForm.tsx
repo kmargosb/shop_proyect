@@ -44,10 +44,10 @@ export default function CreateOrderForm() {
 
       const res = await apiFetch(`/cart/${cartId}/checkout`, {
         method: "POST",
+        credentials: "include",
         body: JSON.stringify({
-          cartId, // ✅ AÑADIR
-          method: "CARD", // ✅ AÑADIR
-
+          cartId,
+          method: "CARD",
           fullName: form.fullName,
           email: form.email,
           phone: form.phone,

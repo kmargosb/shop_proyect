@@ -1,15 +1,11 @@
 import { Request, Response } from "express";
 import { CheckoutService } from "./checkout.service";
 
-export const checkoutController = async (
-  req: Request,
-  res: Response
-) => {
+export const checkoutController = async (req: Request, res: Response) => {
   try {
     const result = await CheckoutService.checkout({
-      cartId: req.params.cartId, // 🔥 CLAVE
-      method: "CARD",
       ...req.body,
+      userId: (req as any).user?.id, // 🔥 CLAVE
     });
 
     return res.json(result);
