@@ -1,25 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+type Order = {
+  id: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+};
+
 export default function AccountPage() {
-  const { user, isAuthenticated } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     async function fetchOrders() {
       try {
-        const token = localStorage.getItem("token");
-
         const res = await fetch(`${API_URL}/orders/me`, {
-          method: "GET",
-          credentials: "include", // 🔥 CLAVE
+          credentials: "include",
         });
 
         if (!res.ok) {
@@ -28,7 +28,6 @@ export default function AccountPage() {
         }
 
         const data = await res.json();
-        console.log("ORDERS RESPONSE:", res.status, data);
         setOrders(data);
       } catch (err) {
         console.error(err);
@@ -38,37 +37,74 @@ export default function AccountPage() {
     }
 
     fetchOrders();
-  }, [isAuthenticated]);
+  }, []);
 
-  if (!isAuthenticated) {
+  if (loading) {
     return (
-      <div className="p-10 text-center">
-        <h1 className="text-xl">Debes iniciar sesión</h1>
-      </div>
+      <div className="p-10 text-white">Cargando pedidos...</div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-10 text-white">
-      <h1 className="text-3xl font-bold mb-8">Mi cuenta</h1>
+    <div className="min-h-screen bg-black text-white p-10">
+      <h1 className="text-3xl font-bold mb-8">
+        Mi cuenta
+      </h1>
 
-      <p className="mb-6 text-neutral-400">{user?.email}</p>
-
-      <h2 className="text-xl font-semibold mb-4">Mis pedidos</h2>
-
-      {loading ? (
-        <p>Cargando...</p>
-      ) : orders.length === 0 ? (
-        <p>No tienes pedidos aún</p>
+      {orders.length === 0 ? (
+        <p className="text-gray-400">
+          No tienes pedidos todavía
+        </p>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-6">
           {orders.map((order) => (
-            <div key={order.id} className="bg-neutral-900 p-4 rounded-xl">
-              <p className="font-bold">#{order.id.slice(0, 6)}</p>
+            <div
+              key={order.id}
+              className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 hover:border-neutral-600 transition"
+            >
+              <div className="flex justify-between items-center">
+                {/* LEFT */}
+                <div>
+                  <p className="text-sm text-gray-400">
+                    Pedido
+                  </p>
+                  <p className="font-semibold">
+                    #{order.id.slice(0, 6)}
+                  </p>
+                </div>
 
-              <p className="text-sm text-neutral-400">{order.status}</p>
+                {/* STATUS */}
+                <span
+                  className={`px-3 py-1 text-xs rounded-full ${
+                    order.status === "PAID"
+                      ? "bg-green-600"
+                      : "bg-yellow-600"
+                  }`}
+                >
+                  {order.status}
+                </span>
+              </div>
 
-              <p className="mt-2">€{(order.totalAmount / 100).toFixed(2)}</p>
+              {/* INFO */}
+              <div className="mt-4 flex justify-between items-center">
+                <p className="text-gray-400 text-sm">
+                  {new Date(order.createdAt).toLocaleDateString()}
+                </p>
+
+                <p className="text-lg font-bold">
+                  €{(order.totalAmount / 100).toFixed(2)}
+                </p>
+              </div>
+
+              {/* ACTION */}
+              <div className="mt-4">
+                <a
+                  href={`/orders/${order.id}`}
+                  className="text-sm text-blue-400 hover:underline"
+                >
+                  Ver pedido →
+                </a>
+              </div>
             </div>
           ))}
         </div>

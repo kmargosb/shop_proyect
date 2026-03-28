@@ -14,7 +14,7 @@ import {
 } from "./order.controller";
 import { getActivityFeedController } from "./order.activity.controller";
 import { getOrderAnalytics } from "@/modules/orders/order.analytics.controller";
-import { searchOrdersController } from "./order.controller";
+import { searchOrdersController,getMyOrderByIdController } from "./order.controller";
 
 const router = Router();
 
@@ -63,6 +63,9 @@ router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
 // Descargar invoice admin
 router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
+
+// 
+router.get("/:id/me", protect, getMyOrderByIdController);
 
 
 export default router;

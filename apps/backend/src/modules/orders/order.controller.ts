@@ -210,7 +210,6 @@ export const downloadPublicInvoice = asyncHandler(
 
 export const resendOrderEmailController = asyncHandler(
   async (req: Request<{ id: string }>, res: Response) => {
-
     const id = req.params.id;
 
     await sendOrderConfirmationEmail(id);
@@ -218,7 +217,7 @@ export const resendOrderEmailController = asyncHandler(
     res.json({
       message: "Email reenviado correctamente",
     });
-  }
+  },
 );
 
 export const getOrderTimelineController = asyncHandler(
@@ -234,7 +233,6 @@ export const getOrderTimelineController = asyncHandler(
 
 export const searchOrdersController = asyncHandler(
   async (req: Request, res: Response) => {
-
     const { q, status, page, limit } = req.query;
 
     const result = await searchOrders({
@@ -245,7 +243,7 @@ export const searchOrdersController = asyncHandler(
     });
 
     res.json(result);
-  }
+  },
 );
 
 // ===============================
@@ -271,5 +269,40 @@ export const getMyOrdersController = asyncHandler(
     });
 
     res.json(orders);
-  }
+  },
+);
+
+// ===============================
+// Obtener pedido del usuario logueado
+// ===============================
+
+export const getMyOrderByIdController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    const orderId =
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+    const order = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        userId, // 🔥 seguridad
+      },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        invoice: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Pedido no encontrado",
+      });
+    }
+
+    res.json(order);
+  },
 );

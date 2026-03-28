@@ -1,27 +1,25 @@
-import Stripe from "stripe"
-import { prisma } from "@/lib/prisma"
-import { RefundRepository } from "./refund.repository"
-import { RefundReason } from "@prisma/client"
+import Stripe from "stripe";
+import { prisma } from "@/lib/prisma";
+import { RefundRepository } from "./refund.repository";
+import { RefundReason } from "@prisma/client";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-02-25.clover"
-})
+  apiVersion: "2026-02-25.clover",
+});
 
 export const RefundService = {
-
   async createRefund(
     orderId: string,
     items: { orderItemId: string; quantity: number }[],
-    reason?: RefundReason
+    reason?: RefundReason,
   ) {
-
     /* =========================
        PROTECCIÓN 1
        Validar items antes de todo
     ========================= */
 
     if (!Array.isArray(items) || items.length === 0) {
-      throw new Error("Refund items are required")
+      throw new Error("Refund items are required");
     }
 
     const order = await prisma.order.findUnique({
@@ -30,50 +28,49 @@ export const RefundService = {
         items: true,
         refunds: {
           include: {
-            items: true
-          }
-        }
-      }
-    })
+            items: true,
+          },
+        },
+      },
+    });
 
     if (!order) {
-      throw new Error("Order not found")
+      throw new Error("Order not found");
     }
 
     if (!order.stripePaymentIntentId) {
-      throw new Error("Order has no payment intent")
+      throw new Error("Order has no payment intent");
     }
 
     if (order.status === "REFUNDED") {
-      throw new Error("Order already fully refunded")
+      throw new Error("Order already fully refunded");
     }
 
-    let refundAmount = 0
+    let refundAmount = 0;
 
     for (const item of items) {
-
-      const orderItem = order.items.find(i => i.id === item.orderItemId)
+      const orderItem = order.items.find((i) => i.id === item.orderItemId);
 
       if (!orderItem) {
-        throw new Error("Order item not found")
+        throw new Error("Order item not found");
       }
 
       const refundedQuantity = order.refunds
-        .flatMap(r => r.items)
-        .filter(ri => ri.orderItemId === item.orderItemId)
-        .reduce((sum, ri) => sum + ri.quantity, 0)
+        .flatMap((r) => r.items)
+        .filter((ri) => ri.orderItemId === item.orderItemId)
+        .reduce((sum, ri) => sum + ri.quantity, 0);
 
-      const remainingQuantity = orderItem.quantity - refundedQuantity
+      const remainingQuantity = orderItem.quantity - refundedQuantity;
 
       if (remainingQuantity <= 0) {
-        throw new Error("Item already fully refunded")
+        throw new Error("Item already fully refunded");
       }
 
       if (item.quantity > remainingQuantity) {
-        throw new Error("Refund quantity exceeds purchased quantity")
+        throw new Error("Refund quantity exceeds purchased quantity");
       }
 
-      refundAmount += orderItem.price * item.quantity
+      refundAmount += orderItem.price * item.quantity;
     }
 
     /* =========================
@@ -81,7 +78,7 @@ export const RefundService = {
     ========================= */
 
     if (refundAmount <= 0) {
-      throw new Error("Invalid refund amount")
+      throw new Error("Invalid refund amount");
     }
 
     /* =========================
@@ -91,28 +88,37 @@ export const RefundService = {
     const refundAggregate = await prisma.refund.aggregate({
       where: {
         orderId: orderId,
-        status: "SUCCEEDED"
+        status: "SUCCEEDED",
       },
       _sum: {
-        amount: true
-      }
-    })
+        amount: true,
+      },
+    });
 
-    const alreadyRefunded = refundAggregate._sum.amount ?? 0
+    const alreadyRefunded = refundAggregate._sum.amount ?? 0;
 
     if (alreadyRefunded + refundAmount > order.totalAmount) {
-      throw new Error("Refund exceeds order total")
+      throw new Error("Refund exceeds order total");
     }
+
+    //console.log("💰 REFUND AMOUNT:", refundAmount);
+    //console.log("💳 PAYMENT INTENT:", order.stripePaymentIntentId);
 
     /* =========================
        STRIPE REFUND
     ========================= */
 
+    const stripeReasonMap: Record<string, any> = {
+      REQUESTED_BY_CUSTOMER: "requested_by_customer",
+      DUPLICATE: "duplicate",
+      FRAUDULENT: "fraudulent",
+    };
+
     const stripeRefund = await stripe.refunds.create({
       payment_intent: order.stripePaymentIntentId,
       amount: refundAmount,
-      reason: reason as any
-    })
+      reason: stripeReasonMap[reason as string] || "requested_by_customer",
+    });
 
     /* =========================
        DB REFUND
@@ -123,8 +129,8 @@ export const RefundService = {
       stripeRefundId: stripeRefund.id,
       amount: refundAmount,
       currency: stripeRefund.currency,
-      reason
-    })
+      reason,
+    });
 
     await prisma.orderEvent.create({
       data: {
@@ -132,33 +138,31 @@ export const RefundService = {
         type: "REFUND_CREATED",
         message: "Refund created",
       },
-    })
+    });
 
     /* =========================
        REFUND ITEMS
     ========================= */
 
     for (const item of items) {
+      const orderItem = order.items.find((i) => i.id === item.orderItemId);
 
-      const orderItem = order.items.find(i => i.id === item.orderItemId)
-
-      if (!orderItem) continue
+      if (!orderItem) continue;
 
       await prisma.refundItem.create({
         data: {
           refundId: dbRefund.id,
           orderItemId: item.orderItemId,
           quantity: item.quantity,
-          amount: orderItem.price * item.quantity
-        }
-      })
+          amount: orderItem.price * item.quantity,
+        },
+      });
     }
 
     return {
-      stripeRefund,
-      dbRefund
-    }
-
-  }
-
-}
+      refundId: dbRefund.id,
+      amount: dbRefund.amount,
+      status: dbRefund.status,
+    };
+  },
+};
