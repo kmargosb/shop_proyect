@@ -1,11 +1,17 @@
 export type ProductImage = {
-  url: string
-}
+  id: string;
+  url: string;
+  publicId: string;
+  productId: string;
+  isPrimary: boolean;
+};
 
 export type Product = {
-  id: string
-  name: string
-  price: number
-  stock: number
-  images?: ProductImage[]
-}
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  stock: number;
+  images: ProductImage[];
+  createdAt: string;
+};

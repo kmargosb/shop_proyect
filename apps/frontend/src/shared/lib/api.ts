@@ -23,11 +23,10 @@ async function refreshAccessToken(): Promise<boolean> {
 
 export async function apiFetch(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response | null> {
   try {
-    const isJSONBody =
-      options.body && !(options.body instanceof FormData);
+    const isJSONBody = options.body && !(options.body instanceof FormData);
 
     let response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
@@ -46,7 +45,14 @@ export async function apiFetch(
       const refreshed = await refreshAccessToken();
 
       if (!refreshed) {
-        window.location.href = "/login";
+        const isAdminRoute = window.location.pathname.startsWith("/admin");
+
+        if (isAdminRoute) {
+          window.location.href = "/admin/login"; // 🔥 FIX REAL FINAL
+        } else {
+          window.location.href = "/login";
+        }
+
         return null;
       }
 
@@ -66,7 +72,14 @@ export async function apiFetch(
     ============================ */
 
     if (response.status === 401 || response.status === 403) {
-      window.location.href = "/login";
+      const isAdminRoute = window.location.pathname.startsWith("/admin");
+
+      if (isAdminRoute) {
+        window.location.href = "/admin/login"; // 🔥 FIX
+      } else {
+        window.location.href = "/login";
+      }
+
       return null;
     }
 
@@ -83,7 +96,7 @@ export async function apiFetch(
 
 export async function publicFetch(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> {
   const res = await fetch(`${API_URL}${endpoint}`, options);
 
@@ -98,10 +111,7 @@ export async function publicFetch(
    📄 DOWNLOAD PUBLIC INVOICE
 ============================================ */
 
-export async function downloadInvoice(
-  orderId: string,
-  email?: string
-) {
+export async function downloadInvoice(orderId: string, email?: string) {
   let url = `/orders/public/${orderId}/invoice`;
 
   if (email) {

@@ -4,21 +4,13 @@ import { useState } from "react"
 import { apiFetch } from "@/shared/lib/api"
 import { toast } from "sonner"
 import { Star } from "lucide-react"
+import type { Product } from "@/types/product";
 
 type Image = {
   id: string
   url: string
   publicId: string
   isPrimary: boolean
-}
-
-type Product = {
-  id: string
-  name: string
-  description?: string | null
-  price: number
-  stock: number
-  images: Image[]
 }
 
 type Props = {

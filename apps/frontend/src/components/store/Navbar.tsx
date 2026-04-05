@@ -6,6 +6,7 @@ import { useCart } from "@/features/cart/CartContext";
 import { useEffect, useState } from "react";
 import { useNavbar } from "@/hooks/useNavbar";
 import { useAuth } from "@/hooks/useAuth";
+import { apiFetch } from "@/shared/lib/api"; // 🔥 IMPORTANTE
 
 export default function Navbar() {
   const { items, setOpen } = useCart();
@@ -67,9 +68,17 @@ export default function Navbar() {
               <Link href="/account">Hola, {user?.name?.split(" ")[0]}</Link>
 
               <button
-                onClick={() => {
+                onClick={async () => {
+                  // 🔥 logout backend (cookie)
+                  await apiFetch("/auth/logout", {
+                    method: "POST",
+                  });
+
+                  // 🔥 limpiar frontend
                   localStorage.removeItem("token");
                   localStorage.removeItem("user");
+
+                  // 🔥 recargar limpio
                   window.location.href = "/";
                 }}
                 className="text-xs text-neutral-500 hover:text-black"

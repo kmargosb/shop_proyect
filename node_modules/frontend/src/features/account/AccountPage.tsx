@@ -16,8 +16,33 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrders() {
+    async function loadData() {
       try {
+        /* =========================
+           CHECK AUTH + ROLE 🔥
+        ========================= */
+
+        const authRes = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!authRes.ok) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const authData = await authRes.json();
+
+        // 🔥 SOLO USERS (NO ADMIN)
+        if (authData.user.role !== "USER") {
+          window.location.href = "/login";
+          return;
+        }
+
+        /* =========================
+           FETCH ORDERS
+        ========================= */
+
         const res = await fetch(`${API_URL}/orders/me`, {
           credentials: "include",
         });
@@ -36,25 +61,19 @@ export default function AccountPage() {
       }
     }
 
-    fetchOrders();
+    loadData();
   }, []);
 
   if (loading) {
-    return (
-      <div className="p-10 text-white">Cargando pedidos...</div>
-    );
+    return <div className="p-10 text-white">Cargando pedidos...</div>;
   }
 
   return (
     <div className="min-h-screen bg-black text-white p-10">
-      <h1 className="text-3xl font-bold mb-8">
-        Mi cuenta
-      </h1>
+      <h1 className="text-3xl font-bold mb-8">Mi cuenta</h1>
 
       {orders.length === 0 ? (
-        <p className="text-gray-400">
-          No tienes pedidos todavía
-        </p>
+        <p className="text-gray-400">No tienes pedidos todavía</p>
       ) : (
         <div className="grid gap-6">
           {orders.map((order) => (
@@ -63,29 +82,20 @@ export default function AccountPage() {
               className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 hover:border-neutral-600 transition"
             >
               <div className="flex justify-between items-center">
-                {/* LEFT */}
                 <div>
-                  <p className="text-sm text-gray-400">
-                    Pedido
-                  </p>
-                  <p className="font-semibold">
-                    #{order.id.slice(0, 6)}
-                  </p>
+                  <p className="text-sm text-gray-400">Pedido</p>
+                  <p className="font-semibold">#{order.id.slice(0, 6)}</p>
                 </div>
 
-                {/* STATUS */}
                 <span
                   className={`px-3 py-1 text-xs rounded-full ${
-                    order.status === "PAID"
-                      ? "bg-green-600"
-                      : "bg-yellow-600"
+                    order.status === "PAID" ? "bg-green-600" : "bg-yellow-600"
                   }`}
                 >
                   {order.status}
                 </span>
               </div>
 
-              {/* INFO */}
               <div className="mt-4 flex justify-between items-center">
                 <p className="text-gray-400 text-sm">
                   {new Date(order.createdAt).toLocaleDateString()}
@@ -96,7 +106,6 @@ export default function AccountPage() {
                 </p>
               </div>
 
-              {/* ACTION */}
               <div className="mt-4">
                 <a
                   href={`/orders/${order.id}`}
