@@ -5,7 +5,7 @@ import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/cart/CartContext";
 import { useEffect, useRef, useState } from "react";
 import { useNavbar } from "@/hooks/useNavbar";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { apiFetch } from "@/shared/lib/api";
 
 export default function Navbar() {

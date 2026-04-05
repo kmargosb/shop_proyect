@@ -279,13 +279,17 @@ export const getMyOrdersController = asyncHandler(
 export const getMyOrderByIdController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const userId = req.user?.id;
+
     const orderId =
       typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
-        userId, // 🔥 seguridad
+        OR: [
+          { userId: userId ?? undefined }, // usuario logueado
+          { userId: null }, // 🔥 pedidos como invitado
+        ],
       },
       include: {
         items: {

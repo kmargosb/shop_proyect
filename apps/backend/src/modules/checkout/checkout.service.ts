@@ -1,57 +1,51 @@
-import { CartService } from "@/modules/cart/cart.service"
-import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service"
+import { CartService } from "@/modules/cart/cart.service";
+import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
 
 type CheckoutInput = {
-  cartId: string
-  method: string
+  cartId: string;
+  method: string;
 
-  userId?: string
-  fullName: string
-  email: string
-  phone: string
-  addressLine1: string
-  addressLine2?: string
-  city: string
-  postalCode: string
-  country: string
-}
+  userId?: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+};
 
 export const CheckoutService = {
-
   async checkout(data: CheckoutInput) {
-
-    const {
-      cartId,
-      method,
-      ...checkoutData
-    } = data
+    const { cartId, method, userId, ...checkoutData } = data;
 
     /* =========================
        VALIDATE CART
     ========================= */
 
-    await CartService.validateCart(cartId)
+    await CartService.validateCart(cartId);
 
     /* =========================
        SYNC INVENTORY
     ========================= */
 
-    await CartService.syncCartInventory(cartId)
+    await CartService.syncCartInventory(cartId);
 
     /* =========================
        CALCULATE TOTALS
     ========================= */
 
-    const totals = await CartService.calculateTotals(cartId)
+    const totals = await CartService.calculateTotals(cartId);
 
     /* =========================
        CREATE ORDER
     ========================= */
 
-    const order = await CartService.convertCartToOrder(
-      cartId,
-      checkoutData
-    )
+    const order = await CartService.convertCartToOrder(cartId, {
+      ...checkoutData,
+      userId,
+    });
 
     /* =========================
        CREATE PAYMENT SESSION
@@ -59,25 +53,22 @@ export const CheckoutService = {
 
     const session = await PaymentSessionService.createSession(
       order.id,
-      method as any
-    )
+      method as any,
+    );
 
-    const paymentIntent =
-      await PaymentSessionService.createPaymentIntent(session.id)
+    const paymentIntent = await PaymentSessionService.createPaymentIntent(
+      session.id,
+    );
 
     return {
-
       orderId: order.id,
 
       totals,
 
       payment: {
         sessionId: session.id,
-        clientSecret: paymentIntent.client_secret
-      }
-
-    }
-
-  }
-
-}
+        clientSecret: paymentIntent.client_secret,
+      },
+    };
+  },
+};

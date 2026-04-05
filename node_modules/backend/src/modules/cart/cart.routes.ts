@@ -1,4 +1,4 @@
-import { Router } from "express"
+import { Router } from "express";
 
 import {
   createCartController,
@@ -8,27 +8,24 @@ import {
   mergeCartController,
   checkoutCartController,
   getCartTotalsController,
-} from "./cart.controller"
-import { protect } from "@/common/middleware/auth.middleware";
+} from "./cart.controller";
 
-const router = Router()
+import { attachUserIfExists } from "@/common/middleware/auth.middleware"; // 🔥 IMPORTANTE
 
-router.post("/", createCartController)
+const router = Router();
 
-router.get("/:cartId", getCartController)
+router.post("/", createCartController);
 
-router.post("/:cartId/items", addItemController)
+router.get("/:cartId", getCartController);
 
-router.delete("/items/:itemId", removeItemController)
+router.post("/:cartId/items", addItemController);
 
-router.get("/:cartId/totals", getCartTotalsController)
+router.delete("/items/:itemId", removeItemController);
 
-router.post("/merge", mergeCartController)
+router.get("/:cartId/totals", getCartTotalsController);
 
-// router.post("/:cartId/checkout", checkoutCartController)
+router.post("/merge", mergeCartController);
 
-router.post("/:cartId/checkout", protect, checkoutCartController);
+router.post("/:cartId/checkout", attachUserIfExists, checkoutCartController);
 
-
-
-export default router
+export default router;

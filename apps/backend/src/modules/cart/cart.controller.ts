@@ -150,6 +150,8 @@ export const checkoutCartController = async (
   try {
     const { cartId } = req.params;
 
+    console.log("USER IN REQUEST:", (req as any).user);
+
     if (!cartId) {
       return res.status(400).json({
         error: "Cart ID is required",

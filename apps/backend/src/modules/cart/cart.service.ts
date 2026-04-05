@@ -302,13 +302,15 @@ export const CartService = {
       const { createOrder } = await import("@/modules/orders/order.service");
 
       const order = await createOrder({
-        ...checkoutData,
+  userId: checkoutData.userId ??  undefined,
 
-        items: cart.items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      });
+  ...checkoutData,
+
+  items: cart.items.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+  })),
+});
 
       await tx.cart.update({
         where: { id: cartId },
