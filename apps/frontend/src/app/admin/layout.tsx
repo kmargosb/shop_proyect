@@ -23,6 +23,7 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  // 🔥 seguimos permitiendo esta página por si aún existe
   const isLoginPage = pathname === "/admin/login";
 
   /* ================= AUTH ================= */
@@ -34,14 +35,14 @@ export default function AdminLayout({
       const res = await apiFetch("/auth/me");
 
       if (!res) {
-        router.replace("/admin/login");
+        router.replace("/login"); // 🔥 UNIFICADO
         return;
       }
 
       const data = await res.json();
 
       if (!data?.user || data.user.role !== "ADMIN") {
-        router.replace("/admin/login");
+        router.replace("/login"); // 🔥 UNIFICADO
       }
     };
 
@@ -53,19 +54,13 @@ export default function AdminLayout({
   const handleLogout = async () => {
     await apiFetch("/auth/logout", { method: "POST" });
 
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-
-    router.replace("/admin/login");
+    router.replace("/login"); // 🔥 UNIFICADO
   };
 
   const handleLogoutAll = async () => {
     await apiFetch("/auth/logout-all", { method: "POST" });
 
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-
-    router.replace("/admin/login");
+    router.replace("/login"); // 🔥 UNIFICADO
   };
 
   if (isLoginPage) return <>{children}</>;
@@ -92,12 +87,12 @@ export default function AdminLayout({
         className={`
           fixed top-0 left-0 z-50
           h-screen w-64
-          bg-[#0A0A0A]   /* 🔥 MISMO COLOR */
+          bg-[#0A0A0A]
           border-r border-white/10
           p-6 flex flex-col justify-between
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0   /* 🔥 CAMBIO CLAVE */
+          lg:translate-x-0
         `}
       >
         {/* TOP */}

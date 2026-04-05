@@ -1,72 +1,55 @@
 "use client";
 
-import { GoogleLogin } from "@react-oauth/google";
+import { useEffect } from "react";
+import { apiFetch } from "@/shared/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 export default function GoogleLoginButton() {
-  const handleSuccess = async (credentialResponse: any) => {
-    try {
-      if (!credentialResponse?.credential) {
-        throw new Error("No Google credential received");
-      }
+  useEffect(() => {
+    /* =========================
+       LOAD GOOGLE SCRIPT
+    ========================= */
 
-      const idToken = credentialResponse.credential;
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
 
-      const res = await fetch(`${API_URL}/auth/google`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // 🔥 CLAVE AHORA
-        body: JSON.stringify({ idToken }),
+    script.onload = () => {
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+        callback: handleCredentialResponse,
       });
 
-      const text = await res.text();
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-btn"),
+        { theme: "outline", size: "large", width: 300 }
+      );
+    };
+  }, []);
 
-      let data;
+  /* =========================
+     HANDLE GOOGLE RESPONSE
+  ========================= */
 
-      try {
-        data = JSON.parse(text);
-      } catch {
-        console.error("❌ Invalid JSON:", text);
-        return;
-      }
+  const handleCredentialResponse = async (response: any) => {
+    const idToken = response.credential;
 
-      if (!res.ok) {
-        console.error("❌ Backend error:", data);
-        return;
-      }
+    const res = await apiFetch("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+    });
 
-      /* =========================
-         🔥 NUEVO SISTEMA
-      ========================= */
+    if (!res) return;
 
-      if (!data?.user) {
-        console.error("❌ Missing user:", data);
-        return;
-      }
-
-      // ✔ solo guardamos user (opcional)
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      // 🔥 NO guardamos token
-      // 🔥 NO usamos localStorage para auth
-
-      window.location.href = "/";
-    } catch (error) {
-      console.error("🔥 Google login error:", error);
-    }
+    window.location.href = "/";
   };
 
-  return (
-    <div className="flex justify-center">
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={() => {
-          console.error("❌ Google Login Failed");
-        }}
-      />
-    </div>
-  );
+  return <div id="google-btn" />;
 }

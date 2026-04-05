@@ -28,6 +28,10 @@ export async function apiFetch(
   try {
     const isJSONBody = options.body && !(options.body instanceof FormData);
 
+    // 🔥 CLAVE
+    const isAuthRoute = endpoint.startsWith("/auth");
+    const isMeRoute = endpoint === "/auth/me";
+
     let response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       credentials: "include",
@@ -41,22 +45,14 @@ export async function apiFetch(
        ACCESS TOKEN EXPIRED
     ============================ */
 
-    if (response.status === 401) {
+    if (response.status === 401 && isAuthRoute && !isMeRoute) {
       const refreshed = await refreshAccessToken();
 
       if (!refreshed) {
-        const isAdminRoute = window.location.pathname.startsWith("/admin");
-
-        if (isAdminRoute) {
-          window.location.href = "/admin/login"; // 🔥 FIX REAL FINAL
-        } else {
-          window.location.href = "/login";
-        }
-
+        window.location.href = "/login";
         return null;
       }
 
-      // retry
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         credentials: "include",
@@ -71,15 +67,12 @@ export async function apiFetch(
        STILL UNAUTHORIZED
     ============================ */
 
-    if (response.status === 401 || response.status === 403) {
-      const isAdminRoute = window.location.pathname.startsWith("/admin");
-
-      if (isAdminRoute) {
-        window.location.href = "/admin/login"; // 🔥 FIX
-      } else {
-        window.location.href = "/login";
-      }
-
+    if (
+      (response.status === 401 || response.status === 403) &&
+      isAuthRoute &&
+      !isMeRoute
+    ) {
+      window.location.href = "/login";
       return null;
     }
 
