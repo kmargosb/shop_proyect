@@ -66,10 +66,10 @@ export default function AdminLayout({
   if (isLoginPage) return <>{children}</>;
 
   const navItems = [
-    { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { name: "Orders", href: "/admin/orders", icon: Package },
-    { name: "Customers", href: "/admin/customers", icon: Users },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Orders", href: "/dashboard/orders", icon: Package },
+    { name: "Customers", href: "/dashboard/customers", icon: Users },
+    { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
   return (
