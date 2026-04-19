@@ -10,11 +10,10 @@ import {
   Package,
   Users,
   Settings,
-  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 
-export default function AdminLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -23,54 +22,46 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // 🔥 seguimos permitiendo esta página por si aún existe
-  const isLoginPage = pathname === "/admin/login";
-
   /* ================= AUTH ================= */
 
   useEffect(() => {
-    if (isLoginPage) return;
-
     const checkSession = async () => {
       const res = await apiFetch("/auth/me");
 
       if (!res) {
-        router.replace("/login"); // 🔥 UNIFICADO
+        router.replace("/login");
         return;
       }
 
       const data = await res.json();
 
       if (!data?.user || data.user.role !== "ADMIN") {
-        router.replace("/login"); // 🔥 UNIFICADO
+        router.replace("/login");
       }
     };
 
     checkSession();
-  }, [router, isLoginPage]);
+  }, [router]);
 
-  /* ================= LOGOUT ================= */
-
-  const handleLogout = async () => {
-    await apiFetch("/auth/logout", { method: "POST" });
-
-    router.replace("/login"); // 🔥 UNIFICADO
-  };
-
-  const handleLogoutAll = async () => {
-    await apiFetch("/auth/logout-all", { method: "POST" });
-
-    router.replace("/login"); // 🔥 UNIFICADO
-  };
-
-  if (isLoginPage) return <>{children}</>;
+  /* ================= NAV ================= */
 
   const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Orders", href: "/dashboard/orders", icon: Package },
-    { name: "Customers", href: "/dashboard/customers", icon: Users },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
-  ];
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Products", href: "/dashboard/products", icon: Package }, // ✅ FIX
+  { name: "Orders", href: "/dashboard/orders", icon: Package },
+  { name: "Customers", href: "/dashboard/customers", icon: Users },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+];
+
+  /* ================= ACTIVE FIX ================= */
+
+  const isActive = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard"; // 👈 exact match SOLO dashboard
+    }
+
+    return pathname.startsWith(href);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0A0A0A] text-white">
@@ -98,7 +89,7 @@ export default function AdminLayout({
         {/* TOP */}
         <div>
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-lg font-semibold">Admin Panel</h2>
+            <h2 className="text-lg font-semibold">Dashboard</h2>
 
             <button className="lg:hidden" onClick={() => setOpen(false)}>
               <X size={20} />
@@ -108,7 +99,7 @@ export default function AdminLayout({
           <nav className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const active = pathname === item.href;
+              const active = isActive(item.href);
 
               return (
                 <Link
@@ -131,23 +122,9 @@ export default function AdminLayout({
           </nav>
         </div>
 
-        {/* BOTTOM */}
-        <div className="space-y-2">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm bg-red-500 hover:bg-red-600 transition"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
-
-          <button
-            onClick={handleLogoutAll}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm bg-orange-600 hover:bg-orange-700 transition"
-          >
-            <LogOut size={16} />
-            Logout global
-          </button>
+        {/* FOOTER */}
+        <div className="text-xs text-neutral-500">
+          Admin Panel © {new Date().getFullYear()}
         </div>
       </aside>
 
@@ -160,8 +137,9 @@ export default function AdminLayout({
           </button>
 
           <h1 className="text-sm text-neutral-400">
-            {pathname === "/admin" && "Dashboard"}
-            {pathname === "/admin/orders" && "Orders"}
+            {pathname.startsWith("/dashboard/orders") && "Orders"}
+            {pathname.startsWith("/dashboard/settings") && "Settings"}
+            {pathname === "/dashboard" && "Dashboard"}
           </h1>
 
           <div className="text-xs text-neutral-500">Admin</div>
