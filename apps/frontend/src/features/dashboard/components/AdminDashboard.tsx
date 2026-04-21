@@ -1,240 +1,296 @@
 "use client";
 
-import { Trash2, Pencil, Plus, Search } from "lucide-react";
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/shared/lib/api";
-import EditProductModal from "@/features/products/components/EditProductModal";
-import CreateProductModal from "@/features/products/components/CreateProductModal";
-import { toast } from "sonner";
-import ConfirmDeleteModal from "@/features/products/components/ConfirmDeleteModal";
-import type { Product, ProductImage } from "@/types/product";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  YAxis,
+} from "recharts";
+import { io } from "socket.io-client";
 
+/* ================= TYPES ================= */
 
-export default function AdminProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [search, setSearch] = useState("");
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
-  const [serverDown, setServerDown] = useState(false);
+type Metrics = {
+  todayOrders: number;
+  totalOrders: number;
+  totalRevenue: number;
+  todayRevenue: number;
+  refundedAmount: number;
+  revenue7d: RevenuePoint[];
+  revenue30d: RevenuePoint[];
+};
 
-  /* ============================
-     LOAD PRODUCTS
-  ============================ */
+type RevenuePoint = {
+  date: string;
+  revenue: number;
+};
 
-  const loadProducts = async () => {
-    try {
-      const res = await apiFetch("/products", { method: "GET" });
+type Country = {
+  country: string;
+  revenue: number;
+};
 
-      if (!res || !res.ok) return;
+type Activity = {
+  id: string;
+  type: string;
+  createdAt: string;
+  message?: string;
+  orderId?: string;
+};
 
-      const data = await res.json();
+/* ================= COMPONENT ================= */
 
-      setProducts(data);
-      setServerDown(false);
-    } catch (error) {
-      console.error("Servidor no disponible");
-      setServerDown(true);
-      // 🔥 NO vaciamos productos
-    }
-  };
+export default function AdminDashboard() {
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
 
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [activity, setActivity] = useState<Activity[]>([]);
+
+  /* ================= LOAD ================= */
   useEffect(() => {
-    loadProducts();
+    loadAll();
   }, []);
 
-  /* ============================
-     DELETE PRODUCT
-  ============================ */
-
-  const deleteProduct = async (id: string) => {
+  const loadAll = async () => {
     try {
-      const res = await apiFetch(`/products/${id}`, {
-        method: "DELETE",
-      });
+      const [m, c, a] = await Promise.all([
+        apiFetch("/dashboard/metrics"),
+        apiFetch("/dashboard/sales-by-country"),
+        apiFetch("/orders/activity-feed"),
+      ]);
 
-      if (!res || !res.ok) throw new Error();
+      if (m?.ok) setMetrics(await m.json());
 
-      toast.success("Producto eliminado correctamente");
-      setProductToDelete(null);
-      loadProducts();
-    } catch {
-      toast.error("No se pudo eliminar el producto");
+      if (c?.ok) {
+        const data = await c.json();
+        setCountries(Array.isArray(data) ? data : data.data ?? []);
+      }
+
+      if (a?.ok) {
+        const data = await a.json();
+        setActivity(Array.isArray(data) ? data : data.data ?? []);
+      }
+    } catch (e) {
+      console.error("Dashboard load error:", e);
     }
   };
 
-  /* ============================
-     FILTER
-  ============================ */
+  /* ================= SOCKET REALTIME ================= */
+  useEffect(() => {
+    const socket = io("http://localhost:4000", {
+      withCredentials: true,
+    });
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [products, search]);
+    socket.on("dashboard:update", () => {
+      console.log("🔄 Dashboard update recibido");
+      loadAll();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  /* ================= REVENUE ================= */
+
+  const revenueData = useMemo(() => {
+    if (!metrics) return [];
+
+    const raw =
+      range === "7d"
+        ? metrics.revenue7d ?? []
+        : metrics.revenue30d ?? [];
+
+    return raw.map((d) => ({
+      date: d.date.slice(5),
+      revenue: Number((d.revenue / 100).toFixed(2)),
+    }));
+  }, [metrics, range]);
+
+  /* ================= GROWTH ================= */
+
+  const growth = useMemo(() => {
+    if (revenueData.length < 2) return 0;
+
+    const last = revenueData[revenueData.length - 1].revenue;
+    const prev = revenueData[revenueData.length - 2].revenue;
+
+    if (prev === 0) return 0;
+
+    return ((last - prev) / prev) * 100;
+  }, [revenueData]);
+
+  if (!metrics) return <p>Cargando...</p>;
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      {/* 🔥 SERVER DOWN BANNER */}
-      {serverDown && (
-        <div className="bg-red-600 text-white p-4 rounded-xl">
-          ⚠️ Servidor no disponible. Algunas funciones están deshabilitadas.
+    <div className="space-y-8">
+
+      {/* ================= ALERTS ================= */}
+      {(metrics.refundedAmount > 10000 || growth < -20) && (
+        <div className="space-y-2">
+          {metrics.refundedAmount > 10000 && (
+            <Alert text="Alto volumen de reembolsos detectado" />
+          )}
+          {growth < -20 && (
+            <Alert text="Caída fuerte en ingresos recientes" />
+          )}
         </div>
       )}
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[
-          {
-            label: "Total productos",
-            value: products.length,
-          },
-          {
-            label: "Stock total",
-            value: products.reduce((acc, p) => acc + p.stock, 0),
-          },
-          {
-            label: "Valor inventario",
-            value:
-              "$" +
-              products
-                .reduce((acc, p) => acc + p.price * p.stock, 0)
-                .toFixed(2),
-          },
-        ].map((card, i) => (
-          <div
-            key={i}
-            className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-blue-500 transition-all duration-300 hover:-translate-y-1"
-          >
-            <p className="text-sm text-gray-400">{card.label}</p>
-            <p className="text-3xl font-bold mt-2">{card.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* HEADER ACTIONS */}
+      {/* ================= HEADER ================= */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Productos</h2>
+        <h1 className="text-xl font-semibold">Dashboard</h1>
 
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-3 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar..."
-              className="pl-8 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
-            />
-          </div>
-
-          <button
-            disabled={serverDown}
-            onClick={() => setCreating(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition ${
-              serverDown
-                ? "bg-gray-600 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-500"
-            }`}
-          >
-            <Plus size={16} />
-            Nuevo
-          </button>
+        <div className="flex gap-2">
+          {["7d", "30d", "90d"].map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r as any)}
+              className={`px-3 py-1 text-xs rounded ${
+                range === r
+                  ? "bg-white text-black"
+                  : "bg-white/10 text-white"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-800 text-gray-400">
-            <tr>
-              <th className="p-4 text-left">Imagen</th>
-              <th className="p-4 text-left">Nombre</th>
-              <th className="p-4 text-left">Precio</th>
-              <th className="p-4 text-left">Stock</th>
-              <th className="p-4 text-left">Acciones</th>
-            </tr>
-          </thead>
+      {/* ================= KPIs ================= */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card title="Revenue" value={format(metrics.totalRevenue)} />
+        <Card title="Hoy" value={format(metrics.todayRevenue)} />
+        <Card title="Pedidos" value={metrics.totalOrders} />
+        <Card title="Hoy" value={metrics.todayOrders} />
+        <Card title="Refunds" value={format(metrics.refundedAmount)} danger />
+      </div>
 
-          <tbody>
-            {filteredProducts.map((p) => {
-              const primaryImage = p.images.find((img) => img.isPrimary);
+      {/* ================= CHART ================= */}
+      <div className="bg-neutral-900 p-6 rounded-2xl">
+        <div className="flex justify-between mb-4">
+          <h3 className="text-sm text-neutral-400">Revenue</h3>
+
+          <span className={growth >= 0 ? "text-green-400" : "text-red-400"}>
+            {growth >= 0 ? "▲" : "▼"} {growth.toFixed(1)}%
+          </span>
+        </div>
+
+        <div className="h-64">
+          <ResponsiveContainer>
+            <AreaChart data={revenueData}>
+              <defs>
+                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid stroke="#222" />
+              <XAxis dataKey="date" stroke="#888" />
+              <Tooltip />
+              <Area dataKey="revenue" stroke="#6366f1" fill="url(#colorRev)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ================= GRID ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* SALES BY COUNTRY */}
+        <div className="bg-neutral-900 p-6 rounded-2xl">
+          <h3 className="text-sm text-neutral-400 mb-4">
+            Sales by country
+          </h3>
+
+          <div className="h-64">
+            <ResponsiveContainer>
+              <BarChart data={countries}>
+                <XAxis dataKey="country" stroke="#888" />
+                <YAxis stroke="#888" />
+                <Tooltip />
+                <Bar dataKey="revenue" fill="#22c55e" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ACTIVITY */}
+        <div className="bg-neutral-900 p-6 rounded-2xl">
+          <h3 className="text-sm text-neutral-400 mb-4">
+            Activity
+          </h3>
+
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {activity.map((a, i) => {
+              const map = {
+                ORDER_CREATED: ["🛒", "text-blue-400", "Nueva orden"],
+                PAYMENT_SUCCEEDED: ["💳", "text-green-400", "Pago completado"],
+                REFUND_CREATED: ["💸", "text-red-400", "Reembolso creado"],
+                REFUND_COMPLETED: ["💰", "text-yellow-400", "Reembolso completado"],
+              } as any;
+
+              const [icon, color, text] =
+                map[a.type] || ["📦", "text-neutral-400", a.message];
 
               return (
-                <tr
-                  key={p.id}
-                  className="border-t border-gray-800 hover:bg-gray-800/40 transition"
+                <div
+                  key={a.id ?? i}
+                  className="flex gap-3 border-b border-white/10 pb-2"
                 >
-                  <td className="p-4">
-                    {primaryImage ? (
-                      <img
-                        src={primaryImage.url}
-                        className="w-12 h-12 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <span className="text-gray-500 text-sm">Sin imagen</span>
-                    )}
-                  </td>
+                  <span>{icon}</span>
 
-                  <td className="p-4">{p.name}</td>
-                  <td className="p-4">${p.price}</td>
-                  <td className="p-4">{p.stock}</td>
+                  <div>
+                    <p className={`text-sm ${color}`}>
+                      {text} {a.orderId?.slice(0, 6) ?? ""}
+                    </p>
 
-                  <td className="p-4 flex gap-4">
-                    <button
-                      disabled={serverDown}
-                      onClick={() => setEditingProduct(p)}
-                      className={`transition ${
-                        serverDown
-                          ? "text-gray-500 cursor-not-allowed"
-                          : "text-blue-400 hover:text-blue-300"
-                      }`}
-                    >
-                      <Pencil size={16} />
-                    </button>
-
-                    <button
-                      disabled={serverDown}
-                      onClick={() => setProductToDelete(p.id)}
-                      className={`transition ${
-                        serverDown
-                          ? "text-gray-500 cursor-not-allowed"
-                          : "text-red-400 hover:text-red-300"
-                      }`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
+                    <p className="text-xs text-neutral-500">
+                      {new Date(a.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
+
       </div>
-
-      {/* MODALS */}
-      {creating && (
-        <CreateProductModal
-          onClose={() => setCreating(false)}
-          onCreated={loadProducts}
-        />
-      )}
-
-      {editingProduct && (
-        <EditProductModal
-          product={editingProduct}
-          onClose={() => setEditingProduct(null)}
-          onUpdated={loadProducts}
-        />
-      )}
-
-      {productToDelete && (
-        <ConfirmDeleteModal
-          title="Eliminar producto"
-          description="¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer."
-          onClose={() => setProductToDelete(null)}
-          onConfirm={() => deleteProduct(productToDelete)}
-        />
-      )}
     </div>
   );
+}
+
+/* ================= UI ================= */
+
+function Card({ title, value, danger }: any) {
+  return (
+    <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
+      <p className="text-xs text-neutral-400">{title}</p>
+      <p className={`text-xl font-bold ${danger ? "text-red-400" : ""}`}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function Alert({ text }: { text: string }) {
+  return (
+    <div className="bg-red-500/10 border border-red-500 text-red-400 p-3 rounded-xl text-sm">
+      ⚠ {text}
+    </div>
+  );
+}
+
+function format(n: number) {
+  return "€" + (n / 100).toFixed(2);
 }

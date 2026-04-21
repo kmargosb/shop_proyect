@@ -7,6 +7,7 @@ import { OrderStatus } from "@prisma/client";
 import { searchOrders } from "./order.service";
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
 import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
+import { getIO } from "@/lib/socket";
 
 /**
  * Crear orden
@@ -36,6 +37,11 @@ export const createOrderController = asyncHandler(
       city,
       postalCode,
       country,
+    });
+
+    getIO().emit("dashboard:update", {
+      type: "ORDER_CREATED",
+      orderId: order.id,
     });
 
     res.status(201).json(order);
@@ -75,6 +81,12 @@ export const updateOrderStatusController = asyncHandler(
     }
 
     const updated = await updateOrderStatus(id, status);
+
+    getIO().emit("dashboard:update", {
+      type: "ORDER_UPDATED",
+      orderId: updated.id,
+      status: updated.status,
+    });
 
     res.json(updated);
   },
@@ -213,6 +225,11 @@ export const resendOrderEmailController = asyncHandler(
     const id = req.params.id;
 
     await sendOrderConfirmationEmail(id);
+
+    getIO().emit("dashboard:update", {
+      type: "EMAIL_RESENT",
+      orderId: id,
+    });
 
     res.json({
       message: "Email reenviado correctamente",

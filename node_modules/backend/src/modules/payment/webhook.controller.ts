@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
 import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
 import { InventoryService } from "@/modules/inventory/inventory.service";
+import { getIO } from "@/lib/socket";
 
 /* =========================================================
    UTIL
@@ -83,6 +84,11 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     await PaymentSessionService.markSessionCompleted(paymentIntent.id);
 
     console.log("✅ Order marked as PAID:", order.id);
+
+    getIO().emit("dashboard:update", {
+      type: "PAYMENT_SUCCEEDED",
+      orderId: order.id,
+    });
   } else {
     console.log("⚠ Duplicate payment webhook:", paymentIntent.id);
   }
@@ -168,6 +174,11 @@ async function handlePaymentFailed(paymentIntent: any) {
   await PaymentSessionService.markSessionFailed(paymentIntent.id);
 
   console.log("❌ Order marked as FAILED:", order.id);
+
+  getIO().emit("dashboard:update", {
+    type: "PAYMENT_FAILED",
+    orderId: order.id,
+  });
 }
 
 /* =========================================================
@@ -221,6 +232,10 @@ async function handleRefundCreated(refund: any) {
   });
 
   console.log("💸 Refund created:", refund.id);
+
+  getIO().emit("dashboard:update", {
+    type: "REFUND_CREATED",
+  });
 }
 
 /* =========================================================
@@ -354,6 +369,11 @@ async function handleRefundUpdated(refund: any) {
   });
 
   console.log(`💰 Refund processed: ${order.id} → ${newStatus}`);
+
+  getIO().emit("dashboard:update", {
+    type: "REFUND_COMPLETED",
+    orderId: order.id,
+  });
 }
 
 /* =========================================================

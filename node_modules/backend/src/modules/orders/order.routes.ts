@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   protect,
   adminOnly,
-  attachUserIfExists, // 🔥 usamos el tuyo (perfecto)
+  attachUserIfExists,
 } from "@/common/middleware/auth.middleware";
 
 import {
@@ -38,30 +38,11 @@ router.get("/public/:id", getPublicOrderController);
 router.post("/", createOrderController);
 
 /* ===============================
-   USER ROUTES (🔥 ANTES DE :id)
+   ADMIN ROUTES (🔥 ANTES DE :id)
 ================================= */
 
-router.get("/me", protect, getMyOrdersController);
-
-/* ===============================
-   🔥 UNIVERSAL ORDER ROUTE (FIX REAL)
-================================= */
-
-router.get("/:id", attachUserIfExists, async (req, res, next) => {
-  try {
-    if ((req as any).user) {
-      return getMyOrderByIdController(req as any, res, next);
-    }
-
-    return getPublicOrderController(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-});
-
-/* ===============================
-   ADMIN ROUTES
-================================= */
+// Activity feed
+router.get("/activity-feed", protect, adminOnly, getActivityFeedController);
 
 // Analytics dashboard
 router.get("/analytics", protect, adminOnly, getOrderAnalytics);
@@ -69,14 +50,8 @@ router.get("/analytics", protect, adminOnly, getOrderAnalytics);
 // Filter Orders
 router.get("/search", protect, adminOnly, searchOrdersController);
 
-// USER ROUTES
-router.get("/me", protect, getMyOrdersController);
-
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);
-
-// Activity feed
-router.get("/activity-feed", protect, adminOnly, getActivityFeedController);
 
 // Timeline Orders
 router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
@@ -95,7 +70,30 @@ router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 // Descargar invoice admin
 router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
 
-// 🔥 ESTA LA DEJAMOS (NO ROMPE NADA)
+/* ===============================
+   USER ROUTES
+================================= */
+
+// Get my orders
+router.get("/me", protect, getMyOrdersController);
+
+// Get my order by id
 router.get("/:id/me", protect, getMyOrderByIdController);
+
+/* ===============================
+   🔥 UNIVERSAL ORDER ROUTE (SIEMPRE AL FINAL)
+================================= */
+
+router.get("/:id", attachUserIfExists, async (req, res, next) => {
+  try {
+    if ((req as any).user) {
+      return getMyOrderByIdController(req as any, res, next);
+    }
+
+    return getPublicOrderController(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

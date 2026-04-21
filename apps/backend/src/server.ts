@@ -1,13 +1,47 @@
 import "dotenv/config";
 import app from "./app";
-import { startJobScheduler } from "@/services/jobs/job.scheduler"
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { startJobScheduler } from "@/services/jobs/job.scheduler";
+import { setIO } from "@/lib/socket";
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
+/* ================= HTTP SERVER ================= */
 
+const httpServer = createServer(app);
+
+/* ================= SOCKET.IO ================= */
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+    credentials: true,
+  },
+});
+
+/* 🔥 guardamos instancia global (IMPORTANTE) */
+setIO(io);
+
+/* ================= SOCKET EVENTS ================= */
+
+io.on("connection", (socket) => {
+  console.log("🟢 Admin conectado:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Admin desconectado:", socket.id);
+  });
+});
+
+/* ================= START SERVER ================= */
+
+httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 
-  startJobScheduler()
-
+  /* 🔥 jobs (no bloquear arranque) */
+  try {
+    startJobScheduler();
+  } catch (err) {
+    console.error("❌ Job scheduler error:", err);
+  }
 });
