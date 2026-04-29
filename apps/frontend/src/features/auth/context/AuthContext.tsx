@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiFetch } from "@/shared/lib/api";
 
+/* ================= TYPES ================= */
+
 type User = {
   id: string;
   email: string;
@@ -15,29 +17,60 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isAdmin: boolean;
   setUser: (user: User | null) => void;
+  refreshUser: () => Promise<void>; // 🔥 NUEVO
 };
 
+/* ================= CONTEXT ================= */
+
 const AuthContext = createContext<AuthContextType | null>(null);
+
+/* ================= PROVIDER ================= */
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadUser = async () => {
+  /* ================= LOAD USER ================= */
+
+  const loadUser = async () => {
+    try {
       const res = await apiFetch("/auth/me");
 
-      if (!res) {
+      if (!res || !res.ok) {
         setUser(null);
-        setLoading(false);
         return;
       }
 
       const data = await res.json();
       setUser(data.user || null);
+    } catch {
+      setUser(null);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
+  /* ================= REFRESH USER (🔥 CLAVE) ================= */
+
+  const refreshUser = async () => {
+    try {
+      const res = await apiFetch("/auth/me");
+
+      if (!res || !res.ok) {
+        setUser(null);
+        return;
+      }
+
+      const data = await res.json();
+      setUser(data.user || null);
+    } catch {
+      setUser(null);
+    }
+  };
+
+  /* ================= INIT ================= */
+
+  useEffect(() => {
     loadUser();
   }, []);
 
@@ -49,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isAdmin: user?.role === "ADMIN",
         setUser,
+        refreshUser, // 🔥 EXPORTADO
       }}
     >
       {children}

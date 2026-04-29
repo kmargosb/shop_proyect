@@ -10,19 +10,16 @@ declare global {
   }
 }
 
-export default function GoogleLoginButton() {
+export default function GoogleLoginButton({
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+}) {
   const searchParams = useSearchParams();
 
-  /* =========================
-     🔥 REDIRECT LOGIC
-  ========================= */
   const redirect = searchParams.get("redirect") || "/";
 
   useEffect(() => {
-    /* =========================
-       LOAD GOOGLE SCRIPT
-    ========================= */
-
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
@@ -42,10 +39,6 @@ export default function GoogleLoginButton() {
     };
   }, []);
 
-  /* =========================
-     HANDLE GOOGLE RESPONSE
-  ========================= */
-
   const handleCredentialResponse = async (response: any) => {
     const idToken = response.credential;
 
@@ -57,9 +50,16 @@ export default function GoogleLoginButton() {
     if (!res || !res.ok) return;
 
     /* =========================
-       🔥 REDIRECT + REFRESH APP
+       🔥 MODO INTELIGENTE
     ========================= */
-    window.location.href = redirect;
+
+    if (onSuccess) {
+      // 👉 modo checkout (NO redirect)
+      onSuccess();
+    } else {
+      // 👉 modo login page (REDIRECT)
+      window.location.href = redirect;
+    }
   };
 
   return <div id="google-btn" />;

@@ -435,17 +435,19 @@ model Address {
 
   fullName     String
   phone        String
+
   addressLine1 String
-  addressLine2 String? // 🔥 añadido
+  addressLine2 String?
+
   city         String
   postalCode   String
   country      String
 
+  isDefault    Boolean @default(false) // 🔥 CLAVE
+
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
-
-  @@index([userId]) // 🔥 rendimiento
 }
 
 model Coupon {

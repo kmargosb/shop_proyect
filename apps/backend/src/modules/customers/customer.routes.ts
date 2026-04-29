@@ -4,7 +4,9 @@ import {
    getCustomerOrdersController,
    getCustomerAnalyticsController,
    getCustomersController,
-   getMyAddressesController
+   getMyAddressesController,
+   deleteAddressController,
+  setDefaultAddressController
 } from "./customer.controller";
 
 const router = Router();
@@ -14,6 +16,10 @@ const router = Router();
 ================================= */
 
 router.get("/me/addresses", protect, getMyAddressesController);
+
+router.delete("/me/addresses/:id", protect, deleteAddressController);
+
+router.patch("/me/addresses/:id/favorite", protect, setDefaultAddressController);
 
 router.get("/:email/orders", protect, adminOnly, getCustomerOrdersController);
 
