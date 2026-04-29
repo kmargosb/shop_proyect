@@ -3,17 +3,33 @@
 import { useCart } from "@/features/cart/CartContext";
 import CreateOrderForm from "./CreateOrderForm";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function CheckoutView() {
   const { items } = useCart();
   const router = useRouter();
 
+  const [isReady, setIsReady] = useState(false);
+
+  /* =======================================================
+     WAIT STORE HYDRATION (FIX REAL)
+  ======================================================= */
   useEffect(() => {
-    if (items.length === 0) {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 150); // 🔥 clave para evitar redirect prematuro
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  /* =======================================================
+     PROTECT EMPTY CART
+  ======================================================= */
+  useEffect(() => {
+    if (isReady && items.length === 0) {
       router.push("/");
     }
-  }, [items, router]);
+  }, [isReady, items, router]);
 
   return (
     <main className="min-h-screen bg-black text-white px-4 md:px-10 py-10">

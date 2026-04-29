@@ -41,7 +41,6 @@ export async function createOrder(data: CreateOrderInput) {
   }
 
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-
     let totalAmount = 0;
 
     const orderItemsData: {
@@ -57,7 +56,6 @@ export async function createOrder(data: CreateOrderInput) {
     ========================= */
 
     for (const item of items) {
-
       const product = await tx.product.findUnique({
         where: { id: item.productId },
         select: {
@@ -88,7 +86,6 @@ export async function createOrder(data: CreateOrderInput) {
         quantity: item.quantity,
         price: product.price,
       });
-
     }
 
     /* =========================
@@ -118,36 +115,38 @@ export async function createOrder(data: CreateOrderInput) {
       },
     });
 
+    const normalize = (str?: string) => str?.trim().toLowerCase();
+
     /* =========================
    SAVE ADDRESS (AUTO)
-========================= */
+   ========================= */
 
-if (userId) {
-  const existing = await tx.address.findFirst({
-    where: {
-      userId,
-      addressLine1,
-      city,
-      postalCode,
-      country,
-    },
-  });
+    if (userId) {
+      const existing = await tx.address.findFirst({
+        where: {
+          userId,
+          addressLine1: normalize(addressLine1),
+          city: normalize(city),
+          postalCode: normalize(postalCode),
+          country,
+        },
+      });
 
-  if (!existing) {
-    await tx.address.create({
-      data: {
-        userId,
-        fullName,
-        phone,
-        addressLine1,
-        addressLine2,
-        city,
-        postalCode,
-        country,
-      },
-    });
-  }
-}
+      if (!existing) {
+        await tx.address.create({
+          data: {
+            userId,
+            fullName,
+            phone,
+            addressLine1: normalize(addressLine1) || "",
+            addressLine2,
+            city: normalize(city) || "",
+            postalCode: normalize(postalCode) || "",
+            country,
+          },
+        });
+      }
+    }
 
     /* =========================
        RESERVE INVENTORY
@@ -157,15 +156,13 @@ if (userId) {
       await import("@/modules/inventory/inventory.service");
 
     for (const item of order.items) {
-
-  await InventoryService.reserveStock(
-    tx,
-    item.productId,
-    order.id,
-    item.quantity
-  );
-
-}
+      await InventoryService.reserveStock(
+        tx,
+        item.productId,
+        order.id,
+        item.quantity,
+      );
+    }
 
     /* =========================
        ORDER TIMELINE
@@ -180,7 +177,6 @@ if (userId) {
     });
 
     return order;
-
   });
 }
 

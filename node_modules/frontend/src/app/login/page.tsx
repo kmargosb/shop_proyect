@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import GoogleLoginButton from "@/features/auth/components/GoogleLoginButton";
 import { apiFetch } from "@/shared/lib/api";
 
@@ -13,6 +14,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  /* =========================
+     🔥 REDIRECT LOGIC
+  ========================= */
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
+
+  /* =========================
+     EMAIL LOGIN
+  ========================= */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -37,8 +47,10 @@ export default function LoginPage() {
       return;
     }
 
-    // 🔥 CLAVE
-    window.location.href = "/";
+    /* =========================
+       🔥 REDIRECT + REFRESH APP
+    ========================= */
+    window.location.href = redirect;
   };
 
   return (
@@ -62,7 +74,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* BOTÓN MOSTRAR EMAIL */}
+        {/* BOTÓN EMAIL */}
         {!showEmailLogin && (
           <button
             onClick={() => setShowEmailLogin(true)}

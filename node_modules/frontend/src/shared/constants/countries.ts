@@ -5,7 +5,7 @@ export const COUNTRIES = [
   { code: "FR", name: "Francia" },
   { code: "IT", name: "Italia" },
   { code: "DE", name: "Alemania" },
-  { code: "NL", name: "Países Bajos" },
+  { code: "NL", name: "Holanda" },
   { code: "BE", name: "Bélgica" },
   { code: "CH", name: "Suiza" },
   { code: "AT", name: "Austria" },
@@ -15,12 +15,12 @@ export const COUNTRIES = [
   { code: "DK", name: "Dinamarca" },
   { code: "FI", name: "Finlandia" },
   { code: "PL", name: "Polonia" },
-  { code: "CZ", name: "República Checa" },
+  { code: "CZ", name: "Republica Checa" },
   { code: "GR", name: "Grecia" },
   { code: "RO", name: "Rumanía" },
 
   /* 🌎 AMÉRICA */
-  { code: "US", name: "Estados Unidos" },
+  { code: "US", name: "USA" },
   { code: "CA", name: "Canadá" },
   { code: "MX", name: "México" },
   { code: "AR", name: "Argentina" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/shared/lib/api";
 
 declare global {
@@ -10,6 +11,13 @@ declare global {
 }
 
 export default function GoogleLoginButton() {
+  const searchParams = useSearchParams();
+
+  /* =========================
+     🔥 REDIRECT LOGIC
+  ========================= */
+  const redirect = searchParams.get("redirect") || "/";
+
   useEffect(() => {
     /* =========================
        LOAD GOOGLE SCRIPT
@@ -46,9 +54,12 @@ export default function GoogleLoginButton() {
       body: JSON.stringify({ idToken }),
     });
 
-    if (!res) return;
+    if (!res || !res.ok) return;
 
-    window.location.href = "/";
+    /* =========================
+       🔥 REDIRECT + REFRESH APP
+    ========================= */
+    window.location.href = redirect;
   };
 
   return <div id="google-btn" />;
