@@ -119,6 +119,37 @@ export async function createOrder(data: CreateOrderInput) {
     });
 
     /* =========================
+   SAVE ADDRESS (AUTO)
+========================= */
+
+if (userId) {
+  const existing = await tx.address.findFirst({
+    where: {
+      userId,
+      addressLine1,
+      city,
+      postalCode,
+      country,
+    },
+  });
+
+  if (!existing) {
+    await tx.address.create({
+      data: {
+        userId,
+        fullName,
+        phone,
+        addressLine1,
+        addressLine2,
+        city,
+        postalCode,
+        country,
+      },
+    });
+  }
+}
+
+    /* =========================
        RESERVE INVENTORY
     ========================= */
 

@@ -3,7 +3,8 @@ import { protect, adminOnly } from "@/common/middleware/auth.middleware";
 import {
    getCustomerOrdersController,
    getCustomerAnalyticsController,
-   getCustomersController
+   getCustomersController,
+   getMyAddressesController
 } from "./customer.controller";
 
 const router = Router();
@@ -11,6 +12,8 @@ const router = Router();
 /* ===============================
    CUSTOMER ADMIN ROUTES
 ================================= */
+
+router.get("/me/addresses", protect, getMyAddressesController);
 
 router.get("/:email/orders", protect, adminOnly, getCustomerOrdersController);
 

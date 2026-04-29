@@ -6,17 +6,19 @@ import { AbandonedCheckoutService } from "@/modules/marketing/abandoned-checkout
 import { InventoryService } from "@/modules/inventory/inventory.service";
 
 export function startJobScheduler() {
+  console.log("🟢 Job Scheduler started");
+
   /* ===============================
-     ORDER CLEANUP
+     ORDER CLEANUP (🔥 CRÍTICO)
   =============================== */
 
   cron.schedule("*/5 * * * *", async () => {
-    console.log("🧹 Running expired order cleanup");
+    console.log("🧹 Running order cleanup");
 
     try {
       await cleanupExpiredOrders();
     } catch (error) {
-      console.error("Order cleanup error:", error);
+      console.error("❌ Order cleanup error:", error);
     }
   });
 
@@ -25,26 +27,26 @@ export function startJobScheduler() {
   =============================== */
 
   cron.schedule("0 * * * *", async () => {
-    console.log("🧹 Running expired cart cleanup");
+    console.log("🧹 Running cart cleanup");
 
     try {
       await cleanupExpiredCarts();
     } catch (error) {
-      console.error("Cart cleanup error:", error);
+      console.error("❌ Cart cleanup error:", error);
     }
   });
 
   /* ===============================
-     ABANDONED CHECKOUT
+     ABANDONED CHECKOUT (MARKETING)
   =============================== */
 
   cron.schedule("*/30 * * * *", async () => {
-    console.log("🛒 Checking abandoned orders");
+    console.log("🛒 Checking abandoned checkouts");
 
     try {
       await AbandonedCheckoutService.processAbandonedOrders();
     } catch (error) {
-      console.error("Abandoned checkout error:", error);
+      console.error("❌ Abandoned checkout error:", error);
     }
   });
 
@@ -53,12 +55,12 @@ export function startJobScheduler() {
   =============================== */
 
   cron.schedule("0 */6 * * *", async () => {
-    console.log("🔧 Running inventory consistency guard");
+    console.log("🔧 Running inventory consistency check");
 
     try {
       await InventoryService.repairAllReservedStock();
     } catch (error) {
-      console.error("Inventory guard error:", error);
+      console.error("❌ Inventory guard error:", error);
     }
   });
 }

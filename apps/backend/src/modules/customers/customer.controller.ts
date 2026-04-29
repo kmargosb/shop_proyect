@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "@/lib/prisma";
 import { asyncHandler } from "@/common/utils/asyncHandler";
 import { getCustomers } from "./customer.service";
+import { AuthRequest } from "@/common/middleware/auth.middleware";
 
 export const getCustomersController = asyncHandler(
   async (req: Request, res: Response) => {
@@ -103,5 +104,24 @@ export const getCustomerAnalyticsController = asyncHandler(
       lastPurchase
     });
 
+  }
+);
+
+export const getMyAddressesController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "No autorizado",
+      });
+    }
+
+    const addresses = await prisma.address.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(addresses);
   }
 );

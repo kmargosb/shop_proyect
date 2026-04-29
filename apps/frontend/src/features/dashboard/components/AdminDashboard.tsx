@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { io } from "socket.io-client";
+import { COUNTRIES } from "@/shared/constants/countries";
 
 /* ================= TYPES ================= */
 
@@ -49,9 +50,18 @@ type Activity = {
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  
   const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
-
+  
   const [countries, setCountries] = useState<Country[]>([]);
+  
+  const countriesFormatted = useMemo(() => {
+    return countries.map((c) => ({
+      ...c,
+      country: COUNTRIES.find((x) => x.code === c.country)?.name || c.country,
+    }));
+  }, [countries]);
+  
   const [activity, setActivity] = useState<Activity[]>([]);
 
   /* ================= LOAD ================= */
@@ -71,12 +81,12 @@ export default function AdminDashboard() {
 
       if (c?.ok) {
         const data = await c.json();
-        setCountries(Array.isArray(data) ? data : data.data ?? []);
+        setCountries(Array.isArray(data) ? data : (data.data ?? []));
       }
 
       if (a?.ok) {
         const data = await a.json();
-        setActivity(Array.isArray(data) ? data : data.data ?? []);
+        setActivity(Array.isArray(data) ? data : (data.data ?? []));
       }
     } catch (e) {
       console.error("Dashboard load error:", e);
@@ -105,9 +115,7 @@ export default function AdminDashboard() {
     if (!metrics) return [];
 
     const raw =
-      range === "7d"
-        ? metrics.revenue7d ?? []
-        : metrics.revenue30d ?? [];
+      range === "7d" ? (metrics.revenue7d ?? []) : (metrics.revenue30d ?? []);
 
     return raw.map((d) => ({
       date: d.date.slice(5),
@@ -132,16 +140,13 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-
       {/* ================= ALERTS ================= */}
       {(metrics.refundedAmount > 10000 || growth < -20) && (
         <div className="space-y-2">
           {metrics.refundedAmount > 10000 && (
             <Alert text="Alto volumen de reembolsos detectado" />
           )}
-          {growth < -20 && (
-            <Alert text="Caída fuerte en ingresos recientes" />
-          )}
+          {growth < -20 && <Alert text="Caída fuerte en ingresos recientes" />}
         </div>
       )}
 
@@ -155,9 +160,7 @@ export default function AdminDashboard() {
               key={r}
               onClick={() => setRange(r as any)}
               className={`px-3 py-1 text-xs rounded ${
-                range === r
-                  ? "bg-white text-black"
-                  : "bg-white/10 text-white"
+                range === r ? "bg-white text-black" : "bg-white/10 text-white"
               }`}
             >
               {r}
@@ -190,8 +193,8 @@ export default function AdminDashboard() {
             <AreaChart data={revenueData}>
               <defs>
                 <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                 </linearGradient>
               </defs>
 
@@ -206,16 +209,13 @@ export default function AdminDashboard() {
 
       {/* ================= GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
         {/* SALES BY COUNTRY */}
         <div className="bg-neutral-900 p-6 rounded-2xl">
-          <h3 className="text-sm text-neutral-400 mb-4">
-            Sales by country
-          </h3>
+          <h3 className="text-sm text-neutral-400 mb-4">Sales by country</h3>
 
           <div className="h-64">
             <ResponsiveContainer>
-              <BarChart data={countries}>
+              <BarChart data={countriesFormatted}>
                 <XAxis dataKey="country" stroke="#888" />
                 <YAxis stroke="#888" />
                 <Tooltip />
@@ -227,9 +227,7 @@ export default function AdminDashboard() {
 
         {/* ACTIVITY */}
         <div className="bg-neutral-900 p-6 rounded-2xl">
-          <h3 className="text-sm text-neutral-400 mb-4">
-            Activity
-          </h3>
+          <h3 className="text-sm text-neutral-400 mb-4">Activity</h3>
 
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {activity.map((a, i) => {
@@ -237,11 +235,18 @@ export default function AdminDashboard() {
                 ORDER_CREATED: ["🛒", "text-blue-400", "Nueva orden"],
                 PAYMENT_SUCCEEDED: ["💳", "text-green-400", "Pago completado"],
                 REFUND_CREATED: ["💸", "text-red-400", "Reembolso creado"],
-                REFUND_COMPLETED: ["💰", "text-yellow-400", "Reembolso completado"],
+                REFUND_COMPLETED: [
+                  "💰",
+                  "text-yellow-400",
+                  "Reembolso completado",
+                ],
               } as any;
 
-              const [icon, color, text] =
-                map[a.type] || ["📦", "text-neutral-400", a.message];
+              const [icon, color, text] = map[a.type] || [
+                "📦",
+                "text-neutral-400",
+                a.message,
+              ];
 
               return (
                 <div
@@ -264,7 +269,6 @@ export default function AdminDashboard() {
             })}
           </div>
         </div>
-
       </div>
     </div>
   );

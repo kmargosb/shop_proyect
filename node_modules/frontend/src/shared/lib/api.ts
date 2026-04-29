@@ -28,7 +28,7 @@ export async function apiFetch(
   try {
     const isJSONBody = options.body && !(options.body instanceof FormData);
 
-    // 🔥 CLAVE
+    // 🔥 mantenemos flags (útiles para futuro)
     const isAuthRoute = endpoint.startsWith("/auth");
     const isMeRoute = endpoint === "/auth/me";
 
@@ -42,17 +42,21 @@ export async function apiFetch(
     });
 
     /* ============================
-       ACCESS TOKEN EXPIRED
+       🔥 ACCESS TOKEN EXPIRED (FIX REAL)
     ============================ */
 
-    if (response.status === 401 && isAuthRoute && !isMeRoute) {
+    if (response.status === 401 && !isMeRoute) {
       const refreshed = await refreshAccessToken();
 
       if (!refreshed) {
-        window.location.href = "/login";
+        // 🔥 solo redirigimos si NO es ruta de auth
+        if (!isAuthRoute) {
+          window.location.href = "/login";
+        }
         return null;
       }
 
+      // 🔁 retry request original
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         credentials: "include",
@@ -64,15 +68,13 @@ export async function apiFetch(
     }
 
     /* ============================
-       STILL UNAUTHORIZED
+       🚨 STILL UNAUTHORIZED
     ============================ */
 
-    if (
-      (response.status === 401 || response.status === 403) &&
-      isAuthRoute &&
-      !isMeRoute
-    ) {
-      window.location.href = "/login";
+    if (response.status === 401 || response.status === 403) {
+      if (!isAuthRoute && !isMeRoute) {
+        window.location.href = "/login";
+      }
       return null;
     }
 

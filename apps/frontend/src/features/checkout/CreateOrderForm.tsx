@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/features/cart/CartContext";
 import { apiFetch } from "@/shared/lib/api";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
+import { COUNTRIES } from "@/shared/constants/countries";
 
 export default function CreateOrderForm() {
   const { items, clearCart, totalPrice } = useCart();
@@ -18,15 +19,45 @@ export default function CreateOrderForm() {
     addressLine1: "",
     city: "",
     postalCode: "",
-    country: "",
+    country: "ES",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* =========================
+     AUTOFILL (UX PRO)
+  ========================= */
+
+  useEffect(() => {
+    const saved = localStorage.getItem("checkoutData");
+
+    if (saved) {
+      setForm(JSON.parse(saved));
+    }
+  }, []);
+
+  /* =========================
+     AUTO SAVE
+  ========================= */
+
+  useEffect(() => {
+    localStorage.setItem("checkoutData", JSON.stringify(form));
+  }, [form]);
+
+  /* =========================
+     INPUT HANDLER
+  ========================= */
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
   };
+
+  /* =========================
+     SUBMIT
+  ========================= */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +75,6 @@ export default function CreateOrderForm() {
 
       const res = await apiFetch(`/cart/${cartId}/checkout`, {
         method: "POST",
-        credentials: "include",
         body: JSON.stringify({
           cartId,
           method: "CARD",
@@ -54,7 +84,7 @@ export default function CreateOrderForm() {
           addressLine1: form.addressLine1,
           city: form.city,
           postalCode: form.postalCode,
-          country: form.country,
+          country: form.country, // 🔥 ahora es CODE (ES)
         }),
       });
 
@@ -63,12 +93,6 @@ export default function CreateOrderForm() {
       }
 
       const data = await res.json();
-
-      console.log("🔥 CHECKOUT RESPONSE:", data); // 👈 AQUÍ
-
-      /* =========================
-         🔥 NEW BACKEND RESPONSE
-      ========================= */
 
       const orderId = data?.orderId;
       const clientSecret = data?.payment?.clientSecret;
@@ -88,7 +112,7 @@ export default function CreateOrderForm() {
       clearCart();
 
       /* =========================
-         🔥 REDIRECT TO PAYMENT
+         REDIRECT
       ========================= */
 
       window.location.href = `/orders/${orderId}/pay?clientSecret=${clientSecret}`;
@@ -102,56 +126,78 @@ export default function CreateOrderForm() {
 
   return (
     <div className="grid md:grid-cols-2 gap-10">
+      {/* FORM */}
       <form onSubmit={handleSubmit} className="space-y-4">
+
         <Input
           name="fullName"
           placeholder="Nombre completo"
           required
+          value={form.fullName}
           onChange={handleChange}
         />
+
         <Input
           name="email"
           type="email"
           placeholder="Email"
           required
+          value={form.email}
           onChange={handleChange}
         />
+
         <Input
           name="phone"
           placeholder="Teléfono"
           required
+          value={form.phone}
           onChange={handleChange}
         />
+
         <Input
           name="addressLine1"
           placeholder="Dirección"
           required
+          value={form.addressLine1}
           onChange={handleChange}
         />
+
         <Input
           name="city"
           placeholder="Ciudad"
           required
+          value={form.city}
           onChange={handleChange}
         />
+
         <Input
           name="postalCode"
           placeholder="Código postal"
           required
+          value={form.postalCode}
           onChange={handleChange}
         />
-        <Input
+
+        {/* 🔥 COUNTRY SELECT PRO */}
+        <select
           name="country"
-          placeholder="País"
-          required
+          value={form.country}
           onChange={handleChange}
-        />
+          className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-sm"
+        >
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Procesando pedido..." : "Confirmar pedido"}
         </Button>
       </form>
 
+      {/* RESUMEN */}
       <div className="bg-neutral-900 p-6 rounded-xl">
         <h2 className="font-bold mb-4">Resumen del pedido</h2>
 
@@ -166,7 +212,9 @@ export default function CreateOrderForm() {
 
         <hr className="my-4 border-neutral-700" />
 
-        <p className="text-xl font-bold">Total: ${totalPrice.toFixed(2)}</p>
+        <p className="text-xl font-bold">
+          Total: ${totalPrice.toFixed(2)}
+        </p>
       </div>
     </div>
   );
