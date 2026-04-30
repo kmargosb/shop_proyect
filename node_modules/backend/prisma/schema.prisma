@@ -443,11 +443,13 @@ model Address {
   postalCode   String
   country      String
 
-  isDefault    Boolean @default(false) // 🔥 CLAVE
+  isDefault    Boolean @default(false)
 
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@index([userId]) // 🔥 rendimiento (déjalo)
 }
 
 model Coupon {

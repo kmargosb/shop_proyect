@@ -174,17 +174,45 @@ export const setDefaultAddressController = asyncHandler(
       return res.status(401).json({ error: "No autorizado" });
     }
 
-    await prisma.$transaction([
-      prisma.address.updateMany({
+    /* ===============================
+       🔒 CHECK ADDRESS OWNERSHIP
+    =============================== */
+    const address = await prisma.address.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!address) {
+      return res.status(404).json({
+        error: "Dirección no encontrada",
+      });
+    }
+
+    /* ===============================
+       🔥 SET FAVORITE (FIX REAL)
+    =============================== */
+    await prisma.$transaction(async (tx) => {
+      // quitar favorito a todas
+      await tx.address.updateMany({
         where: { userId },
         data: { isDefault: false },
-      }),
+      });
 
-      prisma.address.update({
-        where: { id },
+      // poner favorito SOLO a esta (y validar userId)
+      const updated = await tx.address.updateMany({
+        where: {
+          id,
+          userId,
+        },
         data: { isDefault: true },
-      }),
-    ]);
+      });
+
+      if (updated.count === 0) {
+        throw new Error("No se pudo actualizar la dirección");
+      }
+    });
 
     res.json({ success: true });
   }
