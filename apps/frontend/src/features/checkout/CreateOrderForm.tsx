@@ -43,7 +43,9 @@ export default function CreateOrderForm() {
 
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
 
   const [isLogged, setIsLogged] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -133,7 +135,7 @@ export default function CreateOrderForm() {
   /* ================= INPUT ================= */
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
 
@@ -220,12 +222,10 @@ export default function CreateOrderForm() {
     <div className="grid md:grid-cols-2 gap-10">
       {/* LEFT */}
       <div className="space-y-6">
-
         {/* LOGIN APPLE STYLE */}
         {!isLogged && (
           <div className="bg-neutral-900 rounded-xl overflow-hidden">
             <motion.div layout className="p-4">
-
               <AnimatePresence mode="wait">
                 {!showLogin ? (
                   <motion.div
@@ -234,9 +234,9 @@ export default function CreateOrderForm() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{
-                    duration: 0.35,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
+                      duration: 0.35,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
                   >
                     <p className="text-sm text-neutral-400">
                       ¿Tienes cuenta?{" "}
@@ -277,7 +277,6 @@ export default function CreateOrderForm() {
                   </motion.div>
                 )}
               </AnimatePresence>
-
             </motion.div>
           </div>
         )}
@@ -285,9 +284,7 @@ export default function CreateOrderForm() {
         {/* ADDRESSES */}
         {addresses.length > 0 && (
           <div className="bg-neutral-900 p-4 rounded-xl space-y-3">
-            <h3 className="text-sm text-neutral-400">
-              Direcciones guardadas
-            </h3>
+            <h3 className="text-sm text-neutral-400">Direcciones guardadas</h3>
 
             {addresses.map((addr) => {
               const selected = selectedAddressId === addr.id;
@@ -304,9 +301,16 @@ export default function CreateOrderForm() {
                   whileTap={{ scale: 0.985 }}
                   onClick={() => {
                     setSelectedAddressId(addr.id);
+
                     setForm((prev) => ({
                       ...prev,
-                      ...addr,
+                      fullName: addr.fullName ?? "",
+                      phone: addr.phone ?? "",
+                      addressLine1: addr.addressLine1 ?? "",
+                      addressLine2: addr.addressLine2 ?? "",
+                      city: addr.city ?? "",
+                      postalCode: addr.postalCode ?? "",
+                      country: addr.country ?? "ES",
                     }));
                   }}
                   className={`relative pl-10 pr-4 p-4 rounded-xl border cursor-pointer
@@ -320,10 +324,10 @@ export default function CreateOrderForm() {
                     layout
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border"
                     animate={{
-                      backgroundColor: selected ? "#ffffff" : "rgba(255,255,255,0)",
-                      borderColor: selected
-                        ? "#fff"
-                        : "rgba(255,255,255,0.4)",
+                      backgroundColor: selected
+                        ? "#ffffff"
+                        : "rgba(255,255,255,0)",
+                      borderColor: selected ? "#fff" : "rgba(255,255,255,0.4)",
                     }}
                   />
 
@@ -362,19 +366,48 @@ export default function CreateOrderForm() {
 
         {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          <Input name="fullName" value={form.fullName} onChange={handleChange} placeholder="Nombre completo" />
-          <Input name="email" value={form.email} onChange={handleChange} placeholder="Email" />
-          <Input name="phone" value={form.phone} onChange={handleChange} placeholder="Teléfono" />
+          <Input
+            name="fullName"
+            value={form.fullName}
+            onChange={handleChange}
+            placeholder="Nombre completo"
+          />
+          <Input
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Email"
+          />
+          <Input
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            placeholder="Teléfono"
+          />
 
           <AddressAutocomplete
             value={form.addressLine1}
             onChange={handleAddressChange}
           />
 
-          <Input name="addressLine2" value={form.addressLine2} onChange={handleChange} placeholder="Piso / puerta" />
-          <Input name="city" value={form.city} onChange={handleChange} placeholder="Ciudad" />
-          <Input name="postalCode" value={form.postalCode} onChange={handleChange} placeholder="Código postal" />
+          <Input
+            name="addressLine2"
+            value={form.addressLine2}
+            onChange={handleChange}
+            placeholder="Piso / puerta"
+          />
+          <Input
+            name="city"
+            value={form.city}
+            onChange={handleChange}
+            placeholder="Ciudad"
+          />
+          <Input
+            name="postalCode"
+            value={form.postalCode}
+            onChange={handleChange}
+            placeholder="Código postal"
+          />
 
           <select
             name="country"
@@ -383,11 +416,16 @@ export default function CreateOrderForm() {
             className="w-full p-3 bg-neutral-900 border border-neutral-700 rounded-lg"
           >
             {COUNTRIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.name}</option>
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
             ))}
           </select>
 
-          <Button disabled={!isValid || loading} className="w-full h-12 text-base">
+          <Button
+            disabled={!isValid || loading}
+            className="w-full h-12 text-base"
+          >
             {loading ? "Procesando..." : "Confirmar pedido"}
           </Button>
         </form>
@@ -395,89 +433,89 @@ export default function CreateOrderForm() {
 
       {/* RIGHT */}
       <div className="bg-neutral-900 p-6 rounded-2xl border border-white/10 sticky top-6 space-y-6">
-
-  {/* HEADER */}
-  <div className="flex items-center justify-between">
-    <h2 className="text-lg font-semibold">Resumen</h2>
-    <span className="text-xs text-neutral-400">
-      {items.length} {items.length === 1 ? "artículo" : "artículos"}
-    </span>
-  </div>
-
-  {/* ITEMS */}
-  <div className="space-y-4 max-h-[300px] overflow-auto pr-1">
-
-    {items.map((item) => (
-      <div
-        key={item.id}
-        className="flex items-center justify-between gap-3"
-      >
-        <div className="flex items-center gap-3">
-
-          {/* IMAGE (placeholder elegante) */}
-          <div className="w-12 h-12 rounded-lg bg-neutral-800 flex items-center justify-center text-xs text-neutral-500">
-            IMG
-          </div>
-
-          {/* INFO */}
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">
-              {item.name}
-            </span>
-            <span className="text-xs text-neutral-400">
-              Cantidad: {item.quantity}
-            </span>
-          </div>
-
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Resumen</h2>
+          <span className="text-xs text-neutral-400">
+            {items.length} {items.length === 1 ? "artículo" : "artículos"}
+          </span>
         </div>
 
-        {/* PRICE */}
-        <span className="text-sm font-medium">
-          €{((item.price * item.quantity) / 100).toFixed(2)}
-        </span>
+        {/* ITEMS */}
+        <div className="space-y-4 max-h-[300px] overflow-auto pr-1">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3">
+                {/* IMAGE  */}
+                <div className="w-16 h-16 rounded-lg overflow-hidden bg-neutral-800">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-500">
+                      IMG
+                    </div>
+                  )}
+                </div>
+
+                {/* INFO */}
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className="text-xs text-neutral-400">
+                    Cantidad: {item.quantity}
+                  </span>
+                </div>
+              </div>
+
+              {/* PRICE */}
+              <span className="text-sm font-medium">
+                €{((item.price * item.quantity) / 100).toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* DIVIDER */}
+        <div className="border-t border-white/10" />
+
+        {/* COST BREAKDOWN */}
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between text-neutral-400">
+            <span>Subtotal</span>
+            <span>€{(totalPrice / 100).toFixed(2)}</span>
+          </div>
+
+          <div className="flex justify-between text-neutral-400">
+            <span>Envío</span>
+            <span className="text-green-400">Gratis</span>
+          </div>
+
+          <div className="flex justify-between text-neutral-400">
+            <span>Impuestos</span>
+            <span>Incluidos</span>
+          </div>
+        </div>
+
+        {/* TOTAL */}
+        <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+          <span className="text-base font-semibold">Total</span>
+          <span className="text-xl font-bold">
+            €{(totalPrice / 100).toFixed(2)}
+          </span>
+        </div>
+
+        {/* TRUST / UX BOOST */}
+        <div className="text-xs text-neutral-500 space-y-1">
+          <p>🔒 Pago seguro con cifrado SSL</p>
+          <p>💳 Procesado por Stripe</p>
+        </div>
       </div>
-    ))}
-
-  </div>
-
-  {/* DIVIDER */}
-  <div className="border-t border-white/10" />
-
-  {/* COST BREAKDOWN */}
-  <div className="space-y-2 text-sm">
-
-    <div className="flex justify-between text-neutral-400">
-      <span>Subtotal</span>
-      <span>€{(totalPrice / 100).toFixed(2)}</span>
-    </div>
-
-    <div className="flex justify-between text-neutral-400">
-      <span>Envío</span>
-      <span className="text-green-400">Gratis</span>
-    </div>
-
-    <div className="flex justify-between text-neutral-400">
-      <span>Impuestos</span>
-      <span>Incluidos</span>
-    </div>
-
-  </div>
-
-  {/* TOTAL */}
-  <div className="border-t border-white/10 pt-4 flex justify-between items-center">
-    <span className="text-base font-semibold">Total</span>
-    <span className="text-xl font-bold">
-      €{(totalPrice / 100).toFixed(2)}
-    </span>
-  </div>
-
-  {/* TRUST / UX BOOST */}
-  <div className="text-xs text-neutral-500 space-y-1">
-    <p>🔒 Pago seguro con cifrado SSL</p>
-    <p>💳 Procesado por Stripe</p>
-  </div>
-
-</div>
     </div>
   );
 }
