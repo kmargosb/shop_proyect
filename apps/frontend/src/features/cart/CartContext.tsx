@@ -12,16 +12,15 @@ import { apiFetch } from "@/shared/lib/api";
 
 const CART_KEY = "cartId";
 
-/* ============================================
-   TYPES
-============================================ */
+/* ================= TYPES ================= */
 
-type CartItem = {
+export type CartItem = {
   id: string;
   productId: string;
   name: string;
   price: number;
   quantity: number;
+  image?: string | null;
 };
 
 type CartContextType = {
@@ -31,6 +30,10 @@ type CartContextType = {
 
   addItem: (productId: string, quantity?: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
+
+  increaseQuantity: (itemId: string) => Promise<void>;
+  decreaseQuantity: (itemId: string) => Promise<void>;
+
   clearCart: () => void;
 
   totalItems: number;
@@ -39,201 +42,171 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-/* ============================================
-   PROVIDER
-============================================ */
+/* ================= PROVIDER ================= */
 
 export function CartProvider({ children }: { children: ReactNode }) {
-
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
 
-  /* ============================================
-     CREATE CART
-  ============================================ */
+  /* ================= HELPERS ================= */
 
-  const createCart = async (): Promise<string | null> => {
-
-    const res = await apiFetch("/cart", {
-      method: "POST",
-    });
-
-    if (!res || !res.ok) {
-      console.error("Failed to create cart");
-      return null;
-    }
-
-    const cart = await res.json();
-
-    localStorage.setItem(CART_KEY, cart.id);
-
-    return cart.id;
-  };
-
-  /* ============================================
-     ENSURE CART EXISTS
-  ============================================ */
-
-  const ensureCart = async (): Promise<string | null> => {
-
-    let cartId = localStorage.getItem(CART_KEY);
-
-    if (cartId) {
-      return cartId;
-    }
-
-    cartId = await createCart();
-
-    return cartId;
-  };
-
-  /* ============================================
-     FETCH CART
-  ============================================ */
-
-  const fetchCart = async (cartId: string) => {
-
-    const res = await apiFetch(`/cart/${cartId}`);
-
-    if (!res || !res.ok) return;
-
-    const cart = await res.json();
-
-    if (!cart) return;
-
-    /* sincronizar cartId si backend devuelve otro */
-
-    if (cart.id && cart.id !== cartId) {
-      localStorage.setItem(CART_KEY, cart.id);
-      cartId = cart.id;
-    }
-
-    const mappedItems: CartItem[] = (cart.items ?? []).map((item: any) => ({
+  const mapItems = (cart: any): CartItem[] =>
+  (cart.items ?? [])
+    .sort((a: any, b: any) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+    .map((item: any) => ({
       id: item.id,
       productId: item.productId,
       name: item.product?.name ?? "Producto",
       price: item.price,
       quantity: item.quantity,
+      image: item.product?.images?.[0]?.url || null,
     }));
 
-    setItems(mappedItems);
+  /* ================= CREATE CART ================= */
+
+  const createCart = async (): Promise<string | null> => {
+    const res = await apiFetch("/cart", { method: "POST" });
+
+    if (!res || !res.ok) return null;
+
+    const cart = await res.json();
+    localStorage.setItem(CART_KEY, cart.id);
+
+    return cart.id;
   };
 
-  /* ============================================
-     INIT CART
-  ============================================ */
+  /* ================= ENSURE CART ================= */
+
+  const ensureCart = async (): Promise<string | null> => {
+    let cartId = localStorage.getItem(CART_KEY);
+
+    if (cartId) return cartId;
+
+    return await createCart();
+  };
+
+  /* ================= FETCH CART ================= */
+
+  const fetchCart = async (cartId: string) => {
+    const res = await apiFetch(`/cart/${cartId}`);
+    if (!res || !res.ok) return;
+
+    const cart = await res.json();
+    setItems(mapItems(cart));
+  };
+
+  /* ================= INIT ================= */
 
   useEffect(() => {
-
     const init = async () => {
-
       const cartId = await ensureCart();
-
       if (!cartId) return;
 
       await fetchCart(cartId);
     };
 
     init();
-
   }, []);
 
-  /* ============================================
-     ADD ITEM
-  ============================================ */
+  /* ================= ADD ITEM ================= */
 
   const addItem = async (productId: string, quantity = 1) => {
-
-    let cartId = await ensureCart();
-
-    if (!cartId) {
-      console.error("Cart not available");
-      return;
-    }
-
-    console.log("ADDING TO CART", cartId, productId);
+    const cartId = await ensureCart();
+    if (!cartId) return;
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
       method: "POST",
-      body: JSON.stringify({
-        productId,
-        quantity,
-      }),
+      body: JSON.stringify({ productId, quantity }),
     });
 
-    if (!res || !res.ok) {
-      console.error("Failed to add item");
-      return;
-    }
+    if (!res || !res.ok) return;
 
     const cart = await res.json();
-
-    /* sincronizar cartId si backend creó uno nuevo */
-
-    if (cart.id && cart.id !== cartId) {
-      localStorage.setItem(CART_KEY, cart.id);
-      cartId = cart.id;
-    }
-
-    const mappedItems: CartItem[] = (cart.items ?? []).map((item: any) => ({
-      id: item.id,
-      productId: item.productId,
-      name: item.product?.name ?? "Producto",
-      price: item.price,
-      quantity: item.quantity,
-    }));
-
-    setItems(mappedItems);
-
+    setItems(mapItems(cart));
     setOpen(true);
   };
 
-  /* ============================================
-     REMOVE ITEM
-  ============================================ */
+  /* ================= REMOVE ITEM ================= */
 
   const removeItem = async (itemId: string) => {
+    // UI optimista
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
 
-    const cartId = localStorage.getItem(CART_KEY);
-
-    if (!cartId) return;
-
-    /* actualización optimista */
-
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
-
-    const res = await apiFetch(`/cart/items/${itemId}`, {
+    await apiFetch(`/cart/items/${itemId}`, {
       method: "DELETE",
     });
-
-    if (!res || !res.ok) {
-      console.error("Failed to remove item");
-    }
   };
 
-  /* ============================================
-     CLEAR CART
-  ============================================ */
+  /* ================= INCREASE ================= */
+
+  const increaseQuantity = async (itemId: string) => {
+  const item = items.find((i) => i.id === itemId);
+  if (!item) return;
+
+  const cartId = await ensureCart();
+  if (!cartId) return;
+
+  const res = await apiFetch(`/cart/${cartId}/items`, {
+    method: "POST",
+    body: JSON.stringify({
+      productId: item.productId,
+      quantity: 1,
+    }),
+  });
+
+  if (!res || !res.ok) return;
+
+  const cart = await res.json();
+  setItems(mapItems(cart));
+};
+
+  /* ================= DECREASE ================= */
+
+  const decreaseQuantity = async (itemId: string) => {
+  const item = items.find((i) => i.id === itemId);
+  if (!item) return;
+
+  const cartId = await ensureCart();
+  if (!cartId) return;
+
+  if (item.quantity === 1) {
+    await removeItem(itemId);
+    return;
+  }
+
+  const res = await apiFetch(`/cart/${cartId}/items`, {
+    method: "POST",
+    body: JSON.stringify({
+      productId: item.productId,
+      quantity: -1,
+    }),
+  });
+
+  if (!res || !res.ok) return;
+
+  const cart = await res.json();
+  setItems(mapItems(cart));
+};
+
+  /* ================= CLEAR ================= */
 
   const clearCart = () => {
-
     setItems([]);
-
     localStorage.removeItem(CART_KEY);
   };
 
-  /* ============================================
-     TOTALS
-  ============================================ */
+  /* ================= TOTALS ================= */
 
   const totalItems = items.reduce(
-    (acc, item) => acc + item.quantity,
-    0
+    (acc: number, item: CartItem) => acc + item.quantity,
+    0,
   );
 
   const totalPrice = items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
+    (acc: number, item: CartItem) => acc + item.price * item.quantity,
+    0,
   );
 
   return (
@@ -244,6 +217,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setOpen,
         addItem,
         removeItem,
+        increaseQuantity,
+        decreaseQuantity,
         clearCart,
         totalItems,
         totalPrice,
@@ -254,12 +229,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/* ============================================
-   HOOK
-============================================ */
+/* ================= HOOK ================= */
 
 export function useCart() {
-
   const context = useContext(CartContext);
 
   if (!context) {
