@@ -36,7 +36,7 @@ export function loadGoogleMaps(): Promise<void> {
     const script = document.createElement("script");
     script.id = "google-maps";
 
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&v=beta`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&v=beta&loading=async`;
 
     script.async = true;
     script.defer = true;

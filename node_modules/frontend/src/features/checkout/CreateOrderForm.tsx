@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/features/cart/CartContext";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { apiFetch } from "@/shared/lib/api";
@@ -32,6 +32,11 @@ type AddressData = {
   country: string;
 };
 
+type CheckoutResponse = {
+  orderId: string;
+  payment: { clientSecret: string };
+};
+
 export default function CreateOrderForm() {
   const { items, clearCart, totalPrice } = useCart();
   const { refreshUser } = useAuth();
@@ -58,7 +63,6 @@ export default function CreateOrderForm() {
 
   useEffect(() => {
     const saved = localStorage.getItem("checkoutData");
-
     if (saved) {
       try {
         setForm(JSON.parse(saved));
@@ -129,15 +133,15 @@ export default function CreateOrderForm() {
   /* ================= INPUT ================= */
 
   const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-) => {
-  const { name, value } = e.target;
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
 
-  setForm((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   /* ================= ADDRESS AUTOCOMPLETE ================= */
 
@@ -200,10 +204,7 @@ export default function CreateOrderForm() {
 
       if (!res || !res.ok) throw new Error();
 
-      const data: {
-        orderId: string;
-        payment: { clientSecret: string };
-      } = await res.json();
+      const data: CheckoutResponse = await res.json();
 
       clearCart();
 
@@ -217,33 +218,67 @@ export default function CreateOrderForm() {
 
   return (
     <div className="grid md:grid-cols-2 gap-10">
-
       {/* LEFT */}
       <div className="space-y-6">
 
-        {/* LOGIN */}
+        {/* LOGIN APPLE STYLE */}
         {!isLogged && (
-          <div className="bg-neutral-900 p-4 rounded-xl">
-            {!showLogin ? (
-              <p className="text-sm text-neutral-400">
-                ¿Tienes cuenta?{" "}
-                <button
-                  onClick={() => setShowLogin(true)}
-                  className="underline hover:text-white"
-                >
-                  Inicia sesión
-                </button>
-              </p>
-            ) : (
-              <LoginInline
-                onSuccess={async () => {
-                  await refreshUser();
-                  setIsLogged(true);
-                  await loadAddresses();
-                  setShowLogin(false);
-                }}
-              />
-            )}
+          <div className="bg-neutral-900 rounded-xl overflow-hidden">
+            <motion.div layout className="p-4">
+
+              <AnimatePresence mode="wait">
+                {!showLogin ? (
+                  <motion.div
+                    key="cta"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  >
+                    <p className="text-sm text-neutral-400">
+                      ¿Tienes cuenta?{" "}
+                      <button
+                        onClick={() => setShowLogin(true)}
+                        className="underline hover:text-white transition"
+                      >
+                        Inicia sesión
+                      </button>
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="login"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{
+                      duration: 0.35,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    <LoginInline
+                      onSuccess={async () => {
+                        await refreshUser();
+                        setIsLogged(true);
+                        await loadAddresses();
+                        setShowLogin(false);
+                      }}
+                    />
+
+                    <button
+                      onClick={() => setShowLogin(false)}
+                      className="mt-4 text-xs text-neutral-400 hover:text-white transition"
+                    >
+                      ← Volver
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+            </motion.div>
           </div>
         )}
 
@@ -261,44 +296,62 @@ export default function CreateOrderForm() {
                 <motion.div
                   key={addr.id}
                   layout
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  transition={{
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  whileHover={{ scale: 1.015 }}
+                  whileTap={{ scale: 0.985 }}
                   onClick={() => {
                     setSelectedAddressId(addr.id);
-
                     setForm((prev) => ({
                       ...prev,
                       ...addr,
                     }));
                   }}
-                  className={`p-4 rounded-xl border cursor-pointer transition
+                  className={`relative pl-10 pr-4 p-4 rounded-xl border cursor-pointer
                   ${
                     selected
-                      ? "border-white bg-white/5"
+                      ? "border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]"
                       : "border-white/10 hover:border-white/30"
                   }`}
                 >
+                  <motion.div
+                    layout
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border"
+                    animate={{
+                      backgroundColor: selected ? "#ffffff" : "rgba(255,255,255,0)",
+                      borderColor: selected
+                        ? "#fff"
+                        : "rgba(255,255,255,0.4)",
+                    }}
+                  />
+
                   <div className="flex justify-between">
-                    <p>{addr.fullName}</p>
+                    <p className="font-medium">{addr.fullName}</p>
 
                     <div className="flex gap-2">
-                      <button onClick={(e) => {
-                        e.stopPropagation();
-                        setFavorite(addr.id);
-                      }}>
-                        ⭐
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFavorite(addr.id);
+                        }}
+                      >
+                        {addr.isDefault ? "⭐" : "☆"}
                       </button>
 
-                      <button onClick={(e) => {
-                        e.stopPropagation();
-                        deleteAddress(addr.id);
-                      }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteAddress(addr.id);
+                        }}
+                      >
                         🗑
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-xs text-neutral-400 mt-1">
                     {addr.addressLine1}
                   </p>
                 </motion.div>
@@ -314,7 +367,6 @@ export default function CreateOrderForm() {
           <Input name="email" value={form.email} onChange={handleChange} placeholder="Email" />
           <Input name="phone" value={form.phone} onChange={handleChange} placeholder="Teléfono" />
 
-          {/* 🔥 SOLO ESTE INPUT */}
           <AddressAutocomplete
             value={form.addressLine1}
             onChange={handleAddressChange}
@@ -324,35 +376,108 @@ export default function CreateOrderForm() {
           <Input name="city" value={form.city} onChange={handleChange} placeholder="Ciudad" />
           <Input name="postalCode" value={form.postalCode} onChange={handleChange} placeholder="Código postal" />
 
-          <select name="country" value={form.country} onChange={handleChange} className="w-full p-3 bg-neutral-900 border border-neutral-700 rounded-lg">
+          <select
+            name="country"
+            value={form.country}
+            onChange={handleChange}
+            className="w-full p-3 bg-neutral-900 border border-neutral-700 rounded-lg"
+          >
             {COUNTRIES.map((c) => (
               <option key={c.code} value={c.code}>{c.name}</option>
             ))}
           </select>
 
-          <Button disabled={!isValid || loading} className="w-full">
+          <Button disabled={!isValid || loading} className="w-full h-12 text-base">
             {loading ? "Procesando..." : "Confirmar pedido"}
           </Button>
         </form>
       </div>
 
       {/* RIGHT */}
-      <div className="bg-neutral-900 p-6 rounded-xl">
-        <h2 className="font-bold mb-4">Resumen</h2>
+      <div className="bg-neutral-900 p-6 rounded-2xl border border-white/10 sticky top-6 space-y-6">
 
-        {items.map((i) => (
-          <div key={i.id} className="flex justify-between text-sm">
-            <span>{i.name}</span>
-            <span>€{((i.price * i.quantity) / 100).toFixed(2)}</span>
+  {/* HEADER */}
+  <div className="flex items-center justify-between">
+    <h2 className="text-lg font-semibold">Resumen</h2>
+    <span className="text-xs text-neutral-400">
+      {items.length} {items.length === 1 ? "artículo" : "artículos"}
+    </span>
+  </div>
+
+  {/* ITEMS */}
+  <div className="space-y-4 max-h-[300px] overflow-auto pr-1">
+
+    {items.map((item) => (
+      <div
+        key={item.id}
+        className="flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3">
+
+          {/* IMAGE (placeholder elegante) */}
+          <div className="w-12 h-12 rounded-lg bg-neutral-800 flex items-center justify-center text-xs text-neutral-500">
+            IMG
           </div>
-        ))}
 
-        <hr className="my-4 border-neutral-700" />
+          {/* INFO */}
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">
+              {item.name}
+            </span>
+            <span className="text-xs text-neutral-400">
+              Cantidad: {item.quantity}
+            </span>
+          </div>
 
-        <p className="text-xl font-bold">
-          €{(totalPrice / 100).toFixed(2)}
-        </p>
+        </div>
+
+        {/* PRICE */}
+        <span className="text-sm font-medium">
+          €{((item.price * item.quantity) / 100).toFixed(2)}
+        </span>
       </div>
+    ))}
+
+  </div>
+
+  {/* DIVIDER */}
+  <div className="border-t border-white/10" />
+
+  {/* COST BREAKDOWN */}
+  <div className="space-y-2 text-sm">
+
+    <div className="flex justify-between text-neutral-400">
+      <span>Subtotal</span>
+      <span>€{(totalPrice / 100).toFixed(2)}</span>
+    </div>
+
+    <div className="flex justify-between text-neutral-400">
+      <span>Envío</span>
+      <span className="text-green-400">Gratis</span>
+    </div>
+
+    <div className="flex justify-between text-neutral-400">
+      <span>Impuestos</span>
+      <span>Incluidos</span>
+    </div>
+
+  </div>
+
+  {/* TOTAL */}
+  <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+    <span className="text-base font-semibold">Total</span>
+    <span className="text-xl font-bold">
+      €{(totalPrice / 100).toFixed(2)}
+    </span>
+  </div>
+
+  {/* TRUST / UX BOOST */}
+  <div className="text-xs text-neutral-500 space-y-1">
+    <p>🔒 Pago seguro con cifrado SSL</p>
+    <p>💳 Procesado por Stripe</p>
+  </div>
+
+</div>
     </div>
   );
 }
