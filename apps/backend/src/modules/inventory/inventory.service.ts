@@ -28,7 +28,21 @@ export const InventoryService = {
       throw new Error("Product not found");
     }
 
-    const availableStock = product.stock - product.reservedStock;
+    const aggregate = await tx.inventoryReservation.aggregate({
+      where: {
+        productId,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      _sum: {
+        quantity: true,
+      },
+    });
+
+    const reserved = aggregate._sum.quantity ?? 0;
+
+    const availableStock = product.stock - reserved;
 
     if (availableStock < quantity) {
       throw new Error("Not enough stock available");
@@ -93,9 +107,7 @@ export const InventoryService = {
 
       const reserved = aggregate._sum.quantity ?? 0;
 
-      const availableStock = reservation.product.stock - reserved;
-
-      if (availableStock < reservation.quantity) {
+      if (reserved > reservation.product.stock) {
         throw new Error(
           `Stock mismatch detected for product ${reservation.productId}`,
         );
