@@ -67,6 +67,7 @@ export default function ProductPage() {
   );
 
   const mainImage = images[selectedImage]?.url ?? "/placeholder-product.png";
+  const outOfStock = product.stock <= 0;
 
   /* ===============================
      STOCK STATUS
@@ -104,122 +105,126 @@ export default function ProductPage() {
   =============================== */
 
   return (
-  <div className="max-w-7xl mx-auto px-6 py-16 space-y-24">
-    <main className="grid md:grid-cols-2 gap-14">
-      {/* ===============================
+    <div className="max-w-7xl mx-auto px-6 py-16 space-y-24">
+      <main className="grid md:grid-cols-2 gap-14">
+        {/* ===============================
          IMAGE GALLERY
       =============================== */}
 
-      <div className="space-y-4">
-        <div className="relative aspect-square bg-neutral-900 rounded-xl overflow-hidden">
-          <Image
-            src={mainImage}
-            alt={product.name}
-            fill
-            className="object-cover"
-          />
-        </div>
+        <div className="space-y-4">
+          <div className="relative aspect-square bg-neutral-900 rounded-xl overflow-hidden">
+            <Image
+              src={mainImage}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          </div>
 
-        {images.length > 1 && (
-          <div className="flex gap-3 flex-wrap">
-            {images.map((img: any, index: number) => (
-              <button
-                key={img.id}
-                onClick={() => setSelectedImage(index)}
-                className={`relative w-20 h-20 rounded-md overflow-hidden border
+          {images.length > 1 && (
+            <div className="flex gap-3 flex-wrap">
+              {images.map((img: any, index: number) => (
+                <button
+                  key={img.id}
+                  onClick={() => setSelectedImage(index)}
+                  className={`relative w-20 h-20 rounded-md overflow-hidden border
                 ${
                   selectedImage === index
                     ? "border-white"
                     : "border-neutral-700"
                 } cursor-pointer`}
-              >
-                <Image
-                  src={img.url}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+                >
+                  <Image
+                    src={img.url}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* ===============================
+        {/* ===============================
          PRODUCT INFO
       =============================== */}
 
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">{product.name}</h1>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">{product.name}</h1>
 
-        <p className="text-2xl font-semibold">
-          €{(product.price / 100).toFixed(2)}
-        </p>
-
-        {stockBadge}
-
-        {product.description && (
-          <p className="text-neutral-400 leading-relaxed">
-            {product.description}
+          <p className="text-2xl font-semibold">
+            €{(product.price / 100).toFixed(2)}
           </p>
-        )}
 
-        {/* ===============================
+          {stockBadge}
+
+          {product.description && (
+            <p className="text-neutral-400 leading-relaxed">
+              {product.description}
+            </p>
+          )}
+
+          {/* ===============================
            QUANTITY SELECTOR
         =============================== */}
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-neutral-400">Cantidad</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-neutral-400">Cantidad</span>
 
-          <div className="flex items-center border border-neutral-700 rounded-md">
-            <button
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="px-3 py-1 hover:bg-neutral-800 cursor-pointer"
-            >
-              -
-            </button>
+            <div className="flex items-center border border-neutral-700 rounded-md">
+              <button
+                disabled={outOfStock}
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="px-3 py-1 hover:bg-neutral-800 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                -
+              </button>
 
-            <span className="px-4">{quantity}</span>
+              <span className="px-4">{quantity}</span>
 
-            <button
-              onClick={() =>
-                setQuantity((q) => Math.min(product.stock || 10, q + 1))
-              }
-              className="px-3 py-1 hover:bg-neutral-800 cursor-pointer"
-            >
-              +
-            </button>
+              <button
+                disabled={outOfStock}
+                onClick={() =>
+                  setQuantity((q) => Math.min(product.stock || 10, q + 1))
+                }
+                className="px-3 py-1 hover:bg-neutral-800 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                +
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* ===============================
+          {/* ===============================
            ACTION BUTTONS
         =============================== */}
 
-        <div className="flex gap-4">
-          <Button
-            onClick={handleAddToCart}
-            className="bg-white text-black hover:bg-neutral-200 cursor-pointer"
-          >
-            Añadir al carrito
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              onClick={handleAddToCart}
+              disabled={outOfStock}
+              className="bg-white text-black hover:bg-neutral-200 cursor-pointer disabled:bg-neutral-700 disabled:text-neutral-400"
+            >
+              Añadir al carrito
+            </Button>
 
-          <Button
-            onClick={handleBuyNow}
-            variant="outline"
-            className="cursor-pointer"
-          >
-            Comprar ahora
-          </Button>
+            <Button
+              onClick={handleBuyNow}
+              disabled={outOfStock}
+              variant="outline"
+              className="cursor-pointer"
+            >
+              Comprar ahora
+            </Button>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
 
-    {/* ===============================
+      {/* ===============================
        RELATED PRODUCTS
     =============================== */}
 
-    <RelatedProducts productId={product.id} />
-  </div>
-);
+      <RelatedProducts productId={product.id} />
+    </div>
+  );
 }

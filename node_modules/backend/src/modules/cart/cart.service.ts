@@ -45,7 +45,7 @@ export const CartService = {
 
   async getOrCreateCart(userId?: string) {
     const expiresAt = new Date(
-      Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000
+      Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000,
     );
 
     if (!userId) {
@@ -82,9 +82,9 @@ export const CartService = {
   ========================================================= */
 
   async addItem(cartId: string, productId: string, quantity: number) {
-    if (quantity === 0) {
-  throw new Error("Invalid quantity");
-}
+    if (quantity <= 0) {
+      throw new Error("Invalid quantity");
+    }
 
     return prisma.$transaction(async (tx) => {
       const cart = await tx.cart.findUnique({
@@ -104,6 +104,13 @@ export const CartService = {
       const existingItem = await tx.cartItem.findFirst({
         where: { cartId, productId },
       });
+
+      const currentQty = existingItem?.quantity ?? 0;
+      const nextQty = currentQty + quantity;
+
+      if (nextQty > product.stock) {
+        throw new Error("Not enough stock available");
+      }
 
       if (existingItem) {
         await tx.cartItem.update({
@@ -126,9 +133,7 @@ export const CartService = {
       await tx.cart.update({
         where: { id: cartId },
         data: {
-          expiresAt: new Date(
-            Date.now() + CART_EXPIRATION_HOURS * 3600000
-          ),
+          expiresAt: new Date(Date.now() + CART_EXPIRATION_HOURS * 3600000),
         },
       });
 
@@ -144,21 +149,21 @@ export const CartService = {
   ========================================================= */
 
   async removeItem(cartItemId: string) {
-  const item = await prisma.cartItem.findUnique({
-    where: { id: cartItemId },
-  });
+    const item = await prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+    });
 
-  // 🔥 CLAVE: no romper si no existe
-  if (!item) {
+    // 🔥 CLAVE: no romper si no existe
+    if (!item) {
+      return { success: true };
+    }
+
+    await prisma.cartItem.delete({
+      where: { id: cartItemId },
+    });
+
     return { success: true };
-  }
-
-  await prisma.cartItem.delete({
-    where: { id: cartItemId },
-  });
-
-  return { success: true };
-},
+  },
 
   /* =========================================================
      GET CART
@@ -230,7 +235,7 @@ export const CartService = {
 
     const subtotal = cart.items.reduce(
       (acc, item) => acc + item.price * item.quantity,
-      0
+      0,
     );
 
     const discount = 0;
@@ -260,9 +265,7 @@ export const CartService = {
       if (cart.expiresAt < new Date()) throw new Error("Cart expired");
       if (cart.items.length === 0) throw new Error("Cart empty");
 
-      const { createOrder } = await import(
-        "@/modules/orders/order.service"
-      );
+      const { createOrder } = await import("@/modules/orders/order.service");
 
       const order = await createOrder({
         userId: checkoutData.userId ?? undefined,
@@ -314,9 +317,7 @@ export const CartService = {
       }
 
       if (item.product.stock < item.quantity) {
-        throw new Error(
-          `Not enough stock for ${item.product.name}`
-        );
+        throw new Error(`Not enough stock for ${item.product.name}`);
       }
     }
 

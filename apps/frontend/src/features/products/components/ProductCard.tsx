@@ -12,6 +12,7 @@ type Props = {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
+  const outOfStock = product.stock <= 0;
 
   const handleAddToCart = async () => {
     await addItem(product.id, 1);
@@ -24,7 +25,9 @@ export default function ProductCard({ product }: Props) {
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
-      className="group bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-600 transition-all"
+      className={`group bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 transition-all ${
+        outOfStock ? "opacity-60" : "hover:border-neutral-600"
+      }`}
     >
       {/* IMAGE */}
       <Link href={`/product/${product.id}`} className="block">
@@ -34,6 +37,11 @@ export default function ProductCard({ product }: Props) {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.4 }}
           >
+            {outOfStock && (
+              <span className="absolute top-3 left-3 z-10 rounded bg-black/80 px-2 py-1 text-xs font-semibold text-red-300">
+                Sin stock
+              </span>
+            )}
             {/* MAIN */}
             <Image
               src={primaryImage}
@@ -68,12 +76,13 @@ export default function ProductCard({ product }: Props) {
 
         <motion.button
           onClick={handleAddToCart}
+          disabled={outOfStock}
           whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: outOfStock ? 1 : 1.02 }}
           transition={{ duration: 0.15 }}
-          className="w-full bg-white text-black py-2 rounded-md font-medium hover:bg-neutral-200 cursor-pointer"
+          className="w-full bg-white text-black py-2 rounded-md font-medium hover:bg-neutral-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
         >
-          Añadir al carrito
+          {outOfStock ? "Sin stock" : "Añadir al carrito"}
         </motion.button>
       </div>
     </motion.div>

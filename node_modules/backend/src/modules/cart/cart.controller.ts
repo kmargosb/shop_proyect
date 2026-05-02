@@ -2,12 +2,13 @@ import { Request, Response } from "express";
 import { CheckoutService } from "@/modules/checkout/checkout.service";
 import { CartService } from "./cart.service";
 import { getStringParam } from "@/common/utils/request";
+import { AuthRequest } from "@/common/middleware/auth.middleware";
 
 /* =========================================================
    CREATE CART
 ========================================================= */
 
-export const createCartController = async (req: Request, res: Response) => {
+export const createCartController = async (req: AuthRequest, res: Response) => {
   try {
 
     const userId = req.body?.userId;
@@ -32,7 +33,7 @@ export const createCartController = async (req: Request, res: Response) => {
    GET CART
 ========================================================= */
 
-export const getCartController = async (req: Request, res: Response) => {
+export const getCartController = async (req: AuthRequest, res: Response) => {
   try {
 
     const cartId = getStringParam(req.params.cartId);
@@ -63,7 +64,7 @@ export const getCartController = async (req: Request, res: Response) => {
    GET CART TOTALS
 ========================================================= */
 
-export const getCartTotalsController = async (req: Request, res: Response) => {
+export const getCartTotalsController = async (req: AuthRequest, res: Response) => {
 
   const cartId = getStringParam(req.params.cartId);
 
@@ -84,7 +85,7 @@ export const getCartTotalsController = async (req: Request, res: Response) => {
    ADD ITEM
 ========================================================= */
 
-export const addItemController = async (req: Request, res: Response) => {
+export const addItemController = async (req: AuthRequest, res: Response) => {
 
   const cartId = getStringParam(req.params.cartId);
 
@@ -107,7 +108,7 @@ export const addItemController = async (req: Request, res: Response) => {
    REMOVE ITEM
 ========================================================= */
 
-export const removeItemController = async (req: Request, res: Response) => {
+export const removeItemController = async (req: AuthRequest, res: Response) => {
 
   const itemId = getStringParam(req.params.itemId);
 
@@ -128,7 +129,7 @@ export const removeItemController = async (req: Request, res: Response) => {
    MERGE CART
 ========================================================= */
 
-export const mergeCartController = async (req: Request, res: Response) => {
+export const mergeCartController = async (req: AuthRequest, res: Response) => {
 
   const { guestCartId, userId } = req.body;
 
@@ -144,7 +145,7 @@ export const mergeCartController = async (req: Request, res: Response) => {
 ========================================================= */
 
 export const checkoutCartController = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ) => {
   try {
@@ -166,7 +167,7 @@ export const checkoutCartController = async (
       cartId,
       method: "CARD",
       ...req.body,
-      userId: (req as any).user?.id,
+      userId: req.user?.id,
     });
 
     /* =========================
