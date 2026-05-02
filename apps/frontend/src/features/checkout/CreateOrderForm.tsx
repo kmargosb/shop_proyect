@@ -10,6 +10,7 @@ import { Input } from "@/shared/ui/input";
 import { COUNTRIES } from "@/shared/constants/countries";
 import LoginInline from "@/features/auth/components/LoginInline";
 import AddressAutocomplete from "./components/AddressAutocomplete";
+import { toast } from "sonner";
 
 /* ================= TYPES ================= */
 
@@ -204,15 +205,23 @@ export default function CreateOrderForm() {
         }),
       });
 
-      if (!res || !res.ok) throw new Error();
+      if (!res) {
+        throw new Error("Error de conexión");
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+
+        throw new Error(data?.error || "Error al procesar checkout");
+      }
 
       const data: CheckoutResponse = await res.json();
 
       clearCart();
 
       window.location.href = `/orders/${data.orderId}/pay?clientSecret=${data.payment.clientSecret}`;
-    } catch {
-      alert("Error en checkout");
+    } catch (error: any) {
+      toast.error(error?.message || "Error al procesar checkout");
     } finally {
       setLoading(false);
     }

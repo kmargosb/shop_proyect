@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import RelatedProducts from "@/features/products/components/RelatedProducts";
-
+import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { useCart } from "@/features/cart/CartContext";
 import { apiFetch } from "@/shared/lib/api";
@@ -92,12 +92,25 @@ export default function ProductPage() {
   =============================== */
 
   const handleAddToCart = async () => {
-    await addItem(product.id, quantity);
+    try {
+      await addItem(product.id, quantity);
+
+      toast.success("Producto añadido al carrito");
+    } catch (error: any) {
+      toast.error(error?.message || "No hay suficiente stock");
+    }
   };
 
   const handleBuyNow = async () => {
-    await addItem(product.id, quantity);
-    router.push("/checkout");
+    try {
+      await addItem(product.id, quantity);
+
+      toast.success("Producto añadido al carrito");
+
+      router.push("/checkout");
+    } catch (error: any) {
+      toast.error(error?.message || "No hay suficiente stock");
+    }
   };
 
   /* ===============================
