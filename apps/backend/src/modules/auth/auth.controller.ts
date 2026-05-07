@@ -13,13 +13,45 @@ import { loginWithGoogle } from "./google.service";
 
 /**
  * 🔐 Opciones de cookie CONSISTENTES
+ *
+ * Desarrollo local:
+ * - Por defecto funciona con http://localhost porque `secure` queda en false
+ *   y no se fija un domain explícito.
+ *
+ * Producción:
+ * - `secure` se activa automáticamente con NODE_ENV=production.
+ * - Si algún despliegue necesita cookies cross-site, se puede configurar
+ *   COOKIE_SAMESITE=none y COOKIE_SECURE=true desde variables de entorno.
+ * - COOKIE_DOMAIN es opcional; si no se define, el navegador usa el host de la API.
  */
+type CookieSameSite = "lax" | "strict" | "none";
+
+function getCookieSameSite(): CookieSameSite {
+  const value = process.env.COOKIE_SAMESITE?.toLowerCase();
+
+  if (value === "strict" || value === "none") {
+    return value;
+  }
+
+  return "lax";
+}
+
+function getCookieSecure(sameSite: CookieSameSite): boolean {
+  if (process.env.COOKIE_SECURE) {
+    return process.env.COOKIE_SECURE === "true";
+  }
+
+  return process.env.NODE_ENV === "production" || sameSite === "none";
+}
+
+const cookieSameSite = getCookieSameSite();
+
 const cookieOptions = {
   httpOnly: true,
-  secure: false, // en producción → true
-  sameSite: "lax" as const,
+  secure: getCookieSecure(cookieSameSite),
+  sameSite: cookieSameSite,
   path: "/",
-  domain: "localhost",
+  ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN }),
 };
 
 /* ============================
@@ -153,22 +185,11 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (!matchedToken) {
-    await prisma.user.update({
-      where: { id: decoded.id },
-      data: {
-        tokenVersion: { increment: 1 },
-      },
-    });
-
-    await prisma.refreshToken.deleteMany({
-      where: { userId: decoded.id },
-    });
-
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);
 
     return res.status(403).json({
-      error: "Sesión inválida. Se cerraron todas las sesiones.",
+      error: "Sesión inválida. Inicia sesión nuevamente.",
     });
   }
 
@@ -185,8 +206,8 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  await prisma.refreshToken.deleteMany({
-    where: { userId: decoded.id },
+  await prisma.refreshToken.delete({
+    where: { id: matchedToken.id },
   });
 
   const newRefreshToken = generateRefreshToken({

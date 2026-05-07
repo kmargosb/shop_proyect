@@ -51,18 +51,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /* ================= HELPERS ================= */
 
   const mapItems = (cart: any): CartItem[] =>
-  (cart.items ?? [])
-    .sort((a: any, b: any) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    )
-    .map((item: any) => ({
-      id: item.id,
-      productId: item.productId,
-      name: item.product?.name ?? "Producto",
-      price: item.price,
-      quantity: item.quantity,
-      image: item.product?.images?.[0]?.url || null,
-    }));
+    (cart.items ?? [])
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      )
+      .map((item: any) => ({
+        id: item.id,
+        productId: item.productId,
+        name: item.product?.name ?? "Producto",
+        price: item.price,
+        quantity: item.quantity,
+        image: item.product?.images?.[0]?.url || null,
+      }));
 
   /* ================= CREATE CART ================= */
 
@@ -121,7 +122,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ productId, quantity }),
     });
 
-    if (!res || !res.ok) return;
+    if (!res) {
+      throw new Error("Error de conexión");
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+
+      throw new Error(data?.error || "No se pudo añadir al carrito");
+    }
 
     const cart = await res.json();
     setItems(mapItems(cart));
@@ -142,53 +151,53 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /* ================= INCREASE ================= */
 
   const increaseQuantity = async (itemId: string) => {
-  const item = items.find((i) => i.id === itemId);
-  if (!item) return;
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
 
-  const cartId = await ensureCart();
-  if (!cartId) return;
+    const cartId = await ensureCart();
+    if (!cartId) return;
 
-  const res = await apiFetch(`/cart/${cartId}/items`, {
-    method: "POST",
-    body: JSON.stringify({
-      productId: item.productId,
-      quantity: 1,
-    }),
-  });
+    const res = await apiFetch(`/cart/${cartId}/items`, {
+      method: "POST",
+      body: JSON.stringify({
+        productId: item.productId,
+        quantity: 1,
+      }),
+    });
 
-  if (!res || !res.ok) return;
+    if (!res || !res.ok) return;
 
-  const cart = await res.json();
-  setItems(mapItems(cart));
-};
+    const cart = await res.json();
+    setItems(mapItems(cart));
+  };
 
   /* ================= DECREASE ================= */
 
   const decreaseQuantity = async (itemId: string) => {
-  const item = items.find((i) => i.id === itemId);
-  if (!item) return;
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
 
-  const cartId = await ensureCart();
-  if (!cartId) return;
+    const cartId = await ensureCart();
+    if (!cartId) return;
 
-  if (item.quantity === 1) {
-    await removeItem(itemId);
-    return;
-  }
+    if (item.quantity === 1) {
+      await removeItem(itemId);
+      return;
+    }
 
-  const res = await apiFetch(`/cart/${cartId}/items`, {
-    method: "POST",
-    body: JSON.stringify({
-      productId: item.productId,
-      quantity: -1,
-    }),
-  });
+    const res = await apiFetch(`/cart/${cartId}/items`, {
+      method: "POST",
+      body: JSON.stringify({
+        productId: item.productId,
+        quantity: -1,
+      }),
+    });
 
-  if (!res || !res.ok) return;
+    if (!res || !res.ok) return;
 
-  const cart = await res.json();
-  setItems(mapItems(cart));
-};
+    const cart = await res.json();
+    setItems(mapItems(cart));
+  };
 
   /* ================= CLEAR ================= */
 
