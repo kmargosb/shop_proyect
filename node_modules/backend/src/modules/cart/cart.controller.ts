@@ -10,24 +10,19 @@ import { AuthRequest } from "@/common/middleware/auth.middleware";
 
 export const createCartController = async (req: AuthRequest, res: Response) => {
   try {
-
     const userId = req.body?.userId;
 
     const cart = await CartService.getOrCreateCart(userId);
 
     res.json(cart);
-
   } catch (error) {
-
     console.error("Create cart error:", error);
 
     res.status(500).json({
       error: "Failed to create cart",
     });
-
   }
 };
-
 
 /* =========================================================
    GET CART
@@ -35,7 +30,6 @@ export const createCartController = async (req: AuthRequest, res: Response) => {
 
 export const getCartController = async (req: AuthRequest, res: Response) => {
   try {
-
     const cartId = getStringParam(req.params.cartId);
 
     if (!cartId) {
@@ -47,25 +41,23 @@ export const getCartController = async (req: AuthRequest, res: Response) => {
     const cart = await CartService.getCart(cartId);
 
     res.json(cart);
-
   } catch (error) {
-
     console.error(error);
 
     res.status(500).json({
       error: "Failed to get cart",
     });
-
   }
 };
-
 
 /* =========================================================
    GET CART TOTALS
 ========================================================= */
 
-export const getCartTotalsController = async (req: AuthRequest, res: Response) => {
-
+export const getCartTotalsController = async (
+  req: AuthRequest,
+  res: Response,
+) => {
   const cartId = getStringParam(req.params.cartId);
 
   if (!cartId) {
@@ -77,39 +69,38 @@ export const getCartTotalsController = async (req: AuthRequest, res: Response) =
   const totals = await CartService.calculateTotals(cartId);
 
   res.json(totals);
-
 };
-
 
 /* =========================================================
    ADD ITEM
 ========================================================= */
 
 export const addItemController = async (req: AuthRequest, res: Response) => {
+  try {
+    const cartId = getStringParam(req.params.cartId);
+    if (!cartId) {
+      return res.status(400).json({
+        error: "Cart ID is required",
+      });
+    }
 
-  const cartId = getStringParam(req.params.cartId);
+    const { productId, quantity } = req.body;
 
-  if (!cartId) {
+    const cart = await CartService.addItem(cartId, productId, quantity);
+
+    return res.json(cart);
+  } catch (error: any) {
     return res.status(400).json({
-      error: "Cart ID is required",
+      error: error?.message || "Failed to update cart item",
     });
   }
-
-  const { productId, quantity } = req.body;
-
-  const cart = await CartService.addItem(cartId, productId, quantity);
-
-  res.json(cart);
-
 };
-
 
 /* =========================================================
    REMOVE ITEM
 ========================================================= */
 
 export const removeItemController = async (req: AuthRequest, res: Response) => {
-
   const itemId = getStringParam(req.params.itemId);
 
   if (!itemId) {
@@ -121,24 +112,19 @@ export const removeItemController = async (req: AuthRequest, res: Response) => {
   const item = await CartService.removeItem(itemId);
 
   res.json(item);
-
 };
-
 
 /* =========================================================
    MERGE CART
 ========================================================= */
 
 export const mergeCartController = async (req: AuthRequest, res: Response) => {
-
   const { guestCartId, userId } = req.body;
 
   const cart = await CartService.mergeCart(guestCartId, userId);
 
   res.json(cart);
-
 };
-
 
 /* =========================================================
    CHECKOUT CART
@@ -146,7 +132,7 @@ export const mergeCartController = async (req: AuthRequest, res: Response) => {
 
 export const checkoutCartController = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { cartId } = req.params;

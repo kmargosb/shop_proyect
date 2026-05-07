@@ -8,7 +8,7 @@ export interface TokenPayload {
 
 export function generateAccessToken(payload: TokenPayload): string {
   const secret = process.env.JWT_ACCESS_SECRET
-  const expiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "15m"
+  const expiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "2h"
 
   if (!secret) {
     throw new Error("JWT_ACCESS_SECRET no definido")
@@ -23,7 +23,7 @@ export function generateAccessToken(payload: TokenPayload): string {
 
 export function generateRefreshToken(payload: TokenPayload): string {
   const secret = process.env.JWT_REFRESH_SECRET
-  const expiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d"
+  const expiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "30d"
 
   if (!secret) {
     throw new Error("JWT_REFRESH_SECRET no definido")

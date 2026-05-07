@@ -56,12 +56,12 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
 
   res.cookie("accessToken", result.accessToken, {
     ...cookieOptions,
-    maxAge: 15 * 60 * 1000 // 15 min,
+    maxAge: 2 * 60 * 60 * 1000, // 2 hours
   });
 
   res.cookie("refreshToken", result.refreshToken, {
     ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.json({ user: result.user });
@@ -201,7 +201,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     data: {
       token: hashedRefreshToken,
       userId: decoded.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -213,7 +213,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
   res.cookie("accessToken", newAccessToken, {
     ...cookieOptions,
-    maxAge: 15 * 60 * 1000 // 15 min,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", newRefreshToken, {
@@ -272,7 +272,7 @@ export const googleAuthController = asyncHandler(
       data: {
         token: hashedRefreshToken,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -282,12 +282,12 @@ export const googleAuthController = asyncHandler(
 
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 min,
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
     });
 
     res.cookie("refreshToken", refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     /* =========================

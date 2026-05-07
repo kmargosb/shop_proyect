@@ -82,7 +82,7 @@ export const CartService = {
   ========================================================= */
 
   async addItem(cartId: string, productId: string, quantity: number) {
-    if (quantity <= 0) {
+    if (quantity === 0) {
       throw new Error("Invalid quantity");
     }
 
@@ -108,11 +108,21 @@ export const CartService = {
       const currentQty = existingItem?.quantity ?? 0;
       const nextQty = currentQty + quantity;
 
+      if (quantity < 0 && !existingItem) {
+        throw new Error("Cart item not found");
+      }
+
       if (nextQty > product.stock) {
         throw new Error("Not enough stock available");
       }
 
-      if (existingItem) {
+      if (nextQty <= 0) {
+        if (existingItem) {
+          await tx.cartItem.delete({
+            where: { id: existingItem.id },
+          });
+        }
+      } else if (existingItem) {
         await tx.cartItem.update({
           where: { id: existingItem.id },
           data: {
@@ -124,7 +134,7 @@ export const CartService = {
           data: {
             cartId,
             productId,
-            quantity,
+            quantity: nextQty,
             price: product.price,
           },
         });
