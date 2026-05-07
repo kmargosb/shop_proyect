@@ -1,12 +1,5 @@
-"use client"
-
-import AdminOrders from "@/features/orders/components/AdminOrders"
-import AdminDashboard from "@/features/dashboard/components/AdminDashboard"
+import AdminOrders from "@/features/orders/components/AdminOrders";
 
 export default function OrdersPage() {
-  return (
-  <main>
-    <AdminDashboard/>
-    <AdminOrders />
-  </main>)
+  return <AdminOrders />;
 }
