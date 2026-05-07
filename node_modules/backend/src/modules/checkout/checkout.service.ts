@@ -20,21 +20,21 @@ export const CheckoutService = {
   async checkout(data: CheckoutInput) {
     const { cartId, method, userId, ...checkoutData } = data;
 
-    /* =========================
-       VALIDATE CART
-    ========================= */
-
-    await CartService.validateCart(cartId);
-
-    /* =========================
-       SYNC INVENTORY
-    ========================= */
+   /* =========================
+      SYNC INVENTORY
+   ========================= */
 
     await CartService.syncCartInventory(cartId);
 
-    /* =========================
-       CALCULATE TOTALS
-    ========================= */
+   /* =========================
+      VALIDATE CART
+   ========================= */
+
+    await CartService.validateCart(cartId);
+
+   /* =========================
+      CALCULATE TOTALS
+   ========================= */
 
     const totals = await CartService.calculateTotals(cartId);
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useCart } from "@/features/cart/CartContext";
 import type { Product } from "@/types/product";
+import { toast } from "sonner";
 
 type Props = {
   product: Product;
@@ -15,8 +16,16 @@ export default function ProductCard({ product }: Props) {
   const outOfStock = product.stock <= 0;
 
   const handleAddToCart = async () => {
+  try {
     await addItem(product.id, 1);
-  };
+
+    toast.success("Producto añadido al carrito");
+  } catch (error: any) {
+    toast.error(
+      error?.message || "No hay suficiente stock",
+    );
+  }
+};
 
   const primaryImage = product.images?.[0]?.url ?? "/placeholder-product.png";
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
