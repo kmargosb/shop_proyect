@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/shared/lib/api";
 import {
   AreaChart,
@@ -15,6 +15,21 @@ import {
 } from "recharts";
 import { io } from "socket.io-client";
 import { COUNTRIES } from "@/shared/constants/countries";
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Banknote,
+  CalendarDays,
+  CreditCard,
+  Globe2,
+  PackageCheck,
+  ReceiptText,
+  RefreshCw,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 /* ================= TYPES ================= */
 
@@ -26,6 +41,7 @@ type Metrics = {
   refundedAmount: number;
   revenue7d: RevenuePoint[];
   revenue30d: RevenuePoint[];
+  revenue90d?: RevenuePoint[];
 };
 
 type RevenuePoint = {
@@ -46,30 +62,31 @@ type Activity = {
   orderId?: string;
 };
 
+type Range = "7d" | "30d" | "90d";
+
+type KpiCardProps = {
+  title: string;
+  value: string | number;
+  description: string;
+  icon: LucideIcon;
+  accent: string;
+  trend?: number;
+  danger?: boolean;
+};
+
 /* ================= COMPONENT ================= */
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
-  
-  const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
-  
+  const [range, setRange] = useState<Range>("30d");
   const [countries, setCountries] = useState<Country[]>([]);
-  
-  const countriesFormatted = useMemo(() => {
-    return countries.map((c) => ({
-      ...c,
-      country: COUNTRIES.find((x) => x.code === c.country)?.name || c.country,
-    }));
-  }, [countries]);
-  
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   /* ================= LOAD ================= */
-  useEffect(() => {
-    loadAll();
-  }, []);
+  const loadAll = useCallback(async () => {
+    setIsRefreshing(true);
 
-  const loadAll = async () => {
     try {
       const [m, c, a] = await Promise.all([
         apiFetch("/dashboard/metrics"),
@@ -90,38 +107,59 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.error("Dashboard load error:", e);
+    } finally {
+      setIsRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   /* ================= SOCKET REALTIME ================= */
   useEffect(() => {
-    const socket = io("http://localhost:4000", {
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+
+    const socket = io(socketUrl, {
       withCredentials: true,
     });
 
     socket.on("dashboard:update", () => {
-      console.log("🔄 Dashboard update recibido");
       loadAll();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [loadAll]);
 
   /* ================= REVENUE ================= */
 
   const revenueData = useMemo(() => {
     if (!metrics) return [];
 
-    const raw =
-      range === "7d" ? (metrics.revenue7d ?? []) : (metrics.revenue30d ?? []);
+    const rawByRange: Record<Range, RevenuePoint[]> = {
+      "7d": metrics.revenue7d ?? [],
+      "30d": metrics.revenue30d ?? [],
+      "90d": metrics.revenue90d ?? metrics.revenue30d ?? [],
+    };
 
-    return raw.map((d) => ({
-      date: d.date.slice(5),
+    return rawByRange[range].map((d) => ({
+      date: formatDateLabel(d.date),
       revenue: Number((d.revenue / 100).toFixed(2)),
     }));
   }, [metrics, range]);
+
+  const countriesFormatted = useMemo(() => {
+    return countries
+      .map((c) => ({
+        ...c,
+        country: COUNTRIES.find((x) => x.code === c.country)?.name || c.country,
+        revenue: Number((c.revenue / 100).toFixed(2)),
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 6);
+  }, [countries]);
 
   /* ================= GROWTH ================= */
 
@@ -136,13 +174,67 @@ export default function AdminDashboard() {
     return ((last - prev) / prev) * 100;
   }, [revenueData]);
 
-  if (!metrics) return <p>Cargando...</p>;
+  const conversionHint = useMemo(() => {
+    if (!metrics?.totalOrders || !metrics.totalRevenue) return "Sin datos todavía";
+
+    return `${format(metrics.totalRevenue / metrics.totalOrders)} ticket medio`;
+  }, [metrics]);
+
+  if (!metrics) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
+      {/* ================= HERO ================= */}
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.28),transparent_34%),linear-gradient(135deg,#111111,#080808)] p-5 shadow-2xl shadow-black/30 sm:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium text-neutral-300">
+              <Sparkles size={14} className="text-indigo-300" />
+              Panel en tiempo real para decisiones de tienda
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+                Resumen comercial
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base">
+                Supervisa ingresos, pedidos, reembolsos, mercados principales y actividad reciente sin salir del panel.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex rounded-2xl border border-white/10 bg-black/30 p-1">
+              {(["7d", "30d", "90d"] as Range[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 ${
+                    range === r
+                      ? "bg-white text-black shadow-lg shadow-white/10"
+                      : "text-neutral-400 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={loadAll}
+              disabled={isRefreshing}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+              Actualizar
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* ================= ALERTS ================= */}
       {(metrics.refundedAmount > 10000 || growth < -20) && (
-        <div className="space-y-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {metrics.refundedAmount > 10000 && (
             <Alert text="Alto volumen de reembolsos detectado" />
           )}
@@ -150,125 +242,193 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ================= HEADER ================= */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-
-        <div className="flex gap-2">
-          {["7d", "30d", "90d"].map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r as any)}
-              className={`px-3 py-1 text-xs rounded ${
-                range === r ? "bg-white text-black" : "bg-white/10 text-white"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* ================= KPIs ================= */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card title="Revenue" value={format(metrics.totalRevenue)} />
-        <Card title="Hoy" value={format(metrics.todayRevenue)} />
-        <Card title="Pedidos" value={metrics.totalOrders} />
-        <Card title="Hoy" value={metrics.todayOrders} />
-        <Card title="Refunds" value={format(metrics.refundedAmount)} danger />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <KpiCard
+          title="Ingresos totales"
+          value={format(metrics.totalRevenue)}
+          description={conversionHint}
+          icon={Banknote}
+          accent="from-emerald-400/20 to-emerald-400/5 text-emerald-300"
+          trend={growth}
+        />
+        <KpiCard
+          title="Ingresos de hoy"
+          value={format(metrics.todayRevenue)}
+          description="Ventas generadas hoy"
+          icon={CalendarDays}
+          accent="from-sky-400/20 to-sky-400/5 text-sky-300"
+        />
+        <KpiCard
+          title="Pedidos totales"
+          value={metrics.totalOrders}
+          description="Órdenes registradas"
+          icon={ShoppingBag}
+          accent="from-indigo-400/20 to-indigo-400/5 text-indigo-300"
+        />
+        <KpiCard
+          title="Pedidos hoy"
+          value={metrics.todayOrders}
+          description="Actividad diaria"
+          icon={PackageCheck}
+          accent="from-amber-400/20 to-amber-400/5 text-amber-300"
+        />
+        <KpiCard
+          title="Reembolsos"
+          value={format(metrics.refundedAmount)}
+          description="Importe devuelto"
+          icon={CreditCard}
+          accent="from-rose-400/20 to-rose-400/5 text-rose-300"
+          danger={metrics.refundedAmount > 0}
+        />
       </div>
 
       {/* ================= CHART ================= */}
-      <div className="bg-neutral-900 p-6 rounded-2xl">
-        <div className="flex justify-between mb-4">
-          <h3 className="text-sm text-neutral-400">Revenue</h3>
+      <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+              Revenue
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-white">
+              Ingresos por periodo
+            </h2>
+          </div>
 
-          <span className={growth >= 0 ? "text-green-400" : "text-red-400"}>
-            {growth >= 0 ? "▲" : "▼"} {growth.toFixed(1)}%
-          </span>
+          <div
+            className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
+              growth >= 0
+                ? "bg-emerald-500/10 text-emerald-300"
+                : "bg-red-500/10 text-red-300"
+            }`}
+          >
+            {growth >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+            {growth.toFixed(1)}%
+          </div>
         </div>
 
-        <div className="h-64">
-          <ResponsiveContainer>
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
+        <div className="h-72 sm:h-80">
+          {revenueData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueData} margin={{ left: 0, right: 8, top: 8 }}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
 
-              <CartesianGrid stroke="#222" />
-              <XAxis dataKey="date" stroke="#888" />
-              <Tooltip />
-              <Area dataKey="revenue" stroke="#6366f1" fill="url(#colorRev)" />
-            </AreaChart>
-          </ResponsiveContainer>
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                <XAxis dataKey="date" stroke="#737373" tickLine={false} axisLine={false} />
+                <YAxis
+                  stroke="#737373"
+                  tickLine={false}
+                  axisLine={false}
+                  width={48}
+                  tickFormatter={(value) => `€${value}`}
+                />
+                <Tooltip
+                  formatter={(value) => [`€${Number(value).toFixed(2)}`, "Ingresos"]}
+                  contentStyle={{
+                    background: "rgba(10,10,10,0.96)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: "16px",
+                    color: "#fff",
+                  }}
+                  labelStyle={{ color: "#a3a3a3" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#818cf8"
+                  strokeWidth={3}
+                  fill="url(#colorRev)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState title="Sin ingresos para mostrar" description="Cuando entren ventas, aparecerán en esta gráfica." />
+          )}
         </div>
-      </div>
+      </section>
 
       {/* ================= GRID ================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         {/* SALES BY COUNTRY */}
-        <div className="bg-neutral-900 p-6 rounded-2xl">
-          <h3 className="text-sm text-neutral-400 mb-4">Sales by country</h3>
-
-          <div className="h-64">
-            <ResponsiveContainer>
-              <BarChart data={countriesFormatted}>
-                <XAxis dataKey="country" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip />
-                <Bar dataKey="revenue" fill="#22c55e" />
-              </BarChart>
-            </ResponsiveContainer>
+        <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+                Mercados
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">
+                Ventas por país
+              </h2>
+            </div>
+            <Globe2 className="text-neutral-500" size={22} />
           </div>
-        </div>
+
+          <div className="h-72">
+            {countriesFormatted.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={countriesFormatted} margin={{ left: 0, right: 8 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                  <XAxis
+                    dataKey="country"
+                    stroke="#737373"
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis
+                    stroke="#737373"
+                    tickLine={false}
+                    axisLine={false}
+                    width={48}
+                    tickFormatter={(value) => `€${value}`}
+                  />
+                  <Tooltip
+                    formatter={(value) => [`€${Number(value).toFixed(2)}`, "Ventas"]}
+                    contentStyle={{
+                      background: "rgba(10,10,10,0.96)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "16px",
+                      color: "#fff",
+                    }}
+                    labelStyle={{ color: "#a3a3a3" }}
+                  />
+                  <Bar dataKey="revenue" fill="#34d399" radius={[10, 10, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState title="Sin países destacados" description="Las ventas por ubicación aparecerán aquí." />
+            )}
+          </div>
+        </section>
 
         {/* ACTIVITY */}
-        <div className="bg-neutral-900 p-6 rounded-2xl">
-          <h3 className="text-sm text-neutral-400 mb-4">Activity</h3>
-
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {activity.map((a, i) => {
-              const map = {
-                ORDER_CREATED: ["🛒", "text-blue-400", "Nueva orden"],
-                PAYMENT_SUCCEEDED: ["💳", "text-green-400", "Pago completado"],
-                REFUND_CREATED: ["💸", "text-red-400", "Reembolso creado"],
-                REFUND_COMPLETED: [
-                  "💰",
-                  "text-yellow-400",
-                  "Reembolso completado",
-                ],
-              } as any;
-
-              const [icon, color, text] = map[a.type] || [
-                "📦",
-                "text-neutral-400",
-                a.message,
-              ];
-
-              return (
-                <div
-                  key={a.id ?? i}
-                  className="flex gap-3 border-b border-white/10 pb-2"
-                >
-                  <span>{icon}</span>
-
-                  <div>
-                    <p className={`text-sm ${color}`}>
-                      {text} {a.orderId?.slice(0, 6) ?? ""}
-                    </p>
-
-                    <p className="text-xs text-neutral-500">
-                      {new Date(a.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+        <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+                Timeline
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">
+                Actividad reciente
+              </h2>
+            </div>
+            <ReceiptText className="text-neutral-500" size={22} />
           </div>
-        </div>
+
+          <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+            {activity.length > 0 ? (
+              activity.map((item, index) => <ActivityItem key={item.id ?? index} item={item} />)
+            ) : (
+              <EmptyState title="Sin actividad reciente" description="Los eventos de pedidos y pagos aparecerán aquí." />
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -276,23 +436,110 @@ export default function AdminDashboard() {
 
 /* ================= UI ================= */
 
-function Card({ title, value, danger }: any) {
+function KpiCard({ title, value, description, icon: Icon, accent, trend, danger }: KpiCardProps) {
   return (
-    <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
-      <p className="text-xs text-neutral-400">{title}</p>
-      <p className={`text-xl font-bold ${danger ? "text-red-400" : ""}`}>
-        {value}
-      </p>
+    <article className="group rounded-3xl border border-white/10 bg-neutral-950/80 p-5 shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-white/20">
+      <div className="flex items-start justify-between gap-4">
+        <div className={`rounded-2xl bg-gradient-to-br p-3 ${accent}`}>
+          <Icon size={20} />
+        </div>
+
+        {typeof trend === "number" && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
+              trend >= 0 ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"
+            }`}
+          >
+            {trend >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+            {trend.toFixed(1)}%
+          </span>
+        )}
+      </div>
+
+      <div className="mt-5">
+        <p className="text-sm text-neutral-400">{title}</p>
+        <p className={`mt-2 text-2xl font-semibold tracking-tight ${danger ? "text-rose-300" : "text-white"}`}>
+          {value}
+        </p>
+        <p className="mt-2 text-xs text-neutral-500">{description}</p>
+      </div>
+    </article>
+  );
+}
+
+function ActivityItem({ item }: { item: Activity }) {
+  const map: Record<string, { icon: string; color: string; text: string }> = {
+    ORDER_CREATED: { icon: "🛒", color: "text-sky-300", text: "Nueva orden" },
+    PAYMENT_SUCCEEDED: { icon: "💳", color: "text-emerald-300", text: "Pago completado" },
+    REFUND_CREATED: { icon: "💸", color: "text-rose-300", text: "Reembolso creado" },
+    REFUND_COMPLETED: { icon: "💰", color: "text-amber-300", text: "Reembolso completado" },
+  };
+
+  const activity = map[item.type] || {
+    icon: "📦",
+    color: "text-neutral-300",
+    text: item.message || "Actualización de tienda",
+  };
+
+  return (
+    <div className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 transition hover:bg-white/[0.06]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm">
+        {activity.icon}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-sm font-medium ${activity.color}`}>
+          {activity.text} {item.orderId ? `#${item.orderId.slice(0, 6)}` : ""}
+        </p>
+        <p className="mt-1 text-xs text-neutral-500">
+          {new Date(item.createdAt).toLocaleString()}
+        </p>
+      </div>
     </div>
   );
 }
 
 function Alert({ text }: { text: string }) {
   return (
-    <div className="bg-red-500/10 border border-red-500 text-red-400 p-3 rounded-xl text-sm">
-      ⚠ {text}
+    <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+      <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-300" />
+      <span>{text}</span>
     </div>
   );
+}
+
+function EmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex h-full min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
+      <p className="font-medium text-neutral-200">{title}</p>
+      <p className="mt-2 max-w-sm text-sm text-neutral-500">{description}</p>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-48 animate-pulse rounded-3xl bg-white/[0.06]" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="h-36 animate-pulse rounded-3xl bg-white/[0.06]" />
+        ))}
+      </div>
+      <div className="h-96 animate-pulse rounded-3xl bg-white/[0.06]" />
+    </div>
+  );
+}
+
+function formatDateLabel(date: string) {
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) return date.slice(5);
+
+  return parsed.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+  });
 }
 
 function format(n: number) {
