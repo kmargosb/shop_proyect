@@ -206,9 +206,9 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  await prisma.refreshToken.delete({
-    where: { id: matchedToken.id },
-  });
+  await prisma.refreshToken.deleteMany({
+  where: { id: matchedToken.id },
+});
 
   const newRefreshToken = generateRefreshToken({
     id: decoded.id,
