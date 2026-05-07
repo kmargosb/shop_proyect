@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { startJobScheduler } from "@/services/jobs/job.scheduler";
 import { setIO } from "@/lib/socket";
+import { allowedOrigins } from "@/config/origins";
 
 const PORT = process.env.PORT || 4000;
 
@@ -15,7 +16,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     credentials: true,
   },
 });

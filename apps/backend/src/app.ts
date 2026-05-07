@@ -18,6 +18,7 @@ import couponRoutes from "@/modules/coupon/coupon.routes"
 import cartRoutes from "@/modules/cart/cart.routes"
 import checkoutRoutes from "@/modules/checkout/checkout.routes"
 import brandRoutes from "@/modules/brands/brands.routes"
+import { allowedOrigins } from "@/config/origins"
 
 const app = express();
 
@@ -27,7 +28,7 @@ app.post("/api/payments/webhook", stripeWebhook);
 
 /* GLOBAL MIDDLEWARE */
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: allowedOrigins,
   credentials: true,
 }));
 
