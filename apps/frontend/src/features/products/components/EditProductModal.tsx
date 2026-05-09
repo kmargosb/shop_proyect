@@ -1,200 +1,189 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { apiFetch } from "@/shared/lib/api"
-import { toast } from "sonner"
-import { Star } from "lucide-react"
-import type { Product } from "@/types/product";
-
-type Image = {
-  id: string
-  url: string
-  publicId: string
-  isPrimary: boolean
-}
+import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
+import { ImagePlus, Loader2, Save, Star, X } from "lucide-react";
+import { toast } from "sonner";
+import { apiFetch } from "@/shared/lib/api";
+import type { Product, ProductImage } from "@/types/product";
 
 type Props = {
-  product: Product
-  onClose: () => void
-  onUpdated: () => void
-}
+  product: Product;
+  onClose: () => void;
+  onUpdated: () => void;
+};
+
+type ProductForm = {
+  name: string;
+  description: string;
+  price: string;
+  stock: string;
+};
 
 export default function EditProductModal({ product, onClose, onUpdated }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [files, setFiles] = useState<File[]>([])
-  const [images, setImages] = useState<Image[]>(product.images)
-  const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
+  const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [images, setImages] = useState<ProductImage[]>(product.images ?? []);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [primaryImageId, setPrimaryImageId] = useState<string | null>(
-    product.images.find(img => img.isPrimary)?.id || null
-  )
-
-  const [form, setForm] = useState({
+    product.images?.find((img) => img.isPrimary)?.id ?? product.images?.[0]?.id ?? null,
+  );
+  const [form, setForm] = useState<ProductForm>({
     name: product.name,
-    description: product.description || "",
-    price: product.price,
-    stock: product.stock,
-  })
+    description: product.description ?? "",
+    price: String(product.price),
+    stock: String(product.stock),
+  });
+
+  const previews = useMemo(
+    () => files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) })),
+    [files],
+  );
+
+  const isValid = form.name.trim() && Number(form.price) >= 0 && Number(form.stock) >= 0;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+  };
 
   const markImageForDeletion = (id: string) => {
-    setImages(prev => prev.filter(img => img.id !== id))
-    setImagesToDelete(prev => [...prev, id])
+    setImages((prev) => prev.filter((img) => img.id !== id));
+    setImagesToDelete((prev) => (prev.includes(id) ? prev : [...prev, id]));
 
     if (primaryImageId === id) {
-      setPrimaryImageId(null)
+      setPrimaryImageId(null);
     }
-  }
+  };
 
   const updateProduct = async () => {
-  try {
-    setLoading(true)
+    if (!isValid) {
+      toast.error("Completa nombre, precio y stock con valores válidos");
+      return;
+    }
 
-    const formData = new FormData()
-    formData.append("name", form.name)
-    formData.append("description", form.description)
-    formData.append("price", String(form.price))
-    formData.append("stock", String(form.stock))
-    formData.append("imagesToDelete", JSON.stringify(imagesToDelete))
-    formData.append("primaryImageId", primaryImageId || "")
+    try {
+      setLoading(true);
 
-    files.forEach(file => {
-      formData.append("images", file)
-    })
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("description", form.description.trim());
+      formData.append("price", String(Math.round(Number(form.price))));
+      formData.append("stock", String(Math.max(0, Math.round(Number(form.stock)))));
+      formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      formData.append("primaryImageId", primaryImageId ?? "");
 
-    const res = await apiFetch(`/products/${product.id}`, {
-      method: "PUT",
-      body: formData,
-    })
+      files.forEach((file) => formData.append("images", file));
 
-    if (!res || !res.ok) throw new Error()
+      const res = await apiFetch(`/products/${product.id}`, {
+        method: "PUT",
+        body: formData,
+      });
 
-    toast.success("Producto actualizado correctamente")
-    onUpdated()
-    onClose()
-  } catch {
-    toast.error("Error actualizando producto")
-  } finally {
-    setLoading(false)
-  }
-}
+      if (!res || !res.ok) throw new Error("Update product failed");
+
+      toast.success("Producto actualizado correctamente");
+      onUpdated();
+      onClose();
+    } catch {
+      toast.error("Error actualizando producto");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-gray-900 p-6 rounded-2xl w-full max-w-lg space-y-4">
-
-        <h2 className="text-xl font-semibold">Editar Producto</h2>
-
-        <input
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full p-2 bg-gray-800 rounded"
-        />
-
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          className="w-full p-2 bg-gray-800 rounded"
-        />
-
-        <div className="flex gap-4">
-          <input
-            name="price"
-            value={form.price}
-            onChange={handleChange}
-            className="flex-1 p-2 bg-gray-800 rounded"
-          />
-          <input
-            name="stock"
-            value={form.stock}
-            onChange={handleChange}
-            className="flex-1 p-2 bg-gray-800 rounded"
-          />
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white/10 bg-neutral-950 shadow-2xl shadow-black/40 sm:rounded-3xl">
+        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-white/10 bg-neutral-950/95 p-5 backdrop-blur sm:p-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-200">
+              <Save size={14} /> Edición rápida
+            </div>
+            <h2 className="mt-3 text-xl font-semibold text-white">Editar producto</h2>
+            <p className="mt-1 text-sm text-neutral-400">Actualiza catálogo, inventario y portada sin salir del dashboard.</p>
+          </div>
+          <button onClick={onClose} className="rounded-full p-2 text-neutral-500 transition hover:bg-white/10 hover:text-white" aria-label="Cerrar modal">
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Existing Images */}
-        {images.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto">
-            {images.map(img => (
-              <div key={img.id} className="relative">
+        <div className="space-y-5 p-5 sm:p-6">
+          <Field label="Nombre" required>
+            <input name="name" value={form.name} onChange={handleChange} className="dashboard-input" />
+          </Field>
 
-                <img
-                  src={img.url}
-                  className="w-20 h-20 object-cover rounded-lg"
-                />
+          <Field label="Descripción">
+            <textarea name="description" value={form.description} onChange={handleChange} rows={4} className="dashboard-input resize-none" />
+          </Field>
 
-                {/* Delete */}
-                <button
-                  onClick={() => markImageForDeletion(img.id)}
-                  className="absolute -top-2 -right-2 bg-red-600 w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                >
-                  ✕
-                </button>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Precio en céntimos" required>
+              <input name="price" type="number" min="0" value={form.price} onChange={handleChange} className="dashboard-input" />
+            </Field>
+            <Field label="Stock disponible" required>
+              <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} className="dashboard-input" />
+            </Field>
+          </div>
 
-                {/* Primary Star */}
-                <button
-                  onClick={() => setPrimaryImageId(img.id)}
-                  className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center
-                  ${primaryImageId === img.id
-                    ? "bg-yellow-500 text-black"
-                    : "bg-gray-700 text-gray-400"
-                  }`}
-                >
-                  <Star size={14} />
-                </button>
-
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-white">Galería</h3>
+                <p className="mt-1 text-xs text-neutral-500">Marca una imagen como portada o elimina las que ya no uses.</p>
               </div>
-            ))}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10">
+                <ImagePlus size={14} /> Añadir
+                <input type="file" multiple accept="image/*" className="sr-only" onChange={(event) => setFiles((prev) => [...prev, ...Array.from(event.target.files ?? [])])} />
+              </label>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+              {images.map((img) => (
+                <div key={img.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+                  <img src={img.url} alt={product.name} className="h-full w-full object-cover" />
+                  <button onClick={() => setPrimaryImageId(img.id)} className={`absolute bottom-2 left-2 rounded-full p-1.5 transition ${primaryImageId === img.id ? "bg-yellow-400 text-black" : "bg-black/70 text-white hover:bg-yellow-400 hover:text-black"}`} aria-label="Marcar como portada">
+                    <Star size={14} fill={primaryImageId === img.id ? "currentColor" : "none"} />
+                  </button>
+                  <button onClick={() => markImageForDeletion(img.id)} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-rose-500" aria-label="Eliminar imagen">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+
+              {previews.map((preview, index) => (
+                <div key={`${preview.name}-${index}`} className="relative aspect-square overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
+                  <img src={preview.url} alt={preview.name} className="h-full w-full object-cover" />
+                  <span className="absolute bottom-2 left-2 rounded-full bg-emerald-300 px-2 py-1 text-[10px] font-bold text-black">Nueva</span>
+                  <button onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-rose-500" aria-label="Eliminar imagen nueva">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* New Images */}
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(e) => {
-            if (!e.target.files) return
-            setFiles(Array.from(e.target.files))
-          }}
-          className="w-full p-2 bg-gray-800 rounded"
-        />
-
-        {files.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto">
-            {files.map((file, index) => (
-              <img
-                key={index}
-                src={URL.createObjectURL(file)}
-                className="w-20 h-20 object-cover rounded-lg"
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-700 rounded"
-          >
-            Cancelar
-          </button>
-
-          <button
-            onClick={updateProduct}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 rounded disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : "Guardar"}
+        <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-white/10 bg-neutral-950/95 p-5 backdrop-blur sm:flex-row sm:justify-end sm:p-6">
+          <button onClick={onClose} disabled={loading} className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-white/10 disabled:opacity-60">Cancelar</button>
+          <button onClick={updateProduct} disabled={loading || !isValid} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60">
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading ? "Guardando..." : "Guardar cambios"}
           </button>
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
+  return (
+    <label className="block space-y-2">
+      <span className="flex items-center gap-2 text-sm font-medium text-neutral-200">
+        {label} {required && <span className="text-emerald-300">*</span>}
+      </span>
+      {children}
+    </label>
+  );
 }

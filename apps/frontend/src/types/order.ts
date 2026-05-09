@@ -1,12 +1,23 @@
+export type OrderStatus =
+  | "PENDING"
+  | "PAYMENT_PROCESSING"
+  | "PAID"
+  | "SHIPPED"
+  | "CANCELLED"
+  | "FAILED"
+  | "PARTIALLY_REFUNDED"
+  | "REFUNDED";
+
 export type OrderItem = {
   id: string;
   productId: string;
   quantity: number;
   price: number;
-  product: {
+  product?: {
     id: string;
     name: string;
-  };
+  } | null;
+  productName?: string;
 };
 
 export type Invoice = {
@@ -20,22 +31,14 @@ export type Order = {
   email: string;
   phone: string;
   addressLine1: string;
-  addressLine2?: string;
+  addressLine2?: string | null;
   city: string;
   postalCode: string;
   country: string;
   totalAmount: number;
-  status: string;
+  status: OrderStatus | string;
   createdAt: string;
-  stripePaymentIntentId?: string | null
+  stripePaymentIntentId?: string | null;
   items: OrderItem[];
   invoice?: Invoice | null;
-
-  //status:
-    //| "PENDING"
-    //| "PAYMENT_PROCESSING"
-    //| "PAID"
-    //| "SHIPPED"
-    //| "CANCELLED"
-    //| "FAILED"
 };
