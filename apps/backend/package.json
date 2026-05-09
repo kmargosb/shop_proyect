@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "vitest",
     "reset:orders": "ts-node -r tsconfig-paths/register src/scripts/resetOrders.ts",
-    "clear:db": "ts-node -r tsconfig-paths/register src/scripts/clearDatabase.ts"
+    "clear:db": "ts-node -r tsconfig-paths/register src/scripts/clearDatabase.ts",
+    "pretest": "prisma generate"
   },
   "keywords": [],
   "author": "",
