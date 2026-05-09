@@ -19,7 +19,7 @@ type CheckoutData = {
 };
 
 /* ============================================
-   🔥 INCLUDE CENTRALIZADO (CLAVE)
+   🔥 CENTRALIZED INCLUDE
 ============================================ */
 
 const CART_INCLUDE = {
@@ -35,7 +35,7 @@ const CART_INCLUDE = {
 };
 
 /* ============================================
-   SERVICE
+   CART SERVICE
 ============================================ */
 
 export const CartService = {
@@ -48,6 +48,8 @@ export const CartService = {
       Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000,
     );
 
+    /* guest cart */
+
     if (!userId) {
       return prisma.cart.create({
         data: { expiresAt },
@@ -55,14 +57,20 @@ export const CartService = {
       });
     }
 
+    /* existing active cart */
+
     let cart = await prisma.cart.findFirst({
       where: {
         userId,
         status: "ACTIVE",
-        expiresAt: { gt: new Date() },
+        expiresAt: {
+          gt: new Date(),
+        },
       },
       include: CART_INCLUDE,
     });
+
+    /* create new cart */
 
     if (!cart) {
       cart = await prisma.cart.create({
@@ -91,7 +99,19 @@ export const CartService = {
         where: { id: cartId },
       });
 
-      if (!cart) throw new Error("Cart not found");
+      if (!cart) {
+        throw new Error("Cart not found");
+      }
+
+      /* prevent invalid carts */
+
+      if (cart.status !== "ACTIVE") {
+        throw new Error("Cart is no longer active");
+      }
+
+      if (cart.expiresAt < new Date()) {
+        throw new Error("Cart expired");
+      }
 
       const product = await tx.product.findUnique({
         where: { id: productId },
@@ -102,19 +122,31 @@ export const CartService = {
       }
 
       const existingItem = await tx.cartItem.findFirst({
-        where: { cartId, productId },
+        where: {
+          cartId,
+          productId,
+        },
       });
 
       const currentQty = existingItem?.quantity ?? 0;
       const nextQty = currentQty + quantity;
 
+      /* removing non-existing item */
+
       if (quantity < 0 && !existingItem) {
         throw new Error("Cart item not found");
       }
 
-      if (nextQty > product.stock) {
+      /* real available stock */
+
+      const availableStock =
+        product.stock - product.reservedStock;
+
+      if (nextQty > availableStock) {
         throw new Error("Not enough stock available");
       }
+
+      /* remove item */
 
       if (nextQty <= 0) {
         if (existingItem) {
@@ -122,14 +154,22 @@ export const CartService = {
             where: { id: existingItem.id },
           });
         }
-      } else if (existingItem) {
+      }
+
+      /* update quantity */
+
+      else if (existingItem) {
         await tx.cartItem.update({
           where: { id: existingItem.id },
           data: {
-            quantity: { increment: quantity },
+            quantity: nextQty,
           },
         });
-      } else {
+      }
+
+      /* create item */
+
+      else {
         await tx.cartItem.create({
           data: {
             cartId,
@@ -140,10 +180,14 @@ export const CartService = {
         });
       }
 
+      /* extend cart expiration */
+
       await tx.cart.update({
         where: { id: cartId },
         data: {
-          expiresAt: new Date(Date.now() + CART_EXPIRATION_HOURS * 3600000),
+          expiresAt: new Date(
+            Date.now() + CART_EXPIRATION_HOURS * 3600000,
+          ),
         },
       });
 
@@ -163,7 +207,8 @@ export const CartService = {
       where: { id: cartItemId },
     });
 
-    // 🔥 CLAVE: no romper si no existe
+    /* avoid crashing if already removed */
+
     if (!item) {
       return { success: true };
     }
@@ -182,6 +227,8 @@ export const CartService = {
   async getCart(cartId?: string, userId?: string) {
     let cart = null;
 
+    /* try existing cart */
+
     if (cartId) {
       cart = await prisma.cart.findUnique({
         where: { id: cartId },
@@ -189,9 +236,17 @@ export const CartService = {
       });
     }
 
-    if (!cart || cart.status !== "ACTIVE" || cart.expiresAt < new Date()) {
+    /* invalid cart → regenerate */
+
+    if (
+      !cart ||
+      cart.status !== "ACTIVE" ||
+      cart.expiresAt < new Date()
+    ) {
       cart = await this.getOrCreateCart(userId);
     }
+
+    /* sync inventory */
 
     await this.syncCartInventory(cart.id);
 
@@ -202,30 +257,46 @@ export const CartService = {
   },
 
   /* =========================================================
-     SYNC CART WITH INVENTORY
+     SYNC CART INVENTORY
   ========================================================= */
 
   async syncCartInventory(cartId: string) {
     const items = await prisma.cartItem.findMany({
       where: { cartId },
-      include: { product: true },
+      include: {
+        product: true,
+      },
     });
 
     for (const item of items) {
+      /* deleted / inactive */
+
       if (!item.product || !item.product.isActive) {
-        await prisma.cartItem.delete({ where: { id: item.id } });
+        await prisma.cartItem.delete({
+          where: { id: item.id },
+        });
+
         continue;
       }
 
+      /* out of stock */
+
       if (item.product.stock <= 0) {
-        await prisma.cartItem.delete({ where: { id: item.id } });
+        await prisma.cartItem.delete({
+          where: { id: item.id },
+        });
+
         continue;
       }
+
+      /* adjust quantity */
 
       if (item.quantity > item.product.stock) {
         await prisma.cartItem.update({
           where: { id: item.id },
-          data: { quantity: item.product.stock },
+          data: {
+            quantity: item.product.stock,
+          },
         });
       }
     }
@@ -238,10 +309,14 @@ export const CartService = {
   async calculateTotals(cartId: string) {
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
-      include: { items: true },
+      include: {
+        items: true,
+      },
     });
 
-    if (!cart) throw new Error("Cart not found");
+    if (!cart) {
+      throw new Error("Cart not found");
+    }
 
     const subtotal = cart.items.reduce(
       (acc, item) => acc + item.price * item.quantity,
@@ -249,19 +324,30 @@ export const CartService = {
     );
 
     const discount = 0;
+
     const tax = Math.floor(subtotal * 0.21);
+
     const shipping = subtotal > 5000 ? 0 : 500;
 
     const total = subtotal - discount + tax + shipping;
 
-    return { subtotal, discount, tax, shipping, total };
+    return {
+      subtotal,
+      discount,
+      tax,
+      shipping,
+      total,
+    };
   },
 
   /* =========================================================
      CONVERT CART TO ORDER
   ========================================================= */
 
-  async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
+  async convertCartToOrder(
+    cartId: string,
+    checkoutData: CheckoutData,
+  ) {
     await this.validateCart(cartId);
 
     return prisma.$transaction(async (tx) => {
@@ -270,26 +356,47 @@ export const CartService = {
         include: CART_INCLUDE,
       });
 
-      if (!cart) throw new Error("Cart not found");
-      if (cart.status !== "ACTIVE") throw new Error("Cart already converted");
-      if (cart.expiresAt < new Date()) throw new Error("Cart expired");
-      if (cart.items.length === 0) throw new Error("Cart empty");
+      if (!cart) {
+        throw new Error("Cart not found");
+      }
 
-      const { createOrder } = await import("@/modules/orders/order.service");
+      if (cart.status !== "ACTIVE") {
+        throw new Error("Cart already converted");
+      }
+
+      if (cart.expiresAt < new Date()) {
+        throw new Error("Cart expired");
+      }
+
+      if (cart.items.length === 0) {
+        throw new Error("Cart empty");
+      }
+
+      const { createOrder } =
+        await import("@/modules/orders/order.service");
+
+      /* create order */
 
       const order = await createOrder({
         userId: checkoutData.userId ?? undefined,
         ...checkoutData,
+
         items: cart.items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
         })),
       });
 
+      /* mark cart converted */
+
       await tx.cart.update({
         where: { id: cartId },
-        data: { status: "CONVERTED" },
+        data: {
+          status: "CONVERTED",
+        },
       });
+
+      /* cleanup items */
 
       await tx.cartItem.deleteMany({
         where: { cartId },
@@ -306,28 +413,53 @@ export const CartService = {
   async validateCart(cartId: string) {
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
+
       include: {
         items: {
-          include: { product: true },
+          include: {
+            product: true,
+          },
         },
       },
     });
 
-    if (!cart) throw new Error("Cart not found");
-    if (cart.expiresAt < new Date()) throw new Error("Cart expired");
-    if (cart.items.length === 0) throw new Error("Cart empty");
+    if (!cart) {
+      throw new Error("Cart not found");
+    }
+
+    if (cart.status !== "ACTIVE") {
+      throw new Error("Cart already converted");
+    }
+
+    if (cart.expiresAt < new Date()) {
+      throw new Error("Cart expired");
+    }
+
+    if (cart.items.length === 0) {
+      throw new Error("Cart empty");
+    }
 
     for (const item of cart.items) {
       if (!item.product) {
-        throw new Error(`Product ${item.productId} not found`);
+        throw new Error(
+          `Product ${item.productId} not found`,
+        );
       }
 
       if (!item.product.isActive) {
-        throw new Error(`Product ${item.product.name} not available`);
+        throw new Error(
+          `Product ${item.product.name} not available`,
+        );
       }
 
-      if (item.product.stock < item.quantity) {
-        throw new Error(`Not enough stock for ${item.product.name}`);
+      const availableStock =
+        item.product.stock -
+        item.product.reservedStock;
+
+      if (availableStock < item.quantity) {
+        throw new Error(
+          `Not enough stock for ${item.product.name}`,
+        );
       }
     }
 
@@ -341,10 +473,15 @@ export const CartService = {
   async mergeCart(guestCartId: string, userId: string) {
     const guestCart = await prisma.cart.findUnique({
       where: { id: guestCartId },
-      include: { items: true },
+
+      include: {
+        items: true,
+      },
     });
 
-    if (!guestCart) return null;
+    if (!guestCart) {
+      return null;
+    }
 
     const userCart = await this.getOrCreateCart(userId);
 
@@ -358,9 +495,14 @@ export const CartService = {
 
       if (existing) {
         await prisma.cartItem.update({
-          where: { id: existing.id },
+          where: {
+            id: existing.id,
+          },
+
           data: {
-            quantity: { increment: item.quantity },
+            quantity: {
+              increment: item.quantity,
+            },
           },
         });
       } else {
@@ -375,28 +517,43 @@ export const CartService = {
       }
     }
 
+    /* mark guest cart merged */
+
     await prisma.cart.update({
       where: { id: guestCartId },
-      data: { status: "MERGED" },
+
+      data: {
+        status: "MERGED",
+      },
     });
 
     return userCart;
   },
 
   /* =========================================================
-     ENSURE CART
+     ENSURE VALID CART
   ========================================================= */
 
   async ensureCart(cartId?: string, userId?: string) {
-    if (!cartId) return this.getOrCreateCart(userId);
+    if (!cartId) {
+      return this.getOrCreateCart(userId);
+    }
 
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
     });
 
-    if (!cart) return this.getOrCreateCart(userId);
-    if (cart.status !== "ACTIVE") return this.getOrCreateCart(userId);
-    if (cart.expiresAt < new Date()) return this.getOrCreateCart(userId);
+    if (!cart) {
+      return this.getOrCreateCart(userId);
+    }
+
+    if (cart.status !== "ACTIVE") {
+      return this.getOrCreateCart(userId);
+    }
+
+    if (cart.expiresAt < new Date()) {
+      return this.getOrCreateCart(userId);
+    }
 
     return cart;
   },

@@ -30,7 +30,7 @@ export async function apiFetch(
 
     // 🔥 mantenemos flags (útiles para futuro)
     const isAuthRoute = endpoint.startsWith("/auth");
-    const isMeRoute = endpoint === "/auth/me";
+    
 
     let response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
@@ -45,7 +45,7 @@ export async function apiFetch(
        🔥 ACCESS TOKEN EXPIRED (FIX REAL)
     ============================ */
 
-    if (response.status === 401 && !isMeRoute) {
+    if (response.status === 401) {
       const refreshed = await refreshAccessToken();
 
       if (!refreshed) {
@@ -72,11 +72,12 @@ export async function apiFetch(
     ============================ */
 
     if (response.status === 401 || response.status === 403) {
-      if (!isAuthRoute && !isMeRoute) {
-        window.location.href = "/login";
-      }
-      return null;
-    }
+  if (!isAuthRoute) {
+    window.location.href = "/login";
+  }
+
+  return null;
+}
 
     return response;
   } catch (error) {

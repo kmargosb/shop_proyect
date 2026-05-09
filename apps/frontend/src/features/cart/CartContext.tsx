@@ -78,15 +78,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return cart.id;
   };
 
-  /* ================= ENSURE CART ================= */
+  /* ================= ENSURE VALID CART ================= */
 
-  const ensureCart = async (): Promise<string | null> => {
-    let cartId = localStorage.getItem(CART_KEY);
+const ensureCart = async (): Promise<string | null> => {
+  let cartId = localStorage.getItem(CART_KEY);
 
-    if (cartId) return cartId;
+  /* no cart */
+
+  if (!cartId) {
+    return await createCart();
+  }
+
+  /* validate current cart */
+
+  const res = await apiFetch(`/cart/${cartId}`);
+
+  /* invalid / expired / converted */
+
+  if (!res || !res.ok) {
+    localStorage.removeItem(CART_KEY);
 
     return await createCart();
-  };
+  }
+
+  const cart = await res.json();
+
+  /* backend generated new cart */
+
+  if (cart.id !== cartId) {
+    localStorage.setItem(CART_KEY, cart.id);
+  }
+
+  return cart.id;
+};
 
   /* ================= FETCH CART ================= */
 
