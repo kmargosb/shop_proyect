@@ -487,6 +487,60 @@ model StripeWebhookEvent {
   @@index([createdAt])
 }
 
+
+/**
+ * ============================
+ * ADMIN SETTINGS
+ * ============================
+ */
+
+model AdminSettings {
+  id String @id @default("singleton")
+
+  storeName    String @default("Shop Proyect")
+  supportEmail String @default("support@shopproyect.com")
+  domain       String @default("shopproyect.com")
+  country      String @default("España")
+
+  currency      String  @default("EUR")
+  taxRate       Decimal @default(21) @db.Decimal(5, 2)
+  taxLabel      String  @default("IVA")
+  showTaxes     Boolean @default(true)
+
+  shippingZone      String  @default("EU shipping zone")
+  estimatedDelivery String  @default("2-5 días laborables")
+  trackingAutomatic Boolean @default(false)
+
+  emailFromName          String  @default("Shop Proyect")
+  emailFromAddress       String  @default("no-reply@shopproyect.com")
+  orderConfirmationEmail Boolean @default(true)
+
+  theme               String  @default("Dark premium")
+  accentColor         String  @default("Emerald / Indigo")
+  themeEditorPrepared Boolean @default(false)
+
+  notifyOrders  Boolean @default(true)
+  notifyStock   Boolean @default(true)
+  notifyRefunds Boolean @default(true)
+  notifyWeekly  Boolean @default(false)
+
+  compactTableDensity Boolean @default(false)
+  keyboardShortcuts   Boolean @default(true)
+  autoRefreshDashboard Boolean @default(true)
+
+  maintenanceMode Boolean @default(false)
+
+  webhookEndpoint String @default("https://shopproyect.com/api/webhooks")
+  apiKeysLabel    String @default("Secret management pending")
+
+  refundAutomation Boolean @default(false)
+  shipmentTracking Boolean @default(false)
+  invoiceActions   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 /**
  * ============================
  * ENUMS

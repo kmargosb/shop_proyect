@@ -7,6 +7,7 @@ import {
   generateRefreshToken,
 } from "@/common/utils/generateToken";
 import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 import * as authService from "./auth.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { loginWithGoogle } from "./google.service";
@@ -148,6 +149,54 @@ export const logoutAll = asyncHandler(
   },
 );
 
+
+/* ============================
+   CHANGE PASSWORD
+============================ */
+
+function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
+export const changePassword = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  const { currentPassword, newPassword } = req.body as { currentPassword?: unknown; newPassword?: unknown };
+
+  if (!isString(currentPassword) || !isString(newPassword) || newPassword.length < 8) {
+    return res.status(400).json({ error: "Contraseña inválida" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user?.password) {
+    return res.status(400).json({ error: "Esta cuenta no tiene contraseña local" });
+  }
+
+  const validPassword = await bcrypt.compare(currentPassword, user.password);
+
+  if (!validPassword) {
+    return res.status(400).json({ error: "Contraseña actual incorrecta" });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword, tokenVersion: { increment: 1 } },
+  });
+
+  await prisma.refreshToken.deleteMany({ where: { userId } });
+
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
+  res.json({ message: "Contraseña actualizada" });
+});
+
 /* ============================
    REFRESH
 ============================ */
@@ -159,10 +208,16 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     return res.status(401).json({ error: "No autorizado" });
   }
 
-  let decoded: any;
+  let decoded: JwtPayload & { id: string };
 
   try {
-    decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
+
+    if (typeof payload === "string" || typeof payload.id !== "string") {
+      return res.status(403).json({ error: "Refresh inválido" });
+    }
+
+    decoded = payload as JwtPayload & { id: string };
   } catch {
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);

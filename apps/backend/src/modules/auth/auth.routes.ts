@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { login, logout, refresh, logoutAll, me, googleAuthController } from "./auth.controller"
+import { changePassword, login, logout, refresh, logoutAll, me, googleAuthController } from "./auth.controller"
 import { loginRateLimiter } from "@/common/middleware/rateLimit.middleware"
 import { protect} from "@/common/middleware/auth.middleware"
 
@@ -10,6 +10,7 @@ router.post("/logout", logout);
 router.post("/refresh", refresh)
 router.post("/login", loginRateLimiter, login)
 router.post("/logout-all", protect, logoutAll)
+router.post("/change-password", protect, changePassword)
 router.get("/me", protect, me)
 router.post("/google", googleAuthController);
 router.post("/auth/google", googleAuthController);

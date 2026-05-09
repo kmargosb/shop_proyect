@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -27,10 +28,16 @@ export const protect = async (
   }
 
   try {
-    const decoded = jwt.verify(
+    const payload = jwt.verify(
       token,
       process.env.JWT_ACCESS_SECRET as string,
-    ) as any;
+    );
+
+    if (typeof payload === "string" || typeof payload.id !== "string" || typeof payload.role !== "string" || typeof payload.tokenVersion !== "number") {
+      return res.status(401).json({ error: "Token inválido" });
+    }
+
+    const decoded = payload as JwtPayload & { id: string; role: string; tokenVersion: number };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
@@ -67,10 +74,16 @@ export const attachUserIfExists = async (
   }
 
   try {
-    const decoded = jwt.verify(
+    const payload = jwt.verify(
       token,
       process.env.JWT_ACCESS_SECRET as string,
-    ) as any;
+    );
+
+    if (typeof payload === "string" || typeof payload.id !== "string" || typeof payload.role !== "string" || typeof payload.tokenVersion !== "number") {
+      return next();
+    }
+
+    const decoded = payload as JwtPayload & { id: string; role: string; tokenVersion: number };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },

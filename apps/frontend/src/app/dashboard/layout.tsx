@@ -69,7 +69,7 @@ export default function DashboardLayout({
     navItems.find((item) => isActive(item.href))?.name ?? "Dashboard";
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-[#070707] text-white">
+    <div className="flex min-h-screen overflow-x-hidden bg-[#070707] text-white">
       {/* BACKGROUND */}
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.14),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.1),transparent_28%)]" />
 
@@ -166,7 +166,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* MAIN */}
-      <div className="relative z-10 flex min-h-screen flex-1 flex-col lg:ml-72">
+      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col lg:ml-72">
         {/* HEADER */}
         <header className="sticky top-0 z-30 flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#070707]/85 px-4 backdrop-blur-xl sm:px-6">
           <div className="flex items-center gap-3">
@@ -199,8 +199,8 @@ export default function DashboardLayout({
         </header>
 
         {/* CONTENT */}
-        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <div className="mx-auto w-full min-w-0 max-w-7xl">{children}</div>
         </main>
       </div>
     </div>
