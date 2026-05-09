@@ -75,11 +75,20 @@ function toDto(settings: PersistedSettings): AdminSettingsDto {
   };
 }
 
-function upsertDefaultSettings() {
-  return prisma.adminSettings.upsert({
+async function upsertDefaultSettings() {
+  const existing = await prisma.adminSettings.findUnique({
     where: { id: SETTINGS_ID },
-    create: { id: SETTINGS_ID, ...defaultSettings },
-    update: {},
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.adminSettings.create({
+    data: {
+      id: SETTINGS_ID,
+      ...defaultSettings,
+    },
   });
 }
 
