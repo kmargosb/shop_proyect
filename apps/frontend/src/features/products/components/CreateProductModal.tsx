@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { ProductBrand } from "@/types/product";
 import { ImagePlus, Loader2, PackagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/shared/lib/api";
@@ -16,6 +17,7 @@ type ProductForm = {
   description: string;
   price: string;
   stock: string;
+  brandId: string;
 };
 
 const emptyForm: ProductForm = {
@@ -23,12 +25,32 @@ const emptyForm: ProductForm = {
   description: "",
   price: "",
   stock: "",
+  brandId: "",
 };
 
 export default function CreateProductModal({ onClose, onCreated }: Props) {
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [brands, setBrands] = useState<ProductBrand[]>([]);
   const [form, setForm] = useState<ProductForm>(emptyForm);
+
+  useEffect(() => {
+  async function loadBrands() {
+    try {
+      const res = await apiFetch("/brands");
+
+      if (!res) return;
+
+      const data = await res.json();
+
+      setBrands(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadBrands();
+}, []);
 
   const previews = useMemo(
     () => files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) })),
@@ -42,8 +64,10 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
   };
 
   const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  event: React.ChangeEvent<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >,
+) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
   };
 
@@ -61,6 +85,7 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
       formData.append("description", form.description.trim());
       formData.append("price", String(Math.round(Number(form.price))));
       formData.append("stock", String(Math.max(0, Math.round(Number(form.stock)))));
+      formData.append("brandId", form.brandId);
 
       files.forEach((file) => {
         formData.append("images", file);
@@ -117,28 +142,78 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
             </Field>
           </div>
 
-          <div className="rounded-3xl border border-dashed border-white/15 bg-white/[0.03] p-5">
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-black/20 p-6 text-center transition hover:bg-white/[0.04]">
-              <ImagePlus className="text-neutral-500" size={28} />
-              <span className="mt-3 text-sm font-semibold text-white">Subir imágenes</span>
-              <span className="mt-1 text-xs text-neutral-500">PNG, JPG o WebP. La primera imagen será portada.</span>
-              <input type="file" multiple accept="image/*" className="sr-only" onChange={(event) => setFiles((prev) => [...prev, ...Array.from(event.target.files ?? [])])} />
-            </label>
+          <Field label="Marca">
+  <select
+    name="brandId"
+    value={form.brandId}
+    onChange={handleChange}
+    className="dashboard-input"
+  >
+    <option value="">Sin marca</option>
 
-            {previews.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
-                {previews.map((preview, index) => (
-                  <div key={`${preview.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
-                    <img src={preview.url} alt={preview.name} className="h-full w-full object-cover" />
-                    <button onClick={() => removeFile(index)} className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white opacity-100 transition hover:bg-rose-500 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Eliminar imagen">
-                      <X size={14} />
-                    </button>
-                    {index === 0 && <span className="absolute bottom-2 left-2 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-black">Portada</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+    {brands.map((brand) => (
+      <option key={brand.id} value={brand.id}>
+        {brand.name}
+      </option>
+    ))}
+  </select>
+</Field>
+
+<div className="rounded-3xl border border-dashed border-white/15 bg-white/[0.03] p-5">
+  <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-black/20 p-6 text-center transition hover:bg-white/[0.04]">
+    <ImagePlus className="text-neutral-500" size={28} />
+    <span className="mt-3 text-sm font-semibold text-white">
+      Subir imágenes
+    </span>
+    <span className="mt-1 text-xs text-neutral-500">
+      PNG, JPG o WebP. La primera imagen será portada.
+    </span>
+
+    <input
+      type="file"
+      multiple
+      accept="image/*"
+      className="sr-only"
+      onChange={(event) =>
+        setFiles((prev) => [
+          ...prev,
+          ...Array.from(event.target.files ?? []),
+        ])
+      }
+    />
+  </label>
+
+  {previews.length > 0 && (
+    <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+      {previews.map((preview, index) => (
+        <div
+          key={`${preview.name}-${index}`}
+          className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+        >
+          <img
+            src={preview.url}
+            alt={preview.name}
+            className="h-full w-full object-cover"
+          />
+
+          <button
+            onClick={() => removeFile(index)}
+            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white opacity-100 transition hover:bg-rose-500 sm:opacity-0 sm:group-hover:opacity-100"
+            aria-label="Eliminar imagen"
+          >
+            <X size={14} />
+          </button>
+
+          {index === 0 && (
+            <span className="absolute bottom-2 left-2 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-black">
+              Portada
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
         </div>
 
         <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-white/10 bg-neutral-950/95 p-5 backdrop-blur sm:flex-row sm:justify-end sm:p-6">

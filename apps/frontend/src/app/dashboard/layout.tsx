@@ -10,6 +10,7 @@ import {
   ReceiptText,
   Search,
   Settings,
+  Tags,
   ShieldCheck,
   Store,
   Users,
@@ -22,6 +23,7 @@ const navItems = [
   { name: "Products", href: "/dashboard/products", icon: Package },
   { name: "Orders", href: "/dashboard/orders", icon: ReceiptText },
   { name: "Customers", href: "/dashboard/customers", icon: Users },
+  { name: "Brands", href: "/dashboard/brands", icon: Tags },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

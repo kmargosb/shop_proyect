@@ -16,16 +16,14 @@ export default function ProductCard({ product }: Props) {
   const outOfStock = product.stock <= 0;
 
   const handleAddToCart = async () => {
-  try {
-    await addItem(product.id, 1);
+    try {
+      await addItem(product.id, 1);
 
-    toast.success("Producto añadido al carrito");
-  } catch (error: any) {
-    toast.error(
-      error?.message || "No hay suficiente stock",
-    );
-  }
-};
+      toast.success("Producto añadido al carrito");
+    } catch (error: any) {
+      toast.error(error?.message || "No hay suficiente stock");
+    }
+  };
 
   const primaryImage = product.images?.[0]?.url ?? "/placeholder-product.png";
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
@@ -72,12 +70,20 @@ export default function ProductCard({ product }: Props) {
 
       {/* INFO */}
       <div className="p-4 space-y-3">
-        <Link
-          href={`/product/${product.id}`}
-          className="block text-sm font-medium text-white hover:underline"
-        >
-          {product.name}
-        </Link>
+        <div className="space-y-1">
+          {product.brand?.name && (
+            <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+              {product.brand.name}
+            </p>
+          )}
+
+          <Link
+            href={`/product/${product.id}`}
+            className="block text-sm font-medium text-white hover:underline"
+          >
+            {product.name}
+          </Link>
+        </div>
 
         <p className="text-lg font-semibold">
           €{(product.price / 100).toFixed(2)}

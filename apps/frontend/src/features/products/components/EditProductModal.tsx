@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { ProductBrand } from "@/types/product";
 import { ImagePlus, Loader2, Save, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/shared/lib/api";
@@ -18,11 +19,13 @@ type ProductForm = {
   description: string;
   price: string;
   stock: string;
+  brandId: string;
 };
 
 export default function EditProductModal({ product, onClose, onUpdated }: Props) {
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [brands, setBrands] = useState<ProductBrand[]>([]);
   const [images, setImages] = useState<ProductImage[]>(product.images ?? []);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [primaryImageId, setPrimaryImageId] = useState<string | null>(
@@ -33,7 +36,26 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
     description: product.description ?? "",
     price: String(product.price),
     stock: String(product.stock),
+    brandId: product.brandId ?? "",
   });
+
+  useEffect(() => {
+  async function loadBrands() {
+    try {
+      const res = await apiFetch("/brands");
+
+      if (!res) return;
+
+      const data = await res.json();
+
+      setBrands(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadBrands();
+}, []);
 
   const previews = useMemo(
     () => files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) })),
@@ -43,8 +65,10 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
   const isValid = form.name.trim() && Number(form.price) >= 0 && Number(form.stock) >= 0;
 
   const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  event: React.ChangeEvent<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >,
+) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
   };
 
@@ -71,6 +95,7 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
       formData.append("description", form.description.trim());
       formData.append("price", String(Math.round(Number(form.price))));
       formData.append("stock", String(Math.max(0, Math.round(Number(form.stock)))));
+      formData.append("brandId", form.brandId);
       formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
       formData.append("primaryImageId", primaryImageId ?? "");
 
@@ -127,7 +152,24 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
             </Field>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+<Field label="Marca">
+  <select
+    name="brandId"
+    value={form.brandId}
+    onChange={handleChange}
+    className="dashboard-input"
+  >
+    <option value="">Sin marca</option>
+
+    {brands.map((brand) => (
+      <option key={brand.id} value={brand.id}>
+        {brand.name}
+      </option>
+    ))}
+  </select>
+</Field>
+
+<div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-white">Galería</h3>
