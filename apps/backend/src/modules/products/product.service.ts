@@ -170,6 +170,7 @@ export async function createProduct(data: any, files: Express.Multer.File[]) {
         price: Number(data.price),
         stock: Number(data.stock),
         brandId: data.brandId || null,
+        category: data.category,
       },
     });
 
@@ -251,6 +252,7 @@ export async function updateProduct(
         price: Number(data.price),
         stock: Number(data.stock),
         brandId: data.brandId || null,
+        category: data.category,
       },
       include: { images: true },
     });

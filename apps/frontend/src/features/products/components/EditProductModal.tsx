@@ -20,7 +20,28 @@ type ProductForm = {
   price: string;
   stock: string;
   brandId: string;
+  category: string;
 };
+
+const categories = [
+  { value: "T_SHIRTS", label: "T-Shirts" },
+  { value: "SHIRTS", label: "Shirts" },
+  { value: "TANK_TOPS", label: "Tank Tops" },
+  { value: "PANTS", label: "Pants" },
+  { value: "SOCKS", label: "Socks" },
+  { value: "CAPS", label: "Caps" },
+
+  { value: "SKATE_DECKS", label: "Skate Decks" },
+  { value: "TRUCKS", label: "Trucks" },
+  { value: "BEARINGS", label: "Bearings" },
+  { value: "WHEELS", label: "Wheels" },
+  { value: "HARDWARE", label: "Hardware" },
+  { value: "WAX", label: "Wax" },
+
+  { value: "STICKERS", label: "Stickers" },
+  { value: "SPECIAL_ITEMS", label: "Special Items" },
+  { value: "OTHER", label: "Other" },
+];
 
 export default function EditProductModal({ product, onClose, onUpdated }: Props) {
   const [loading, setLoading] = useState(false);
@@ -37,6 +58,7 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
     price: String(product.price),
     stock: String(product.stock),
     brandId: product.brandId ?? "",
+    category: product.category ?? "OTHER",
   });
 
   useEffect(() => {
@@ -96,6 +118,7 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
       formData.append("price", String(Math.round(Number(form.price))));
       formData.append("stock", String(Math.max(0, Math.round(Number(form.stock)))));
       formData.append("brandId", form.brandId);
+      formData.append("category", form.category);
       formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
       formData.append("primaryImageId", primaryImageId ?? "");
 
@@ -151,6 +174,23 @@ export default function EditProductModal({ product, onClose, onUpdated }: Props)
               <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} className="dashboard-input" />
             </Field>
           </div>
+<Field label="Categoría">
+  <select
+    name="category"
+    value={form.category}
+    onChange={handleChange}
+    className="dashboard-input"
+  >
+    {categories.map((category) => (
+      <option
+        key={category.value}
+        value={category.value}
+      >
+        {category.label}
+      </option>
+    ))}
+  </select>
+</Field>
 
 <Field label="Marca">
   <select

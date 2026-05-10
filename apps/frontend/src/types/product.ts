@@ -24,6 +24,7 @@ export type Product = {
   isActive?: boolean;
   brand?: ProductBrand | null;
   brandId?: string | null;
+  category?: string;
   images: ProductImage[];
   createdAt: string;
 };

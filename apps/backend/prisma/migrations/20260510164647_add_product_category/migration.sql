@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "ProductCategory" AS ENUM ('T_SHIRTS', 'SHIRTS', 'TANK_TOPS', 'PANTS', 'SOCKS', 'CAPS', 'SKATE_DECKS', 'TRUCKS', 'BEARINGS', 'WHEELS', 'HARDWARE', 'WAX', 'STICKERS', 'SPECIAL_ITEMS', 'OTHER');
+
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "category" "ProductCategory" NOT NULL DEFAULT 'OTHER';

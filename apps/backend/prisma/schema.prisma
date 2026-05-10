@@ -66,12 +66,10 @@ model Product {
 
   isActive Boolean @default(true)
 
-  /* ============================
-     BRAND (NEW - SAFE)
-  ============================ */
-
   brandId String?
   brand   Brand? @relation(fields: [brandId], references: [id])
+
+  category ProductCategory @default(OTHER)
 
   /* ============================
      RELATIONS
@@ -546,6 +544,26 @@ model AdminSettings {
  * ENUMS
  * ============================
  */
+
+enum ProductCategory {
+  T_SHIRTS
+  SHIRTS
+  TANK_TOPS
+  PANTS
+  SOCKS
+  CAPS
+
+  SKATE_DECKS
+  TRUCKS
+  BEARINGS
+  WHEELS
+  HARDWARE
+  WAX
+
+  STICKERS
+  SPECIAL_ITEMS
+  OTHER
+}
 
 enum Role {
   USER
