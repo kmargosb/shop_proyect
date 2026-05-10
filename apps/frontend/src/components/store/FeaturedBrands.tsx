@@ -10,9 +10,9 @@ const brandImages: Record<string, string> = {
 
 const brandDescriptions: Record<string, string> = {
   "cobra-skate": "Underground skate culture and raw energy.",
-  luxphere: "Creative night sessions and visual aesthetics.",
-  camarguette: "Skateboarding, art and handmade identity.",
-  lust: "Performance, movement and modern lifestyle.",
+  "luxphere": "Creative night sessions and visual aesthetics.",
+  "camarguette": "Skateboarding, art and handmade identity.",
+  "lust": "Performance, movement and modern lifestyle.",
 };
 
 export default async function FeaturedBrands() {

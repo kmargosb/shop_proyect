@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/cart/CartContext";
 import { useEffect, useRef, useState } from "react";
@@ -81,8 +82,15 @@ export default function Navbar() {
       bg-white border-neutral-800`}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="font-bold text-xl text-black">
-          Koky Store
+        <Link
+          href="/"
+          className="flex items-center gap-3 transition hover:opacity-80"
+        >
+          <img
+  src="/brands/camarguette/logo.png"
+  alt="Camarguette"
+  className="h-16 w-auto object-contain"
+/>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm text-black">
