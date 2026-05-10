@@ -267,7 +267,7 @@ export default function SettingsPage() {
         {isDirty && <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">Tienes cambios sin guardar. Guarda todo o usa el botón de cada sección.</div>}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="hidden h-fit rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 xl:block">
           {settingsNav.map((item) => <a key={item.href} href={item.href} className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-neutral-400 transition hover:bg-white/[0.06] hover:text-white"><item.icon size={16} />{item.label}</a>)}
         </aside>

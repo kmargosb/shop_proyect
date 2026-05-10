@@ -90,7 +90,7 @@ export default function AdminOrders() {
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <OrderStat icon={CreditCard} label="Revenue capturado" value={formatMoney(stats.revenue)} helper={`${stats.paid} pagadas`} tone="emerald" />
         <OrderStat icon={Clock3} label="Pendientes" value={stats.pending} helper="Requieren pago/seguimiento" tone="amber" />
         <OrderStat icon={Truck} label="Enviadas" value={stats.shipped} helper="Tracking preparado" tone="sky" />
@@ -111,13 +111,13 @@ export default function AdminOrders() {
         </div>
       </section>
 
-      <div className="space-y-3 lg:hidden">
+      <div className="grid gap-3 md:grid-cols-2 xl:hidden">
         {paginated.map((order) => <OrderMobileCard key={order.id} order={order} onOpen={setSelectedOrder} onMarkPaid={() => updateStatus(order.id, "PAID")} />)}
       </div>
 
-      <section className="hidden min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/80 shadow-xl shadow-black/20 lg:block">
+      <section className="hidden min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/80 shadow-xl shadow-black/20 xl:block">
         <div className="min-w-0 overflow-x-auto">
-          <table className="w-full min-w-[760px] table-fixed text-sm">
+          <table className="w-full min-w-[920px] table-fixed text-sm">
             <thead className="bg-white/[0.03] text-xs uppercase tracking-[0.16em] text-neutral-500">
               <tr><th className="p-4 text-left font-medium">Orden</th><th className="p-4 text-left font-medium">Cliente</th><th className="p-4 text-left font-medium">Timeline</th><th className="p-4 text-left font-medium">Total</th><th className="p-4 text-left font-medium">Estado</th><th className="p-4 text-left font-medium">Fecha</th><th className="p-4 text-right font-medium">Acciones</th></tr>
             </thead>
@@ -170,4 +170,4 @@ function QuickViewModal({ order, onClose, onMarkShipped }: { order: Order; onClo
 function ActionTile({ icon: Icon, label }: { icon: LucideIcon; label: string }) { return <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-4 text-center text-neutral-500"><Icon className="mx-auto" size={18} /><p className="mt-2 text-xs font-semibold">{label} ready</p></div>; }
 function EmptyOrders() { return <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center"><PackageCheck className="mx-auto text-neutral-600" size={34} /><p className="mt-4 font-semibold text-neutral-200">No hay órdenes para esta vista</p><p className="mt-2 text-sm text-neutral-500">Cambia filtros o búsqueda para ver otros pedidos.</p></div>; }
 function Pagination({ page, totalPages, total, onPage }: { page: number; totalPages: number; total: number; onPage: (page: number) => void }) { return <div className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-neutral-950/80 p-4 text-sm text-neutral-400 sm:flex-row sm:items-center sm:justify-between"><span>{total} resultados · Página {page} de {totalPages}</span><div className="flex w-full gap-2 sm:w-auto"><button onClick={() => onPage(Math.max(1, page - 1))} disabled={page === 1} className="flex-1 rounded-xl border border-white/10 p-2 disabled:opacity-40 sm:flex-none"><ChevronLeft size={16} /></button><button onClick={() => onPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="flex-1 rounded-xl border border-white/10 p-2 disabled:opacity-40 sm:flex-none"><ChevronRight size={16} /></button></div></div>; }
-function OrdersSkeleton() { return <div className="space-y-4"><div className="h-44 animate-pulse rounded-3xl bg-white/[0.06]" /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-28 animate-pulse rounded-3xl bg-white/[0.06]" />)}</div><div className="h-96 animate-pulse rounded-3xl bg-white/[0.06]" /></div>; }
+function OrdersSkeleton() { return <div className="space-y-4"><div className="h-44 animate-pulse rounded-3xl bg-white/[0.06]" /><div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-28 animate-pulse rounded-3xl bg-white/[0.06]" />)}</div><div className="h-96 animate-pulse rounded-3xl bg-white/[0.06]" /></div>; }

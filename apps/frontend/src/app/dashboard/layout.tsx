@@ -108,7 +108,9 @@ export default function DashboardLayout({
                 <span className="block text-base font-semibold tracking-tight">
                   Store Admin
                 </span>
-                <span className="text-xs text-neutral-500">Panel profesional</span>
+                <span className="text-xs text-neutral-500">
+                  Panel profesional
+                </span>
               </span>
             </Link>
 
@@ -199,8 +201,10 @@ export default function DashboardLayout({
         </header>
 
         {/* CONTENT */}
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full min-w-0 max-w-7xl">{children}</div>
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8">
+          <div className="mx-auto w-full min-w-0 max-w-[1600px]">
+            {children}
+          </div>
         </main>
       </div>
     </div>

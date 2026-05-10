@@ -80,7 +80,7 @@ export default function CustomersPage() {
         <StatCard icon={TrendingUp} label="AOV" value={formatMoney(analytics.averageOrderValue)} helper="Average order value" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.85fr)]">
         <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-5 shadow-xl shadow-black/20">
           <div className="flex items-center justify-between gap-3">
             <div><h2 className="font-semibold text-white">Customer analytics</h2><p className="mt-1 text-sm text-neutral-500">Distribución simple para detectar clientes de alto valor.</p></div>
@@ -114,7 +114,7 @@ export default function CustomersPage() {
 
       <div className="hidden overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/80 shadow-xl shadow-black/20 md:block">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[680px] text-sm">
             <thead className="bg-white/[0.03] text-xs uppercase tracking-[0.18em] text-neutral-500">
               <tr><th className="p-4 text-left font-medium">Cliente</th><th className="p-4 text-left font-medium">Email</th><th className="p-4 text-left font-medium">Pedidos</th><th className="p-4 text-left font-medium">AOV</th><th className="p-4 text-left font-medium">Total gastado</th><th className="p-4 text-left font-medium">Última compra</th></tr>
             </thead>

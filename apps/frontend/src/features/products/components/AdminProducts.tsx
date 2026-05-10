@@ -114,7 +114,7 @@ export default function AdminProducts() {
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <ProductStat label="SKUs activos" value={stats.active} helper={`${stats.total} productos visibles`} tone="emerald" />
         <ProductStat label="Stock bajo" value={stats.lowStock} helper={`≤ ${LOW_STOCK_LIMIT} unidades`} tone="amber" />
         <ProductStat label="Sin stock" value={stats.outOfStock} helper="Requieren reposición" tone="rose" />
@@ -122,28 +122,70 @@ export default function AdminProducts() {
       </div>
 
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-5">
-        <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_auto_auto_auto] lg:items-center">
-          <div className="relative">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, marca o descripción..." className="dashboard-input pl-11" />
-          </div>
-          <FilterSelect label="Estado" value={statusFilter} onChange={(value) => setStatusFilter(value as ProductStatus | "all")} options={[ ["all", "Todos"], ["active", "Activos"], ["draft", "Draft"], ["out-of-stock", "Sin stock"] ]} />
-          <FilterSelect label="Stock" value={stockFilter} onChange={(value) => setStockFilter(value as StockFilter)} options={[ ["all", "Todo stock"], ["in-stock", "Saludable"], ["low", "Bajo"], ["out", "Agotado"] ]} />
-          <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-xs font-medium text-neutral-400">
-            <SlidersHorizontal size={14} /> Bulk actions preparado
-          </div>
-        </div>
-      </section>
+  <div className="grid gap-3">
 
-      <div className="space-y-3 md:hidden">
+    {/* SEARCH */}
+    <div className="relative">
+      <Search
+        size={16}
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"
+      />
+
+      <input
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder="Buscar por nombre, marca o descripción..."
+        className="dashboard-input pl-11"
+      />
+    </div>
+
+    {/* FILTERS */}
+    <div className="grid gap-3 sm:grid-cols-3">
+
+      <FilterSelect
+        label="Estado"
+        value={statusFilter}
+        onChange={(value) =>
+          setStatusFilter(value as ProductStatus | "all")
+        }
+        options={[
+          ["all", "Todos"],
+          ["active", "Activos"],
+          ["draft", "Draft"],
+          ["out-of-stock", "Sin stock"],
+        ]}
+      />
+
+      <FilterSelect
+        label="Stock"
+        value={stockFilter}
+        onChange={(value) => setStockFilter(value as StockFilter)}
+        options={[
+          ["all", "Todo stock"],
+          ["in-stock", "Saludable"],
+          ["low", "Bajo"],
+          ["out", "Agotado"],
+        ]}
+      />
+
+      <div className="dashboard-input flex min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-xs font-medium text-neutral-400">
+        <SlidersHorizontal size={14} />
+        <span className="truncate">Bulk actions preparado</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:hidden">
         {paginatedProducts.map((product) => (
           <ProductMobileCard key={product.id} product={product} onEdit={setEditingProduct} onDelete={setProductToDelete} />
         ))}
       </div>
 
-      <section className="hidden overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/80 shadow-xl shadow-black/20 md:block">
+      <section className="hidden overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/80 shadow-xl shadow-black/20 xl:block">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-white/[0.03] text-xs uppercase tracking-[0.16em] text-neutral-500">
               <tr>
                 <th className="p-4 text-left font-medium">Producto</th>
@@ -253,7 +295,7 @@ function ProductIdentity({ product }: { product: Product }) {
       <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
         {image ? <img src={image.url} alt={product.name} className="h-full w-full object-cover" /> : <Archive size={18} className="text-neutral-600" />}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 max-w-[220px]">
         <p className="truncate font-semibold text-white">{product.name}</p>
         <p className="truncate text-xs text-neutral-500">{product.brand?.name ?? product.description ?? "Sin descripción"}</p>
       </div>
@@ -273,12 +315,12 @@ function ProductMobileCard({ product, onEdit, onDelete }: { product: Product; on
 
 function ProductStat({ label, value, helper, tone }: { label: string; value: string | number; helper: string; tone: "emerald" | "amber" | "rose" | "sky" }) {
   const tones = { emerald: "text-emerald-300", amber: "text-amber-300", rose: "text-rose-300", sky: "text-sky-300" };
-  return <div className="rounded-3xl border border-white/10 bg-neutral-950/80 p-5 shadow-xl shadow-black/20"><p className="text-sm text-neutral-400">{label}</p><p className={`mt-2 text-2xl font-semibold ${tones[tone]}`}>{value}</p><p className="mt-1 text-xs text-neutral-500">{helper}</p></div>;
+  return <div className="rounded-2xl border border-white/10 bg-neutral-950/80 p-3 shadow-xl shadow-black/20 sm:rounded-3xl sm:p-5"><p className="text-xs text-neutral-400 sm:text-sm">{label}</p><p className={`mt-1 text-lg font-semibold sm:mt-2 sm:text-2xl ${tones[tone]}`}>{value}</p><p className="mt-1 line-clamp-1 text-[11px] text-neutral-500 sm:text-xs">{helper}</p></div>;
 }
 
 function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: [string, string][]; onChange: (value: string) => void }) {
   return (
-    <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} className="dashboard-input min-w-40">
+    <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)} className="dashboard-input w-full min-w-0">
       {options.map(([optionValue, optionLabel]) => (
         <option key={optionValue} value={optionValue} className="bg-neutral-950">{optionLabel}</option>
       ))}

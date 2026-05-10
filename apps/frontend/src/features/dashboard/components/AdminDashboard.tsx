@@ -118,7 +118,8 @@ export default function AdminDashboard() {
 
   /* ================= SOCKET REALTIME ================= */
   useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
 
     const socket = io(socketUrl, {
       withCredentials: true,
@@ -175,7 +176,8 @@ export default function AdminDashboard() {
   }, [revenueData]);
 
   const conversionHint = useMemo(() => {
-    if (!metrics?.totalOrders || !metrics.totalRevenue) return "Sin datos todavía";
+    if (!metrics?.totalOrders || !metrics.totalRevenue)
+      return "Sin datos todavía";
 
     return `${format(metrics.totalRevenue / metrics.totalOrders)} ticket medio`;
   }, [metrics]);
@@ -198,7 +200,8 @@ export default function AdminDashboard() {
                 Resumen comercial
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base">
-                Supervisa ingresos, pedidos, reembolsos, mercados principales y actividad reciente sin salir del panel.
+                Supervisa ingresos, pedidos, reembolsos, mercados principales y
+                actividad reciente sin salir del panel.
               </p>
             </div>
           </div>
@@ -225,7 +228,10 @@ export default function AdminDashboard() {
               disabled={isRefreshing}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                className={isRefreshing ? "animate-spin" : ""}
+              />
               Actualizar
             </button>
           </div>
@@ -243,7 +249,7 @@ export default function AdminDashboard() {
       )}
 
       {/* ================= KPIs ================= */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         <KpiCard
           title="Ingresos totales"
           value={format(metrics.totalRevenue)}
@@ -302,7 +308,11 @@ export default function AdminDashboard() {
                 : "bg-red-500/10 text-red-300"
             }`}
           >
-            {growth >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+            {growth >= 0 ? (
+              <ArrowUpRight size={16} />
+            ) : (
+              <ArrowDownRight size={16} />
+            )}
             {growth.toFixed(1)}%
           </div>
         </div>
@@ -310,7 +320,10 @@ export default function AdminDashboard() {
         <div className="h-72 sm:h-80">
           {revenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData} margin={{ left: 0, right: 8, top: 8 }}>
+              <AreaChart
+                data={revenueData}
+                margin={{ left: 0, right: 8, top: 8 }}
+              >
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#818cf8" stopOpacity={0.45} />
@@ -318,8 +331,16 @@ export default function AdminDashboard() {
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="date" stroke="#737373" tickLine={false} axisLine={false} />
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.06)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  stroke="#737373"
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis
                   stroke="#737373"
                   tickLine={false}
@@ -328,7 +349,10 @@ export default function AdminDashboard() {
                   tickFormatter={(value) => `€${value}`}
                 />
                 <Tooltip
-                  formatter={(value) => [`€${Number(value).toFixed(2)}`, "Ingresos"]}
+                  formatter={(value) => [
+                    `€${Number(value).toFixed(2)}`,
+                    "Ingresos",
+                  ]}
                   contentStyle={{
                     background: "rgba(10,10,10,0.96)",
                     border: "1px solid rgba(255,255,255,0.12)",
@@ -347,13 +371,16 @@ export default function AdminDashboard() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyState title="Sin ingresos para mostrar" description="Cuando entren ventas, aparecerán en esta gráfica." />
+            <EmptyState
+              title="Sin ingresos para mostrar"
+              description="Cuando entren ventas, aparecerán en esta gráfica."
+            />
           )}
         </div>
       </section>
 
       {/* ================= GRID ================= */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
         {/* SALES BY COUNTRY */}
         <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-4">
@@ -371,8 +398,14 @@ export default function AdminDashboard() {
           <div className="h-72">
             {countriesFormatted.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={countriesFormatted} margin={{ left: 0, right: 8 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                <BarChart
+                  data={countriesFormatted}
+                  margin={{ left: 0, right: 8 }}
+                >
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.06)"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="country"
                     stroke="#737373"
@@ -389,7 +422,10 @@ export default function AdminDashboard() {
                     tickFormatter={(value) => `€${value}`}
                   />
                   <Tooltip
-                    formatter={(value) => [`€${Number(value).toFixed(2)}`, "Ventas"]}
+                    formatter={(value) => [
+                      `€${Number(value).toFixed(2)}`,
+                      "Ventas",
+                    ]}
                     contentStyle={{
                       background: "rgba(10,10,10,0.96)",
                       border: "1px solid rgba(255,255,255,0.12)",
@@ -398,11 +434,18 @@ export default function AdminDashboard() {
                     }}
                     labelStyle={{ color: "#a3a3a3" }}
                   />
-                  <Bar dataKey="revenue" fill="#34d399" radius={[10, 10, 0, 0]} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="#34d399"
+                    radius={[10, 10, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState title="Sin países destacados" description="Las ventas por ubicación aparecerán aquí." />
+              <EmptyState
+                title="Sin países destacados"
+                description="Las ventas por ubicación aparecerán aquí."
+              />
             )}
           </div>
         </section>
@@ -423,9 +466,14 @@ export default function AdminDashboard() {
 
           <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
             {activity.length > 0 ? (
-              activity.map((item, index) => <ActivityItem key={item.id ?? index} item={item} />)
+              activity.map((item, index) => (
+                <ActivityItem key={item.id ?? index} item={item} />
+              ))
             ) : (
-              <EmptyState title="Sin actividad reciente" description="Los eventos de pedidos y pagos aparecerán aquí." />
+              <EmptyState
+                title="Sin actividad reciente"
+                description="Los eventos de pedidos y pagos aparecerán aquí."
+              />
             )}
           </div>
         </section>
@@ -436,21 +484,37 @@ export default function AdminDashboard() {
 
 /* ================= UI ================= */
 
-function KpiCard({ title, value, description, icon: Icon, accent, trend, danger }: KpiCardProps) {
+function KpiCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  accent,
+  trend,
+  danger,
+}: KpiCardProps) {
   return (
-    <article className="group rounded-3xl border border-white/10 bg-neutral-950/80 p-5 shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-white/20">
+    <article className="group rounded-2xl border border-white/10 bg-neutral-950/80 p-3 shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-white/20 sm:rounded-3xl sm:p-5">
       <div className="flex items-start justify-between gap-4">
-        <div className={`rounded-2xl bg-gradient-to-br p-3 ${accent}`}>
+        <div
+          className={`rounded-xl bg-gradient-to-br p-2.5 ${accent} sm:rounded-2xl sm:p-3`}
+        >
           <Icon size={20} />
         </div>
 
         {typeof trend === "number" && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-              trend >= 0 ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"
+              trend >= 0
+                ? "bg-emerald-500/10 text-emerald-300"
+                : "bg-red-500/10 text-red-300"
             }`}
           >
-            {trend >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+            {trend >= 0 ? (
+              <ArrowUpRight size={13} />
+            ) : (
+              <ArrowDownRight size={13} />
+            )}
             {trend.toFixed(1)}%
           </span>
         )}
@@ -458,10 +522,14 @@ function KpiCard({ title, value, description, icon: Icon, accent, trend, danger 
 
       <div className="mt-5">
         <p className="text-sm text-neutral-400">{title}</p>
-        <p className={`mt-2 text-2xl font-semibold tracking-tight ${danger ? "text-rose-300" : "text-white"}`}>
+        <p
+          className={`mt-2 text-lg font-semibold tracking-tight sm:text-2xl ${danger ? "text-rose-300" : "text-white"}`}
+        >
           {value}
         </p>
-        <p className="mt-2 text-xs text-neutral-500">{description}</p>
+        <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-neutral-500 sm:mt-2 sm:text-xs">
+          {description}
+        </p>
       </div>
     </article>
   );
@@ -470,9 +538,21 @@ function KpiCard({ title, value, description, icon: Icon, accent, trend, danger 
 function ActivityItem({ item }: { item: Activity }) {
   const map: Record<string, { icon: string; color: string; text: string }> = {
     ORDER_CREATED: { icon: "🛒", color: "text-sky-300", text: "Nueva orden" },
-    PAYMENT_SUCCEEDED: { icon: "💳", color: "text-emerald-300", text: "Pago completado" },
-    REFUND_CREATED: { icon: "💸", color: "text-rose-300", text: "Reembolso creado" },
-    REFUND_COMPLETED: { icon: "💰", color: "text-amber-300", text: "Reembolso completado" },
+    PAYMENT_SUCCEEDED: {
+      icon: "💳",
+      color: "text-emerald-300",
+      text: "Pago completado",
+    },
+    REFUND_CREATED: {
+      icon: "💸",
+      color: "text-rose-300",
+      text: "Reembolso creado",
+    },
+    REFUND_COMPLETED: {
+      icon: "💰",
+      color: "text-amber-300",
+      text: "Reembolso completado",
+    },
   };
 
   const activity = map[item.type] || {
@@ -508,7 +588,13 @@ function Alert({ text }: { text: string }) {
   );
 }
 
-function EmptyState({ title, description }: { title: string; description: string }) {
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex h-full min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
       <p className="font-medium text-neutral-200">{title}</p>
@@ -523,7 +609,10 @@ function DashboardSkeleton() {
       <div className="h-48 animate-pulse rounded-3xl bg-white/[0.06]" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="h-36 animate-pulse rounded-3xl bg-white/[0.06]" />
+          <div
+            key={index}
+            className="h-36 animate-pulse rounded-3xl bg-white/[0.06]"
+          />
         ))}
       </div>
       <div className="h-96 animate-pulse rounded-3xl bg-white/[0.06]" />
