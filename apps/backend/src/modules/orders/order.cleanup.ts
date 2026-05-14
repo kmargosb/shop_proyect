@@ -28,8 +28,8 @@ export async function cleanupExpiredOrders() {
         {
           status: OrderStatus.PAYMENT_PROCESSING,
           createdAt: {
-            lt: processingLimit,
-          },
+  lt: processingLimit,
+},
         },
       ],
     },

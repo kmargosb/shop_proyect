@@ -6,7 +6,9 @@ import {
    getCustomersController,
    getMyAddressesController,
    deleteAddressController,
-  setDefaultAddressController
+  setDefaultAddressController,
+  createAddressController,
+updateAddressController
 } from "./customer.controller";
 
 const router = Router();
@@ -16,6 +18,10 @@ const router = Router();
 ================================= */
 
 router.get("/me/addresses", protect, getMyAddressesController);
+
+router.post("/me/addresses", protect, createAddressController);
+
+router.put("/me/addresses/:id", protect, updateAddressController);
 
 router.delete("/me/addresses/:id", protect, deleteAddressController);
 

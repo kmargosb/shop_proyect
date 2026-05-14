@@ -4,7 +4,10 @@ import { stripe } from "@/lib/stripe";
 import { getPaymentProvider } from "./payment.factory";
 import { getProviderFromMethod } from "./payment-method.mapper";
 
-export const createPaymentIntent = async (req: Request, res: Response) => {
+export const createPaymentIntent = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const { orderId, method } = req.body;
 
@@ -13,10 +16,6 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
         error: "Order ID is required",
       });
     }
-
-    /* ===============================
-       LOAD ORDER
-    =============================== */
 
     let order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -34,18 +33,12 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
       });
     }
 
-    /* ===============================
-       METHOD + PROVIDER
-    =============================== */
-
     const paymentMethod = method ?? "CARD";
-    const paymentProvider = getProviderFromMethod(paymentMethod);
+
+    const paymentProvider =
+      getProviderFromMethod(paymentMethod);
 
     let paymentIntent;
-
-    /* ===============================
-       🔥 RELOAD ORDER (ANTI RACE CONDITION)
-    =============================== */
 
     order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -58,13 +51,14 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     }
 
     /* ===============================
-       REUSE EXISTING INTENT
+       REUSE VALID INTENT
     =============================== */
 
-    if (order?.stripePaymentIntentId) {
-      paymentIntent = await stripe.paymentIntents.retrieve(
-        order.stripePaymentIntentId,
-      );
+    if (order.stripePaymentIntentId) {
+      paymentIntent =
+        await stripe.paymentIntents.retrieve(
+          order.stripePaymentIntentId,
+        );
 
       if (paymentIntent.status === "succeeded") {
         return res.status(400).json({
@@ -73,51 +67,51 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
       }
 
       if (
-        paymentIntent.status === "requires_payment_method" ||
-        paymentIntent.status === "requires_confirmation" ||
+        paymentIntent.status ===
+          "requires_payment_method" ||
+        paymentIntent.status ===
+          "requires_confirmation" ||
         paymentIntent.status === "processing"
       ) {
-        console.log("♻️ Reusing existing PaymentIntent:", paymentIntent.id);
+        console.log(
+          "♻️ Reusing existing PaymentIntent:",
+          paymentIntent.id,
+        );
 
         return res.json({
           clientSecret: paymentIntent.client_secret,
         });
       }
+    }
 
-      if (!paymentIntent.metadata?.orderId) {
-        await stripe.paymentIntents.update(paymentIntent.id, {
-          metadata: {
-            orderId: order.id,
-          },
-        });
-      }
-    } else {
-      /* ===============================
-         🔥 CREATE NEW INTENT (SAFE)
-      =============================== */
+    /* ===============================
+       CREATE NEW PAYMENT INTENT
+    =============================== */
 
-      const provider = getPaymentProvider(paymentProvider);
+    const provider =
+      getPaymentProvider(paymentProvider);
 
-      paymentIntent = await provider.createPaymentIntent(
+    paymentIntent =
+      await provider.createPaymentIntent(
         order.totalAmount,
         order.currency,
         order.id,
       );
 
-      /* 🔥 CRITICAL: SAVE IMMEDIATELY */
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        stripePaymentIntentId: paymentIntent.id,
+        paymentProvider,
+        paymentMethod,
+        status: "PAYMENT_PROCESSING",
+      },
+    });
 
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          stripePaymentIntentId: paymentIntent.id,
-          paymentProvider: paymentProvider,
-          paymentMethod: paymentMethod,
-          status: "PAYMENT_PROCESSING",
-        },
-      });
-
-      console.log("✅ PaymentIntent created & saved:", paymentIntent.id);
-    }
+    console.log(
+      "✅ PaymentIntent created:",
+      paymentIntent.id,
+    );
 
     return res.json({
       clientSecret: paymentIntent.client_secret,
@@ -127,6 +121,69 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       error: "Payment initialization failed",
+    });
+  }
+};
+
+/* =========================================================
+   RETRY PAYMENT
+========================================================= */
+
+export const retryPaymentController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const orderId =
+      typeof req.params.orderId === "string"
+        ? req.params.orderId
+        : req.params.orderId[0];
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Orden no encontrada",
+      });
+    }
+
+    if (order.status === "PAID") {
+      return res.status(400).json({
+        error: "La orden ya está pagada",
+      });
+    }
+
+    /* ===============================
+       REUSE EXISTING PAYMENT INTENT
+    =============================== */
+
+    if (!order.stripePaymentIntentId) {
+      return res.status(400).json({
+        error: "No existe PaymentIntent",
+      });
+    }
+
+    const paymentIntent =
+      await stripe.paymentIntents.retrieve(
+        order.stripePaymentIntentId,
+      );
+
+    if (paymentIntent.status === "succeeded") {
+      return res.status(400).json({
+        error: "Pago ya completado",
+      });
+    }
+
+    return res.json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error: any) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: error.message,
     });
   }
 };

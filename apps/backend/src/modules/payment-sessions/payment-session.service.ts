@@ -20,13 +20,11 @@ export const PaymentSessionService = {
     }
 
     const existingSession = await prisma.paymentSession.findFirst({
-      where: {
-        orderId,
-        status: {
-          in: ["PENDING", "ACTIVE"]
-        }
-      }
-    })
+  where: {
+    orderId,
+    status: "PENDING",
+  },
+})
 
     if (existingSession) {
       return existingSession

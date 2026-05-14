@@ -1,25 +1,444 @@
 "use client";
 
-export default function AddressesTab() {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Direcciones</h2>
+import { useEffect, useState } from "react";
+import AddressAutocomplete from "@/features/checkout/components/AddressAutocomplete";
+import { COUNTRIES } from "@/shared/constants/countries";
+import {
+  MapPin,
+  Pencil,
+  Plus,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
+import { apiFetch } from "@/shared/lib/api";
 
-          <p className="mt-2 text-sm text-neutral-500">
-            Gestiona tus direcciones de envío y facturación.
-          </p>
+type Address = {
+  id: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  isDefault?: boolean;
+};
+
+const emptyForm = {
+  fullName: "",
+  phone: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  postalCode: "",
+  country: "ES",
+};
+
+export default function AddressesTab() {
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [openModal, setOpenModal] = useState(false);
+  const [editing, setEditing] = useState<Address | null>(null);
+
+  const [form, setForm] = useState(emptyForm);
+
+  /* ================= LOAD ================= */
+
+  const loadAddresses = async () => {
+    try {
+      const res = await apiFetch("/customers/me/addresses");
+
+      if (!res) return;
+
+      const data = await res.json();
+
+      setAddresses(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  /* ================= INPUT ================= */
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement
+    >,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  /* ================= OPEN CREATE ================= */
+
+  const openCreate = () => {
+    setEditing(null);
+
+    setForm(emptyForm);
+
+    setOpenModal(true);
+  };
+
+  /* ================= OPEN EDIT ================= */
+
+  const openEdit = (address: Address) => {
+    setEditing(address);
+
+    setForm({
+      fullName: address.fullName || "",
+      phone: address.phone || "",
+      addressLine1: address.addressLine1 || "",
+      addressLine2: address.addressLine2 || "",
+      city: address.city || "",
+      postalCode: address.postalCode || "",
+      country: address.country || "ES",
+    });
+
+    setOpenModal(true);
+  };
+
+  /* ================= SAVE ================= */
+
+  const saveAddress = async () => {
+    try {
+      const method = editing ? "PUT" : "POST";
+
+      const endpoint = editing
+        ? `/customers/me/addresses/${editing.id}`
+        : "/customers/me/addresses";
+
+      const res = await apiFetch(endpoint, {
+        method,
+        body: JSON.stringify(form),
+      });
+
+      if (!res || !res.ok) {
+        throw new Error();
+      }
+
+      setOpenModal(false);
+
+      await loadAddresses();
+    } catch {
+      alert("Error guardando dirección");
+    }
+  };
+
+  /* ================= DELETE ================= */
+
+  const deleteAddress = async (id: string) => {
+    const confirmed = confirm(
+      "¿Eliminar esta dirección?",
+    );
+
+    if (!confirmed) return;
+
+    await apiFetch(`/customers/me/addresses/${id}`, {
+      method: "DELETE",
+    });
+
+    loadAddresses();
+  };
+
+  /* ================= FAVORITE ================= */
+
+  const setFavorite = async (id: string) => {
+    await apiFetch(
+      `/customers/me/addresses/${id}/favorite`,
+      {
+        method: "PATCH",
+      },
+    );
+
+    loadAddresses();
+  };
+
+  if (loading) {
+    return (
+      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
+        <p className="text-neutral-400">
+          Cargando direcciones...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
+        {/* HEADER */}
+
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">
+              Direcciones
+            </h2>
+
+            <p className="mt-2 text-sm text-neutral-500">
+              Gestiona tus direcciones de envío.
+            </p>
+          </div>
+
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
+          >
+            <Plus size={16} />
+            Nueva dirección
+          </button>
         </div>
 
-        <button className="rounded-2xl bg-white px-4 py-2 text-sm font-medium text-black">
-          Añadir dirección
-        </button>
+        {/* EMPTY */}
+
+        {addresses.length === 0 ? (
+          <div className="mt-8 rounded-2xl border border-dashed border-white/10 p-10 text-center">
+            <MapPin
+              size={40}
+              className="mx-auto text-neutral-600"
+            />
+
+            <p className="mt-4 text-neutral-400">
+              No tienes direcciones guardadas.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {addresses.map((address) => (
+              <div
+                key={address.id}
+                className="rounded-3xl border border-white/10 bg-black/30 p-5 transition hover:border-white/20"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-white">
+                      {address.fullName}
+                    </h3>
+
+                    <p className="mt-1 text-sm text-neutral-500">
+                      {address.phone}
+                    </p>
+                  </div>
+
+                  {address.isDefault && (
+                    <div className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-black">
+                      Principal
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-5 space-y-1 text-sm text-neutral-300">
+                  <p>{address.addressLine1}</p>
+
+                  {address.addressLine2 && (
+                    <p>{address.addressLine2}</p>
+                  )}
+
+                  <p>
+                    {address.city}, {address.postalCode}
+                  </p>
+
+                  <p>{address.country}</p>
+                </div>
+
+                {/* ACTIONS */}
+
+                <div className="mt-6 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() =>
+                      setFavorite(address.id)
+                    }
+                    className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
+                      address.isDefault
+                        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+                        : "border-white/10 text-neutral-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <Star size={15} />
+
+                    {address.isDefault
+                      ? "Principal"
+                      : "Favorita"}
+                  </button>
+
+                  <button
+                    onClick={() => openEdit(address)}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:bg-white/10"
+                  >
+                    <Pencil size={15} />
+                    Editar
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      deleteAddress(address.id)
+                    }
+                    className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                  >
+                    <Trash2 size={15} />
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-dashed border-white/10 p-10 text-center text-neutral-500">
-        Todavía no tienes direcciones guardadas.
-      </div>
-    </div>
+      {/* MODAL */}
+
+      {openModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-6 shadow-2xl">
+            {/* HEADER */}
+
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-white">
+                  {editing
+                    ? "Editar dirección"
+                    : "Nueva dirección"}
+                </h3>
+
+                <p className="mt-1 text-sm text-neutral-500">
+                  Guarda una dirección para futuros pedidos.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setOpenModal(false)}
+                className="rounded-full p-2 text-neutral-500 transition hover:bg-white/10 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* FORM */}
+
+            <div className="mt-6 grid gap-4">
+              {/* FULL NAME */}
+
+              <input
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                placeholder="Nombre completo"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+              />
+
+              {/* PHONE */}
+
+              <input
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="Teléfono"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+              />
+
+              {/* ADDRESS AUTOCOMPLETE */}
+
+              <AddressAutocomplete
+                value={form.addressLine1}
+                onChange={(data: {
+                  addressLine1: string;
+                  city: string;
+                  postalCode: string;
+                  country: string;
+                }) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    addressLine1:
+                      data.addressLine1 || "",
+                    city: data.city || "",
+                    postalCode:
+                      data.postalCode || "",
+                    country: data.country || "ES",
+                  }))
+                }
+              />
+
+              {/* ADDRESS 2 */}
+
+              <input
+                name="addressLine2"
+                value={form.addressLine2}
+                onChange={handleChange}
+                placeholder="Piso / puerta"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+              />
+
+              {/* CITY + ZIP */}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <input
+                  name="city"
+                  value={form.city || ""}
+                  onChange={handleChange}
+                  placeholder="Ciudad"
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                />
+
+                <input
+                  name="postalCode"
+                  value={form.postalCode || ""}
+                  onChange={handleChange}
+                  placeholder="Código postal"
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                />
+              </div>
+
+              {/* COUNTRY */}
+
+              <select
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
+              >
+                {COUNTRIES.map((country) => (
+                  <option
+                    key={country.code}
+                    value={country.code}
+                    className="bg-white text-black"
+                  >
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* FOOTER */}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setOpenModal(false)}
+                className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-neutral-300 transition hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={saveAddress}
+                className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
+              >
+                {editing
+                  ? "Guardar cambios"
+                  : "Crear dirección"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

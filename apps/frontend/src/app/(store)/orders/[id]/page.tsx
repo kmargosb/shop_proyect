@@ -78,6 +78,9 @@ export default function Page() {
   }
 
   const isPaid = order.status === "PAID";
+  const canContinuePayment =
+  order.status === "PENDING" ||
+  order.status === "PAYMENT_PROCESSING";
 
   const handleDownloadInvoice = () => {
     const email =
@@ -150,11 +153,41 @@ export default function Page() {
             </Button>
           )}
 
+{canContinuePayment && (
+  <Button
+    className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
+    onClick={async () => {
+      try {
+        const res = await apiFetch(
+  `/api/payments/retry/${order.id}`,
+          {
+            method: "POST",
+          },
+        );
+
+        if (!res || !res.ok) {
+          throw new Error();
+        }
+
+        const data = await res.json();
+
+        router.push(
+          `/orders/${order.id}/pay?clientSecret=${data.clientSecret}`,
+        );
+      } catch {
+        alert("No se pudo continuar el pago");
+      }
+    }}
+  >
+    Continuar pago
+  </Button>
+)}
           {/* SEGUIR COMPRANDO */}
           <Button
             className="w-full bg-white text-black hover:bg-gray-200"
             onClick={() => router.push("/shop")}
           >
+            
             Seguir comprando
           </Button>
         </div>

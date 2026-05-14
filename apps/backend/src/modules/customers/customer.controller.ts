@@ -138,6 +138,132 @@ export const getMyAddressesController = asyncHandler(
 );
 
 /* =========================================================
+   USER: CREATE ADDRESS
+========================================================= */
+
+export const createAddressController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "No autorizado",
+      });
+    }
+
+    const normalize = (str?: string) =>
+      str?.trim().toLowerCase();
+
+    const {
+      fullName,
+      phone,
+      addressLine1,
+      addressLine2,
+      city,
+      postalCode,
+      country,
+    } = req.body;
+
+    const existingCount = await prisma.address.count({
+      where: { userId },
+    });
+
+    /* ===============================
+       AVOID DUPLICATES
+    =============================== */
+
+    const existingAddress = await prisma.address.findFirst({
+      where: {
+        userId,
+        addressLine1: normalize(addressLine1),
+        city: normalize(city),
+        postalCode: normalize(postalCode),
+        country,
+      },
+    });
+
+    if (existingAddress) {
+      return res.json(existingAddress);
+    }
+
+    const address = await prisma.address.create({
+      data: {
+        userId,
+        fullName,
+        phone,
+        addressLine1:
+          normalize(addressLine1) || "",
+        addressLine2: addressLine2 || "",
+        city: normalize(city) || "",
+        postalCode:
+          normalize(postalCode) || "",
+        country,
+        isDefault: existingCount === 0,
+      },
+    });
+
+    res.status(201).json(address);
+  },
+);
+
+/* =========================================================
+   USER: UPDATE ADDRESS
+========================================================= */
+
+export const updateAddressController = asyncHandler(
+  async (
+    req: AuthRequest & { params: { id: string } },
+    res: Response,
+  ) => {
+    const userId = req.user?.id;
+
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "No autorizado",
+      });
+    }
+
+    const address = await prisma.address.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!address) {
+      return res.status(404).json({
+        error: "Dirección no encontrada",
+      });
+    }
+
+    const normalize = (str?: string) =>
+      str?.trim().toLowerCase();
+
+    const updated = await prisma.address.update({
+      where: { id },
+
+      data: {
+        fullName: req.body.fullName,
+        phone: req.body.phone,
+        addressLine1:
+          normalize(req.body.addressLine1) || "",
+        addressLine2:
+          req.body.addressLine2 || "",
+        city:
+          normalize(req.body.city) || "",
+        postalCode:
+          normalize(req.body.postalCode) || "",
+        country: req.body.country,
+      },
+    });
+
+    res.json(updated);
+  },
+);
+
+/* =========================================================
    USER: DELETE ADDRESS
 ========================================================= */
 
