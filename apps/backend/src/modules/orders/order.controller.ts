@@ -145,7 +145,14 @@ export const getPublicOrderController = asyncHandler(
             },
           },
         },
+
         invoice: true,
+
+        events: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
     });
 
@@ -314,7 +321,14 @@ export const getMyOrderByIdController = asyncHandler(
             product: true,
           },
         },
+
         invoice: true,
+
+        events: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
     });
 
