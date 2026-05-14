@@ -25,6 +25,15 @@ export type Invoice = {
   invoiceNumber: string;
 };
 
+export type Shipment = {
+  id: string;
+  carrier: string;
+  trackingNumber: string;
+  status: string;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+};
+
 export type Order = {
   id: string;
   fullName: string;
@@ -41,4 +50,5 @@ export type Order = {
   stripePaymentIntentId?: string | null;
   items: OrderItem[];
   invoice?: Invoice | null;
+  shipment?: Shipment | null;
 };
