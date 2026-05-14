@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { ShipmentStatus } from "@prisma/client"
+import { sendShipmentEmail } from "@/modules/email/sendOrderEmail"
 
 export const ShippingService = {
 
@@ -57,6 +58,7 @@ export const ShippingService = {
         message: `Order shipped via ${carrier}`
       }
     })
+    await sendShipmentEmail(orderId)
 
     return shipment
   },

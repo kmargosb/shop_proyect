@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { sendEmail } from "./email.service"
-import { orderConfirmationTemplate } from "./email.templates"
+import {
+  orderConfirmationTemplate,
+  shipmentConfirmationTemplate,
+} from "./email.templates"
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator"
 
 export async function sendOrderConfirmationEmail(orderId: string) {
@@ -66,4 +69,44 @@ export async function sendOrderConfirmationEmail(orderId: string) {
 
   console.log("✅ Order confirmation email sent")
 
+}
+
+export async function sendShipmentEmail(
+  orderId: string,
+) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+
+    include: {
+      shipment: true,
+    },
+  })
+
+  if (!order || !order.shipment) {
+    return
+  }
+
+  const publicUrl =
+    `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`
+
+  const html =
+    shipmentConfirmationTemplate(
+      order.fullName,
+      order.id,
+      order.shipment.carrier,
+      order.shipment.trackingNumber,
+      publicUrl,
+    )
+
+  await sendEmail({
+    to: order.email,
+
+    subject: "Tu pedido fue enviado",
+
+    html,
+  })
+
+  console.log(
+    "✅ Shipment email sent",
+  )
 }
