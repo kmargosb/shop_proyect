@@ -20,6 +20,18 @@ type Slide = {
 
 const slides: Slide[] = [
   {
+    title: "Luxphere",
+    subtitle: "Exclusive products available now",
+    image: "https://res.cloudinary.com/dhybf1y2t/image/upload/v1778447197/products/public/ChatGPT_Image_10_may_2026_08_47_48_p.m._n3k33e.png",
+    link: "/shop",
+  },
+  {
+    title: "Sunglasses",
+    subtitle: "New tecnology UV400",
+    image: "https://res.cloudinary.com/dhybf1y2t/image/upload/v1778447986/products/public/gafas2_brnayb.png",
+    link: "/shop",
+  },
+  {
     title: "New Collection",
     subtitle: "Discover the latest arrivals",
     image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
@@ -37,6 +49,7 @@ const slides: Slide[] = [
     image: "https://images.unsplash.com/photo-1519741497674-611481863552",
     link: "/shop",
   },
+  
 ];
 
 export default function HeroCarousel() {

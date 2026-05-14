@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/cart/CartContext";
 import { useEffect, useRef, useState } from "react";
@@ -13,15 +12,22 @@ export default function Navbar() {
   const { items, setOpen } = useCart();
   const { user, isAuthenticated, loading } = useAuth();
 
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalItems = items.reduce(
+    (acc, item) => acc + item.quantity,
+    0,
+  );
 
   const [visible, setVisible] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
-  const [openDropdown, setOpenDropdown] = useState(false);
+  const [openDropdown, setOpenDropdown] =
+    useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef =
+    useRef<HTMLDivElement>(null);
 
-  const setNavbarVisible = useNavbar((s) => s.setVisible);
+  const setNavbarVisible = useNavbar(
+    (s) => s.setVisible,
+  );
 
   /* ================= SCROLL ================= */
 
@@ -29,7 +35,10 @@ export default function Navbar() {
     const handleScroll = () => {
       const currentScroll = window.scrollY;
 
-      if (currentScroll > lastScroll && currentScroll > 80) {
+      if (
+        currentScroll > lastScroll &&
+        currentScroll > 80
+      ) {
         setVisible(false);
         setNavbarVisible(false);
       } else {
@@ -40,131 +49,315 @@ export default function Navbar() {
       setLastScroll(currentScroll);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener(
+      "scroll",
+      handleScroll,
+    );
+
+    return () =>
+      window.removeEventListener(
+        "scroll",
+        handleScroll,
+      );
   }, [lastScroll, setNavbarVisible]);
 
   /* ================= CLICK OUTSIDE ================= */
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (
+      e: MouseEvent,
+    ) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
+        !dropdownRef.current.contains(
+          e.target as Node,
+        )
       ) {
         setOpenDropdown(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside,
+    );
+
+    return () =>
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside,
+      );
   }, []);
 
   /* ================= ESC CLOSE ================= */
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
+    const handleEsc = (
+      e: KeyboardEvent,
+    ) => {
       if (e.key === "Escape") {
         setOpenDropdown(false);
       }
     };
 
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
+    document.addEventListener(
+      "keydown",
+      handleEsc,
+    );
+
+    return () =>
+      document.removeEventListener(
+        "keydown",
+        handleEsc,
+      );
   }, []);
 
   if (loading) return null;
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300
-      ${visible ? "translate-y-0" : "-translate-y-full"}
-      bg-white border-neutral-800`}
+      className={`fixed top-0 left-0 z-50 w-full transition-transform duration-300
+      ${
+        visible
+          ? "translate-y-0"
+          : "-translate-y-full"
+      }
+      border-neutral-800 bg-white`}
     >
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link
           href="/"
           className="flex items-center gap-3 transition hover:opacity-80"
         >
           <img
-  src="/brands/camarguette/logo.png"
-  alt="Camarguette"
-  className="h-16 w-auto object-contain"
-/>
+            src="/brands/camarguette/logo.png"
+            alt="Camarguette"
+            className="h-16 w-auto object-contain"
+          />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm text-black">
-          <Link href="/shop">Shop</Link>
-          <Link href="/brands">Brands</Link>
+        <nav className="hidden items-center gap-8 text-sm text-black md:flex">
+          <Link href="/shop">
+            Shop
+          </Link>
+
+          <Link href="/brands">
+            Brands
+          </Link>
         </nav>
 
         <div className="flex items-center gap-6">
           {/* USER */}
+
           {isAuthenticated ? (
-            <div className="relative" ref={dropdownRef}>
+            <div
+              className="relative"
+              ref={dropdownRef}
+            >
               <button
-                onClick={() => setOpenDropdown((prev) => !prev)}
-                className="text-sm text-black hover:opacity-70 transition"
+                onClick={() =>
+                  setOpenDropdown(
+                    (prev) => !prev,
+                  )
+                }
+                className="text-sm text-black transition hover:opacity-70"
               >
-                Hola, {user?.email?.split("@")[0]}
+                Hola,{" "}
+                {user?.email?.split("@")[0]}
               </button>
 
               {/* DROPDOWN */}
+
               <div
-                className={`absolute right-0 mt-3 w-52 rounded-xl border bg-white shadow-lg overflow-hidden
-                transition-all duration-200 origin-top-right
+                className={`absolute right-0 mt-3 w-72 origin-top-right overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl transition-all duration-200
                 ${
                   openDropdown
-                    ? "opacity-100 scale-100 translate-y-0"
-                    : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                    ? "translate-y-0 scale-100 opacity-100"
+                    : "-translate-y-2 scale-95 opacity-0 pointer-events-none"
                 }`}
               >
-                <Link
-                  href="/account"
-                  onClick={() => setOpenDropdown(false)}
-                  className="block px-4 py-3 hover:bg-gray-100 transition"
-                >
-                  Mi cuenta
-                </Link>
+                {/* HEADER */}
 
-                {user?.role === "ADMIN" && (
+                <div className="border-b border-black/5 p-5">
+                  <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">
+                    Cuenta
+                  </p>
+
+                  <p className="mt-2 text-lg font-semibold text-black">
+                    {user?.email?.split("@")[0]}
+                  </p>
+
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {user?.email}
+                  </p>
+                </div>
+
+                {/* LINKS */}
+
+                <div className="p-2">
                   <Link
-                    href="/dashboard"
-                    onClick={() => setOpenDropdown(false)}
-                    className="block px-4 py-3 hover:bg-gray-100 transition"
+                    href="/account?tab=profile"
+                    onClick={() =>
+                      setOpenDropdown(false)
+                    }
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    Admin panel
+                    <span>
+                      Mi cuenta
+                    </span>
+
+                    <span className="text-neutral-400">
+                      →
+                    </span>
                   </Link>
-                )}
 
-                <div className="h-px bg-gray-200" />
+                  <Link
+                    href="/account?tab=orders"
+                    onClick={() =>
+                      setOpenDropdown(false)
+                    }
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
+                  >
+                    <span>
+                      Pedidos
+                    </span>
 
-                <button
-                  onClick={async () => {
-                    setOpenDropdown(false);
-                    await apiFetch("/auth/logout", {
-                      method: "POST",
-                    });
-                    window.location.href = "/";
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-100 transition"
-                >
-                  Logout
-                </button>
+                    <span className="text-neutral-400">
+                      →
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/account?tab=addresses"
+                    onClick={() =>
+                      setOpenDropdown(false)
+                    }
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
+                  >
+                    <span>
+                      Direcciones
+                    </span>
+
+                    <span className="text-neutral-400">
+                      →
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/account?tab=wishlist"
+                    onClick={() =>
+                      setOpenDropdown(false)
+                    }
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
+                  >
+                    <span>
+                      Wishlist
+                    </span>
+
+                    <span className="text-neutral-400">
+                      →
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/account?tab=security"
+                    onClick={() =>
+                      setOpenDropdown(false)
+                    }
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
+                  >
+                    <span>
+                      Seguridad
+                    </span>
+
+                    <span className="text-neutral-400">
+                      →
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/account?tab=settings"
+                    onClick={() =>
+                      setOpenDropdown(false)
+                    }
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
+                  >
+                    <span>
+                      Configuración
+                    </span>
+
+                    <span className="text-neutral-400">
+                      →
+                    </span>
+                  </Link>
+
+                  {user?.role ===
+                    "ADMIN" && (
+                    <div className="px-2 pt-3">
+                      <Link
+                        href="/dashboard"
+                        onClick={() =>
+                          setOpenDropdown(
+                            false,
+                          )
+                        }
+                        className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/20"
+                      >
+                        <span>
+                          Admin panel
+                        </span>
+
+                        <span className="rounded-full bg-emerald-300 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-black">
+                          Admin
+                        </span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* FOOTER */}
+
+                <div className="border-t border-black/5 p-2">
+                  <button
+                    onClick={async () => {
+                      setOpenDropdown(false);
+
+                      await apiFetch(
+                        "/auth/logout",
+                        {
+                          method: "POST",
+                        },
+                      );
+
+                      window.location.href =
+                        "/";
+                    }}
+                    className="w-full rounded-2xl px-4 py-3 text-left text-sm text-red-500 transition hover:bg-red-50"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
-            <Link href="/login" className="text-sm">
+            <Link
+              href="/login"
+              className="text-sm"
+            >
               Login
             </Link>
           )}
 
           {/* CART */}
-          <button onClick={() => setOpen(true)} className="relative">
+
+          <button
+            onClick={() => setOpen(true)}
+            className="relative"
+          >
             <ShoppingCart size={24} />
 
             {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-black text-white text-xs px-2 py-1 rounded-full">
+              <span className="absolute -right-2 -top-2 rounded-full bg-black px-2 py-1 text-xs text-white">
                 {totalItems}
               </span>
             )}
