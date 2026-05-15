@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { PaymentMethod } from "@prisma/client"
 import { getProviderFromMethod } from "@/modules/payment/payment-method.mapper"
 import { getPaymentProvider } from "@/modules/payment/payment.factory"
+import { stripe } from "@/lib/stripe";
 
 export const PaymentSessionService = {
 
@@ -22,13 +23,20 @@ export const PaymentSessionService = {
     const existingSession = await prisma.paymentSession.findFirst({
   where: {
     orderId,
-    status: "PENDING",
+    status: {
+      in: ["PENDING", "ACTIVE"],
+    },
   },
 })
 
     if (existingSession) {
-      return existingSession
-    }
+  console.log(
+    "♻️ Reusing existing payment session:",
+    existingSession.id,
+  );
+
+  return existingSession;
+}
 
     const provider = getProviderFromMethod(method)
 
@@ -45,7 +53,7 @@ export const PaymentSessionService = {
   },
 
   async createPaymentIntent(sessionId: string) {
-
+    
     const session = await prisma.paymentSession.findUnique({
       where: { id: sessionId },
       include: {
@@ -60,7 +68,24 @@ export const PaymentSessionService = {
     if (session.status === "COMPLETED") {
       throw new Error("Payment session already completed")
     }
+if (session.paymentIntentId) {
+  const existingIntent =
+    await stripe.paymentIntents.retrieve(
+      session.paymentIntentId,
+    );
 
+  if (
+    existingIntent.status !== "canceled" &&
+    existingIntent.status !== "succeeded"
+  ) {
+    console.log(
+      "♻️ Reusing session PaymentIntent:",
+      existingIntent.id,
+    );
+
+    return existingIntent;
+  }
+}
     const provider = getPaymentProvider(session.provider)
 
     const paymentIntent = await provider.createPaymentIntent(
