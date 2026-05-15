@@ -19,11 +19,14 @@ export default function StripePaymentForm({ orderId }: Props) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [elementError, setElementError] = useState(false);
+  const [elementReady, setElementReady] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || loading) return;
+    if (!stripe || !elements || loading || !elementReady) {
+      return;
+    }
 
     setLoading(true);
     setErrorMessage(null);
@@ -49,11 +52,13 @@ export default function StripePaymentForm({ orderId }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      
       {/* PAYMENT ELEMENT */}
       {!elementError ? (
         <div className="bg-black/30 border border-white/[0.08] rounded-xl p-4">
           <PaymentElement
+            onReady={() => {
+              setElementReady(true);
+            }}
             onLoadError={(err: unknown) => {
               console.error("Stripe load error:", err);
               setElementError(true);
@@ -93,10 +98,16 @@ export default function StripePaymentForm({ orderId }: Props) {
         whileTap={{ scale: 0.97 }}
         whileHover={{ scale: 1.02 }}
         type="submit"
-        disabled={!stripe || loading || elementError}
+        disabled={
+          !stripe || !elements || !elementReady || loading || elementError
+        }
         className="w-full py-4 rounded-xl font-medium text-lg bg-white text-black transition disabled:opacity-50"
       >
-        {loading ? "Processing..." : "Pay now"}
+        {loading
+          ? "Processing..."
+          : !elementReady
+            ? "Loading payment..."
+            : "Pay now"}
       </motion.button>
 
       {/* FOOTER */}
