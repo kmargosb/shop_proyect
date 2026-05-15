@@ -56,9 +56,10 @@ export const RefundService = {
       }
 
       const refundedQuantity = order.refunds
-        .flatMap((r) => r.items)
-        .filter((ri) => ri.orderItemId === item.orderItemId)
-        .reduce((sum, ri) => sum + ri.quantity, 0);
+  .filter((r) => r.status === "SUCCEEDED")
+  .flatMap((r) => r.items)
+  .filter((ri) => ri.orderItemId === item.orderItemId)
+  .reduce((sum, ri) => sum + ri.quantity, 0);
 
       const remainingQuantity = orderItem.quantity - refundedQuantity;
 
@@ -131,7 +132,7 @@ export const RefundService = {
       currency: stripeRefund.currency,
       reason,
     });
-
+    
     await prisma.orderEvent.create({
       data: {
         orderId,
@@ -158,7 +159,6 @@ export const RefundService = {
         },
       });
     }
-
     return {
       refundId: dbRefund.id,
       amount: dbRefund.amount,

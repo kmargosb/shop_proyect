@@ -98,24 +98,16 @@ export const updateOrderStatusController = asyncHandler(
 );
 
 export const cancelOrderController = asyncHandler(
-  async (
-    req: AuthRequest,
-    res: Response,
-  ) => {
+  async (req: AuthRequest, res: Response) => {
     const orderId =
-  typeof req.params.id === "string"
-    ? req.params.id
-    : req.params.id[0];
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
     await cancelOrder(orderId);
 
-    getIO().emit(
-      "dashboard:update",
-      {
-        type: "ORDER_CANCELLED",
-        orderId,
-      },
-    );
+    getIO().emit("dashboard:update", {
+      type: "ORDER_CANCELLED",
+      orderId,
+    });
 
     res.json({
       success: true,
@@ -174,6 +166,8 @@ export const getPublicOrderController = asyncHandler(
             product: {
               select: { name: true },
             },
+
+            refundItems: true,
           },
         },
 
@@ -351,6 +345,8 @@ export const getMyOrderByIdController = asyncHandler(
         items: {
           include: {
             product: true,
+
+            refundItems: true,
           },
         },
 

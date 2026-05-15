@@ -25,18 +25,17 @@ type OrderEvent = {
 
 export default function Page() {
   const params = useParams();
-
   const searchParams = useSearchParams();
-
   const router = useRouter();
-
   const id = params?.id as string;
-
   const [order, setOrder] = useState<any>(null);
-
   const [loading, setLoading] = useState(true);
-
   const [cancelling, setCancelling] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [processingRefund, setProcessingRefund] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundSuccess, setRefundSuccess] = useState(false);
+  const [refundItems, setRefundItems] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -95,6 +94,7 @@ export default function Page() {
     );
   }
 
+  console.log(JSON.stringify(order.items, null, 2));
   if (!order) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white">
@@ -112,6 +112,11 @@ export default function Page() {
     order.status === "PENDING" ||
     order.status === "PAYMENT_PROCESSING" ||
     order.status === "PAID";
+
+  const canRefund =
+    order.status === "PAID" ||
+    order.status === "SHIPPED" ||
+    order.status === "PARTIALLY_REFUNDED";
 
   const handleDownloadInvoice = () => {
     const email =
@@ -155,6 +160,68 @@ export default function Page() {
       alert("No se pudo cancelar el pedido");
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleRefund = async () => {
+    try {
+      setProcessingRefund(true);
+
+      setRefundError(null);
+
+      const items = order.items
+        .filter((item: any) => (refundItems[item.id] || 0) > 0)
+        .map((item: any) => ({
+          orderItemId: item.id,
+          quantity: refundItems[item.id],
+        }));
+
+      if (items.length === 0) {
+        setRefundError("Selecciona al menos un producto");
+
+        return;
+      }
+
+      const res = await apiFetch("/refunds", {
+        method: "POST",
+        body: JSON.stringify({
+          orderId: order.id,
+          items,
+          reason: "CUSTOMER_RETURN",
+        }),
+      });
+
+      const data = await res?.json();
+
+      if (!res || !res.ok) {
+        setRefundError(data?.message || "No se pudo procesar");
+
+        return;
+      }
+
+      const refreshed = await apiFetch(`/orders/${order.id}`);
+
+      if (refreshed && refreshed.ok) {
+        const updatedOrder = await refreshed.json();
+
+        setOrder(updatedOrder);
+      }
+
+      setRefundSuccess(true);
+
+      setTimeout(() => {
+        setShowRefundModal(false);
+
+        setRefundSuccess(false);
+
+        setRefundItems({});
+      }, 1200);
+    } catch (error) {
+      console.error(error);
+
+      setRefundError("Error inesperado");
+    } finally {
+      setProcessingRefund(false);
     }
   };
 
@@ -377,6 +444,20 @@ export default function Page() {
               {cancelling ? "Cancelando..." : "Cancelar pedido"}
             </Button>
           )}
+          {canRefund && (
+            <Button
+              className="h-12 w-full rounded-2xl border border-orange-500/20 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20"
+              onClick={() => {
+                setRefundError(null);
+
+                setRefundSuccess(false);
+
+                setShowRefundModal(true);
+              }}
+            >
+              Solicitar devolución
+            </Button>
+          )}
 
           <Button
             className="h-12 w-full rounded-2xl bg-white text-black hover:bg-neutral-200"
@@ -385,6 +466,111 @@ export default function Page() {
             Seguir comprando
           </Button>
         </div>
+
+        {showRefundModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-neutral-950 p-6">
+              <h2 className="text-2xl font-semibold">Solicitar devolución</h2>
+
+              <div className="mt-6 space-y-4">
+                {order.items
+                  .filter((item: any) => {
+                    const refunded =
+                      item.refundItems?.reduce(
+                        (sum: number, ri: any) => sum + ri.quantity,
+                        0,
+                      ) || 0;
+
+                    return refunded < item.quantity;
+                  })
+                  .map((item: any) => {
+                    const refunded =
+                      item.refundItems?.reduce(
+                        (sum: number, ri: any) => sum + ri.quantity,
+                        0,
+                      ) || 0;
+
+                    const remaining = item.quantity - refunded;
+
+                    const selected = refundItems[item.id] || 0;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-white/10 p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{item.product?.name}</p>
+
+                            <p className="text-sm text-neutral-500">
+                              Comprados: {item.quantity}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() =>
+                                setRefundItems((prev) => ({
+                                  ...prev,
+                                  [item.id]: Math.max(0, selected - 1),
+                                }))
+                              }
+                              className="h-8 w-8 rounded-full border border-white/10"
+                            >
+                              -
+                            </button>
+
+                            <span className="w-6 text-center">{selected}</span>
+
+                            <button
+                              onClick={() =>
+                                setRefundItems((prev) => ({
+                                  ...prev,
+                                  [item.id]: Math.min(remaining, selected + 1),
+                                }))
+                              }
+                              className="h-8 w-8 rounded-full border border-white/10"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {refundError && (
+                <p className="mt-4 text-sm text-red-400">{refundError}</p>
+              )}
+
+              {refundSuccess && (
+                <p className="mt-4 text-sm text-green-400">
+                  Reembolso procesado
+                </p>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => setShowRefundModal(false)}
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  className="w-full"
+                  onClick={handleRefund}
+                  disabled={processingRefund}
+                >
+                  {processingRefund ? "Procesando..." : "Confirmar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
