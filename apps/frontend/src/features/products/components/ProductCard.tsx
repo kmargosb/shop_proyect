@@ -13,7 +13,9 @@ type Props = {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
-  const outOfStock = product.stock <= 0;
+  const availableStock = (product.stock ?? 0) - (product.reservedStock ?? 0);
+
+  const outOfStock = availableStock <= 0;
 
   const handleAddToCart = async () => {
     try {
@@ -85,9 +87,17 @@ export default function ProductCard({ product }: Props) {
           </Link>
         </div>
 
-        <p className="text-lg font-semibold">
-          €{(product.price / 100).toFixed(2)}
-        </p>
+        <div className="space-y-1">
+          <p className="text-lg font-semibold">
+            €{(product.price / 100).toFixed(2)}
+          </p>
+
+          {!outOfStock && availableStock <= 5 && (
+            <p className="text-xs text-amber-400">
+              Solo quedan {availableStock}
+            </p>
+          )}
+        </div>
 
         <motion.button
           onClick={handleAddToCart}
