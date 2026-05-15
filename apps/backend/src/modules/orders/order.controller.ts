@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "@/common/utils/asyncHandler";
-import { createOrder, getOrders, updateOrderStatus } from "./order.service";
+import {
+  createOrder,
+  getOrders,
+  updateOrderStatus,
+  cancelOrder,
+} from "./order.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
@@ -89,6 +94,32 @@ export const updateOrderStatusController = asyncHandler(
     });
 
     res.json(updated);
+  },
+);
+
+export const cancelOrderController = asyncHandler(
+  async (
+    req: AuthRequest,
+    res: Response,
+  ) => {
+    const orderId =
+  typeof req.params.id === "string"
+    ? req.params.id
+    : req.params.id[0];
+
+    await cancelOrder(orderId);
+
+    getIO().emit(
+      "dashboard:update",
+      {
+        type: "ORDER_CANCELLED",
+        orderId,
+      },
+    );
+
+    res.json({
+      success: true,
+    });
   },
 );
 

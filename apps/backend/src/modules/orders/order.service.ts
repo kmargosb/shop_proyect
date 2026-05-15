@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
+import { RefundService } from "@/modules/refunds/refund.service";
 
 type CreateOrderInput = {
   userId?: string;
@@ -289,39 +290,6 @@ export async function updateOrderStatus(
     }
 
     /* =========================
-       CANCEL ORDER
-    ========================= */
-
-    if (newStatus === "CANCELLED") {
-      // si estaba pagada → iniciar refund
-      if (order.status === "PAID") {
-        const { stripe } = await import("@/lib/stripe");
-
-        if (!order.stripePaymentIntentId) {
-          throw new Error("PaymentIntent missing");
-        }
-
-        await stripe.refunds.create({
-          payment_intent: order.stripePaymentIntentId,
-        });
-
-        await tx.orderEvent.create({
-          data: {
-            orderId: order.id,
-            type: "ORDER_UPDATED",
-            message: "Refund initiated by admin",
-          },
-        });
-
-        return order;
-      }
-
-      await tx.inventoryReservation.deleteMany({
-        where: { orderId },
-      });
-    }
-
-    /* =========================
        UPDATE STATUS
     ========================= */
 
@@ -365,6 +333,122 @@ export async function updateOrderStatus(
 
     return updatedOrder;
   });
+}
+
+/* =========================================================
+   CANCEL ORDER
+========================================================= */
+
+export async function cancelOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+
+    include: {
+      items: true,
+
+      shipment: true,
+
+      refunds: {
+        include: {
+          items: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  /* =========================
+     BLOCK SHIPPED
+  ========================= */
+
+  if (order.status === "SHIPPED") {
+    throw new Error("Shipped orders cannot be cancelled");
+  }
+
+  /* =========================
+     ALREADY CANCELLED
+  ========================= */
+
+  if (order.status === "CANCELLED" || order.status === "REFUNDED") {
+    throw new Error("Order already cancelled");
+  }
+
+  /* =========================
+     PAYMENT NOT COMPLETED
+  ========================= */
+
+  if (
+    order.status === "PENDING" ||
+    order.status === "PAYMENT_PROCESSING" ||
+    order.status === "FAILED"
+  ) {
+    const { InventoryService } =
+      await import("@/modules/inventory/inventory.service");
+
+    await InventoryService.releaseReservation(order.id);
+
+    await prisma.order.update({
+      where: { id: order.id },
+
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: order.id,
+
+        type: "ORDER_CANCELLED",
+
+        message: "Order cancelled before payment",
+      },
+    });
+
+    return;
+  }
+
+  /* =========================
+     PAID → FULL REFUND
+  ========================= */
+
+  if (order.status === "PAID") {
+    await RefundService.createRefund(
+      order.id,
+
+      order.items.map((item) => ({
+        orderItemId: item.id,
+        quantity: item.quantity,
+      })),
+
+      "ORDER_CANCELLED",
+    );
+
+    await prisma.order.update({
+      where: { id: order.id },
+
+      data: {
+        status: "REFUNDED",
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: order.id,
+
+        type: "ORDER_CANCELLED",
+
+        message: "Order cancelled and refunded",
+      },
+    });
+
+    return;
+  }
+
+  throw new Error("Order cannot be cancelled");
 }
 
 /* =========================================================

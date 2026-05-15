@@ -42,6 +42,7 @@ export default function AdminOrders() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [shipmentOrder, setShipmentOrder] = useState<Order | null>(null);
+  const [refundOrder, setRefundOrder] = useState<Order | null>(null);
 
   const loadOrders = async () => {
     try {
@@ -57,11 +58,10 @@ export default function AdminOrders() {
       setRefreshing(false);
     }
   };
-
   useEffect(() => {
     loadOrders();
   }, []);
-
+  
   useEffect(() => {
     setPage(1);
   }, [search, filter]);
@@ -76,11 +76,9 @@ export default function AdminOrders() {
       return true;
     });
   }, [orders, search, filter]);
-
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const stats = useMemo(() => buildOrderStats(orders), [orders]);
-
   const updateStatus = async (id: string, status: OrderStatus) => {
     try {
       const res = await apiFetch(`/orders/${id}`, {
@@ -95,7 +93,25 @@ export default function AdminOrders() {
       toast.error("Error actualizando");
     }
   };
+  const cancelOrder = async (id: string) => {
+    try {
+      const res = await apiFetch(`/orders/${id}/cancel`, {
+        method: "POST",
+      });
 
+      if (!res || !res.ok) {
+        throw new Error();
+      }
+
+      toast.success("Pedido cancelado");
+
+      await loadOrders();
+
+      setSelectedOrder(null);
+    } catch {
+      toast.error("No se pudo cancelar");
+    }
+  };
   if (loading) return <OrdersSkeleton />;
 
   return (
@@ -278,6 +294,8 @@ export default function AdminOrders() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onCreateShipment={() => setShipmentOrder(selectedOrder)}
+          onCancel={() => cancelOrder(selectedOrder.id)}
+          onOpenRefund={() => setRefundOrder(selectedOrder)}
         />
       )}
       {shipmentOrder && (
@@ -285,10 +303,17 @@ export default function AdminOrders() {
           order={shipmentOrder}
           onClose={() => setShipmentOrder(null)}
           onSuccess={async () => {
-  await loadOrders();
+            await loadOrders();
 
-  setSelectedOrder(null);
-}}
+            setSelectedOrder(null);
+          }}
+        />
+      )}
+      {refundOrder && (
+        <RefundModal
+          order={refundOrder}
+          onClose={() => setRefundOrder(null)}
+          onSuccess={loadOrders}
         />
       )}
     </div>
@@ -351,7 +376,6 @@ function formatDate(date: string) {
         year: "numeric",
       });
 }
-
 function OrderStat({
   icon: Icon,
   label,
@@ -541,36 +565,22 @@ function ShipmentModal({
 
         <div className="mt-6 space-y-4">
           <select
-  value={carrier}
-  onChange={(e) =>
-    setCarrier(e.target.value)
-  }
-  className="dashboard-input"
->
-  <option value="">
-    Seleccionar carrier
-  </option>
+            value={carrier}
+            onChange={(e) => setCarrier(e.target.value)}
+            className="dashboard-input"
+          >
+            <option value="">Seleccionar carrier</option>
 
-  <option value="Correos">
-    Correos
-  </option>
+            <option value="Correos">Correos</option>
 
-  <option value="Correos Express">
-    Correos Express
-  </option>
+            <option value="Correos Express">Correos Express</option>
 
-  <option value="SEUR">
-    SEUR
-  </option>
+            <option value="SEUR">SEUR</option>
 
-  <option value="MRW">
-    MRW
-  </option>
+            <option value="MRW">MRW</option>
 
-  <option value="DHL">
-    DHL
-  </option>
-</select>
+            <option value="DHL">DHL</option>
+          </select>
 
           <input
             value={trackingNumber}
@@ -600,14 +610,153 @@ function ShipmentModal({
     </div>
   );
 }
+function RefundModal({
+  order,
+  onClose,
+  onSuccess,
+}: {
+  order: Order;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const [selectedItems, setSelectedItems] = useState<Record<string, number>>(
+    {},
+  );
+
+  const processRefund = async () => {
+    try {
+      setLoading(true);
+
+      const items = Object.entries(selectedItems)
+        .filter(([, quantity]) => quantity > 0)
+        .map(([orderItemId, quantity]) => ({
+          orderItemId,
+          quantity,
+        }));
+
+      if (items.length === 0) {
+        toast.error("Selecciona productos");
+        return;
+      }
+
+      const res = await apiFetch("/refunds", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          orderId: order.id,
+          items,
+          reason: "CUSTOMER_RETURN",
+        }),
+      });
+
+      if (!res || !res.ok) {
+        throw new Error();
+      }
+
+      toast.success("Refund procesado");
+
+      await onSuccess();
+
+      onClose();
+    } catch {
+      toast.error("Error procesando refund");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4">
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-neutral-950 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Procesar refund</h2>
+
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-neutral-500 hover:bg-white/10 hover:text-white"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="mt-6 space-y-4">
+          {order.items?.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-2xl border border-white/10 p-4"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-white">
+                    {item.product?.name ?? item.productName}
+                  </p>
+
+                  <p className="text-sm text-neutral-500">
+                    Comprado: {item.quantity}
+                  </p>
+                </div>
+
+                <select
+                  value={selectedItems[item.id] ?? 0}
+                  onChange={(e) =>
+                    setSelectedItems((prev) => ({
+                      ...prev,
+                      [item.id]: Number(e.target.value),
+                    }))
+                  }
+                  className="dashboard-input w-24"
+                >
+                  {Array.from({
+                    length: item.quantity + 1,
+                  }).map((_, index) => (
+                    <option key={index} value={index}>
+                      {index}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="w-full rounded-2xl border border-white/10 px-4 py-3 text-white"
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={processRefund}
+            disabled={loading}
+            className="w-full rounded-2xl bg-rose-300 px-4 py-3 font-semibold text-black disabled:opacity-50"
+          >
+            {loading ? "Procesando..." : "Procesar refund"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 function QuickViewModal({
   order,
   onClose,
   onCreateShipment,
+  onOpenRefund,
+  onCancel,
 }: {
   order: Order;
   onClose: () => void;
   onCreateShipment: () => void;
+  onOpenRefund: () => void;
+  onCancel: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center sm:p-6">
@@ -663,6 +812,15 @@ function QuickViewModal({
             <ActionTile icon={Truck} label="Tracking" />
             <ActionTile icon={FileText} label="Invoice" />
           </div>
+          {(order.status === "PAID" ||
+            order.status === "PARTIALLY_REFUNDED") && (
+            <button
+              onClick={() => onOpenRefund()}
+              className="w-full rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-200"
+            >
+              Procesar refund
+            </button>
+          )}
 
           {order.status === "PAID" && (
             <button
@@ -672,6 +830,16 @@ function QuickViewModal({
               Crear envío + tracking
             </button>
           )}
+          {order.status !== "SHIPPED" &&
+            order.status !== "REFUNDED" &&
+            order.status !== "CANCELLED" && (
+              <button
+                onClick={onCancel}
+                className="w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200"
+              >
+                Cancelar pedido
+              </button>
+            )}
         </div>
       </div>
     </div>

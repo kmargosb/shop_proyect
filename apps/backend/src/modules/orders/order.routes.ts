@@ -17,6 +17,7 @@ import {
   getMyOrdersController,
   getMyOrderByIdController,
   searchOrdersController,
+  cancelOrderController,
 } from "./order.controller";
 
 import { getActivityFeedController } from "./order.activity.controller";
@@ -66,6 +67,9 @@ router.post(
 
 // Cambiar estado
 router.patch("/:id", protect, adminOnly, updateOrderStatusController);
+
+// Cancelar orden
+router.post("/:id/cancel", protect, adminOnly, cancelOrderController,);
 
 // Descargar invoice admin
 router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
