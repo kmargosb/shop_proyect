@@ -272,32 +272,69 @@ export default function Page() {
           </div>
 
           <div className="space-y-4">
-            {order.items.map((item: any) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4"
-              >
-                <div>
-                  <p className="font-medium">
-                    {item.product?.name || item.productName}
-                  </p>
+            {order.items.map((item: any) => {
+              const refundedQuantity =
+                item.refundItems?.reduce(
+                  (sum: number, ri: any) => sum + ri.quantity,
+                  0,
+                ) || 0;
 
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Cantidad: {item.quantity}
-                  </p>
+              const remainingQuantity = item.quantity - refundedQuantity;
+
+              const isFullyRefunded = remainingQuantity <= 0;
+
+              const isPartiallyRefunded =
+                refundedQuantity > 0 && remainingQuantity > 0;
+
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {item.product?.name || item.productName}
+                    </p>
+
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Cantidad: {item.quantity}
+                    </p>
+                  </div>
+                  {isFullyRefunded && (
+                    <span className="mt-2 inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-300">
+                      Fully refunded
+                    </span>
+                  )}
+
+                  {isPartiallyRefunded && (
+                    <span className="mt-2 inline-flex rounded-full border border-orange-500/20 bg-orange-500/10 px-2 py-1 text-xs text-orange-300">
+                      Partially refunded
+                    </span>
+                  )}
+
+                  {refundedQuantity > 0 && (
+                    <div className="mt-2 space-y-1 text-xs">
+                      <p className="text-orange-400">
+                        Refunded: {refundedQuantity}
+                      </p>
+
+                      <p className="text-neutral-500">
+                        Remaining: {remainingQuantity}
+                      </p>
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <p className="font-semibold">
+                      €{((item.price * item.quantity) / 100).toFixed(2)}
+                    </p>
+
+                    <p className="mt-1 text-xs text-neutral-500">
+                      €{(item.price / 100).toFixed(2)} c/u
+                    </p>
+                  </div>
                 </div>
-
-                <div className="text-right">
-                  <p className="font-semibold">
-                    €{((item.price * item.quantity) / 100).toFixed(2)}
-                  </p>
-
-                  <p className="mt-1 text-xs text-neutral-500">
-                    €{(item.price / 100).toFixed(2)} c/u
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-6">
