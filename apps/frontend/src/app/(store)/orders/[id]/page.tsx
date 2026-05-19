@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import ShipmentStatusCard from "@/features/orders/components/ShipmentStatusCard";
 
 import {
   CheckCircle2,
@@ -347,31 +348,7 @@ export default function Page() {
 
         {/* SHIPMENT */}
 
-        {order.shipment && (
-          <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-indigo-300">
-                  Envío
-                </p>
-
-                <h2 className="mt-2 text-xl font-semibold text-white">
-                  {order.shipment.carrier}
-                </h2>
-
-                <p className="mt-2 text-sm text-neutral-400">Tracking:</p>
-
-                <p className="font-mono text-lg text-white">
-                  {order.shipment.trackingNumber}
-                </p>
-              </div>
-
-              <div className="rounded-full bg-indigo-400/10 px-4 py-2 text-sm font-semibold text-indigo-200">
-                {order.shipment.status}
-              </div>
-            </div>
-          </div>
-        )}
+        {order.shipment && <ShipmentStatusCard shipment={order.shipment} />}
 
         {/* TIMELINE */}
 
