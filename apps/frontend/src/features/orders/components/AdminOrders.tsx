@@ -12,7 +12,6 @@ import {
   RotateCcw,
   Search,
   Truck,
-  UserRound,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -20,6 +19,17 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "@/shared/lib/api";
 import type { Order, OrderStatus } from "@/types/order";
+import StatusBadge from "./StatusBadge";
+import RefundModal from "./RefundModal";
+import ShipmentModal from "./ShipmentModal";
+import QuickViewModal from "./QuickViewModal";
+import {
+  formatMoney,
+  CustomerPreview,
+  OrderTimeline,
+  ActionTile,
+  safeNumber,
+} from "./order-ui";
 
 type FilterStatus = "ALL" | OrderStatus;
 
@@ -61,7 +71,7 @@ export default function AdminOrders() {
   useEffect(() => {
     loadOrders();
   }, []);
-  
+
   useEffect(() => {
     setPage(1);
   }, [search, filter]);
@@ -112,6 +122,7 @@ export default function AdminOrders() {
       toast.error("No se pudo cancelar");
     }
   };
+
   if (loading) return <OrdersSkeleton />;
 
   return (
@@ -336,9 +347,6 @@ function isOrderLike(value: unknown): value is Order {
     "status" in value
   );
 }
-function safeNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
 function buildOrderStats(orders: Order[]) {
   return orders.reduce(
     (acc, order) => {
@@ -359,12 +367,6 @@ function statusLabel(status: FilterStatus) {
   return status === "ALL"
     ? "Todas"
     : status.replace("PARTIALLY_", "PART. ").toLowerCase();
-}
-function formatMoney(cents: number) {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-  }).format(safeNumber(cents) / 100);
 }
 function formatDate(date: string) {
   const parsed = new Date(date);
@@ -403,65 +405,6 @@ function OrderStat({
       <p className="mt-4 text-sm text-neutral-400">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
       <p className="mt-1 text-xs text-neutral-500">{helper}</p>
-    </div>
-  );
-}
-function CustomerPreview({ order }: { order: Order }) {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-black">
-        <UserRound size={17} />
-      </div>
-      <div className="min-w-0">
-        <p className="truncate font-medium text-white">
-          {order.fullName || "Cliente sin nombre"}
-        </p>
-        <p className="truncate text-xs text-neutral-500">
-          {order.email || "Sin email"}
-        </p>
-      </div>
-    </div>
-  );
-}
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    PENDING: "border-amber-400/20 bg-amber-400/10 text-amber-200",
-    PAYMENT_PROCESSING: "border-sky-400/20 bg-sky-400/10 text-sky-200",
-    PAID: "border-emerald-400/20 bg-emerald-400/10 text-emerald-200",
-    SHIPPED: "border-indigo-400/20 bg-indigo-400/10 text-indigo-200",
-    REFUNDED: "border-rose-400/20 bg-rose-400/10 text-rose-200",
-    PARTIALLY_REFUNDED: "border-orange-400/20 bg-orange-400/10 text-orange-200",
-    FAILED: "border-red-400/20 bg-red-400/10 text-red-200",
-    CANCELLED: "border-neutral-400/20 bg-neutral-400/10 text-neutral-200",
-  };
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${map[status] ?? map.PENDING}`}
-    >
-      {status.toLowerCase().replaceAll("_", " ")}
-    </span>
-  );
-}
-function OrderTimeline({ status }: { status: string }) {
-  const steps = ["PENDING", "PAID", "SHIPPED"];
-  const current =
-    status === "FAILED" || status === "REFUNDED"
-      ? 1
-      : Math.max(0, steps.indexOf(status));
-  return (
-    <div className="flex items-center gap-1">
-      {steps.map((step, index) => (
-        <div key={step} className="flex items-center gap-1">
-          <span
-            className={`h-2.5 w-2.5 rounded-full ${index <= current ? "bg-emerald-300" : "bg-white/15"}`}
-          />
-          {index < steps.length - 1 && (
-            <span
-              className={`h-px w-7 ${index < current ? "bg-emerald-300" : "bg-white/15"}`}
-            />
-          )}
-        </div>
-      ))}
     </div>
   );
 }
@@ -506,356 +449,6 @@ function Metric({ label, value }: { label: string; value: string | number }) {
     <div className="rounded-2xl bg-white/[0.05] p-3">
       <p className="text-neutral-500">{label}</p>
       <p className="mt-1 truncate font-semibold text-white">{value}</p>
-    </div>
-  );
-}
-function ShipmentModal({
-  order,
-  onClose,
-  onSuccess,
-}: {
-  order: Order;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [carrier, setCarrier] = useState("");
-
-  const [trackingNumber, setTrackingNumber] = useState("");
-
-  const [loading, setLoading] = useState(false);
-
-  const createShipment = async () => {
-    try {
-      setLoading(true);
-
-      const res = await apiFetch("/shipping", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          orderId: order.id,
-          carrier,
-          trackingNumber,
-        }),
-      });
-
-      if (!res || !res.ok) {
-        throw new Error();
-      }
-
-      toast.success("Shipment creado");
-
-      onSuccess();
-
-      onClose();
-    } catch {
-      toast.error("Error creando shipment");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">
-        <h2 className="text-xl font-semibold text-white">Crear envío</h2>
-
-        <div className="mt-6 space-y-4">
-          <select
-            value={carrier}
-            onChange={(e) => setCarrier(e.target.value)}
-            className="dashboard-input"
-          >
-            <option value="">Seleccionar carrier</option>
-
-            <option value="Correos">Correos</option>
-
-            <option value="Correos Express">Correos Express</option>
-
-            <option value="SEUR">SEUR</option>
-
-            <option value="MRW">MRW</option>
-
-            <option value="DHL">DHL</option>
-          </select>
-
-          <input
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-            placeholder="Tracking number"
-            className="dashboard-input"
-          />
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onClose}
-            className="w-full rounded-2xl border border-white/10 px-4 py-3 text-white"
-          >
-            Cancelar
-          </button>
-
-          <button
-            onClick={createShipment}
-            disabled={loading || !carrier || !trackingNumber}
-            className="w-full rounded-2xl bg-white px-4 py-3 font-semibold text-black disabled:opacity-50"
-          >
-            {loading ? "Creando..." : "Crear envío"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-function RefundModal({
-  order,
-  onClose,
-  onSuccess,
-}: {
-  order: Order;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [loading, setLoading] = useState(false);
-
-  const [selectedItems, setSelectedItems] = useState<Record<string, number>>(
-    {},
-  );
-
-  const processRefund = async () => {
-    try {
-      setLoading(true);
-
-      const items = Object.entries(selectedItems)
-        .filter(([, quantity]) => quantity > 0)
-        .map(([orderItemId, quantity]) => ({
-          orderItemId,
-          quantity,
-        }));
-
-      if (items.length === 0) {
-        toast.error("Selecciona productos");
-        return;
-      }
-
-      const res = await apiFetch("/refunds", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          orderId: order.id,
-          items,
-          reason: "CUSTOMER_RETURN",
-        }),
-      });
-
-      if (!res || !res.ok) {
-        throw new Error();
-      }
-
-      toast.success("Refund procesado");
-
-      await onSuccess();
-
-      onClose();
-    } catch {
-      toast.error("Error procesando refund");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-neutral-950 p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Procesar refund</h2>
-
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 text-neutral-500 hover:bg-white/10 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="mt-6 space-y-4">
-          {order.items?.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-2xl border border-white/10 p-4"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-medium text-white">
-                    {item.product?.name ?? item.productName}
-                  </p>
-
-                  <p className="text-sm text-neutral-500">
-                    Comprado: {item.quantity}
-                  </p>
-                </div>
-
-                <select
-                  value={selectedItems[item.id] ?? 0}
-                  onChange={(e) =>
-                    setSelectedItems((prev) => ({
-                      ...prev,
-                      [item.id]: Number(e.target.value),
-                    }))
-                  }
-                  className="dashboard-input w-24"
-                >
-                  {Array.from({
-                    length: item.quantity + 1,
-                  }).map((_, index) => (
-                    <option key={index} value={index}>
-                      {index}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onClose}
-            className="w-full rounded-2xl border border-white/10 px-4 py-3 text-white"
-          >
-            Cancelar
-          </button>
-
-          <button
-            onClick={processRefund}
-            disabled={loading}
-            className="w-full rounded-2xl bg-rose-300 px-4 py-3 font-semibold text-black disabled:opacity-50"
-          >
-            {loading ? "Procesando..." : "Procesar refund"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-function QuickViewModal({
-  order,
-  onClose,
-  onCreateShipment,
-  onOpenRefund,
-  onCancel,
-}: {
-  order: Order;
-  onClose: () => void;
-  onCreateShipment: () => void;
-  onOpenRefund: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center sm:p-6">
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-white/10 bg-neutral-950 p-5 shadow-2xl sm:rounded-3xl sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-neutral-500">
-              Vista rápida
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-white">
-              Orden #{order.id.slice(0, 8)}
-            </h2>
-            <div className="mt-3">
-              <StatusBadge status={order.status} />
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 text-neutral-500 hover:bg-white/10 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <div className="mt-6 space-y-4">
-          <CustomerPreview order={order} />
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="font-semibold text-white">Timeline</p>
-            <div className="mt-4">
-              <OrderTimeline status={order.status} />
-            </div>
-            <p className="mt-3 text-sm text-neutral-500">
-              Preparado para tracking de envío, factura y reembolsos.
-            </p>
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="font-semibold text-white">Productos</p>
-            {order.items?.map((item) => (
-              <div
-                key={item.id}
-                className="mt-3 flex flex-col gap-1 text-sm sm:flex-row sm:justify-between sm:gap-3"
-              >
-                <span className="text-neutral-300">
-                  {item.product?.name ?? item.productName ?? item.productId}
-                </span>
-                <span className="text-neutral-500">
-                  x{item.quantity} · {formatMoney(item.price)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="grid gap-3 min-[420px]:grid-cols-3">
-            <ActionTile icon={RotateCcw} label="Refund" />
-            <ActionTile icon={Truck} label="Tracking" />
-            <ActionTile icon={FileText} label="Invoice" />
-          </div>
-          {(order.status === "PAID" ||
-            order.status === "PARTIALLY_REFUNDED") && (
-            <button
-              onClick={() => onOpenRefund()}
-              className="w-full rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-200"
-            >
-              Procesar refund
-            </button>
-          )}
-
-          {order.status === "PAID" && (
-            <button
-              onClick={onCreateShipment}
-              className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"
-            >
-              Crear envío + tracking
-            </button>
-          )}
-          {order.status !== "SHIPPED" &&
-            order.status !== "REFUNDED" &&
-            order.status !== "CANCELLED" && (
-              <button
-                onClick={onCancel}
-                className="w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200"
-              >
-                Cancelar pedido
-              </button>
-            )}
-        </div>
-      </div>
-    </div>
-  );
-}
-function ActionTile({
-  icon: Icon,
-  label,
-}: {
-  icon: LucideIcon;
-  label: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-4 text-center text-neutral-500">
-      <Icon className="mx-auto" size={18} />
-      <p className="mt-2 text-xs font-semibold">{label} ready</p>
     </div>
   );
 }

@@ -105,7 +105,7 @@ export default function OrderDetailModal({ order, onClose }: Props) {
                 className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4 flex justify-between items-center"
               >
                 <div>
-                  <p className="font-medium">{item.product.name}</p>
+                  <p className="font-medium">{item.product?.name ?? item.productName}</p>
 
                   <p className="text-xs text-neutral-500">
                     {item.quantity} × €{(item.price / 100).toFixed(2)}
