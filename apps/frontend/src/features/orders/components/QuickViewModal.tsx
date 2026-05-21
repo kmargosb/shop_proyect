@@ -84,7 +84,7 @@ export default function QuickViewModal({
             </button>
           )}
 
-          {order.status === "PAID" && (
+          {order.status === "PAID" && !order.shipment && (
             <button
               onClick={onCreateShipment}
               className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black"

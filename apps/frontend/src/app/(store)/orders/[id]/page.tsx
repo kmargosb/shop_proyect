@@ -110,8 +110,7 @@ export default function Page() {
 
   const canCancel =
     order.status === "PENDING" ||
-    order.status === "PAYMENT_PROCESSING" ||
-    order.status === "PAID";
+    order.status === "PAYMENT_PROCESSING"
 
   const canRefund =
     order.status === "PAID" ||

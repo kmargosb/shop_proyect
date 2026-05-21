@@ -39,6 +39,7 @@ const STATUSES: FilterStatus[] = [
   "PENDING",
   "PAID",
   "SHIPPED",
+  "DELIVERED",
   "REFUNDED",
   "FAILED",
 ];
@@ -218,6 +219,34 @@ export default function AdminOrders() {
             order={order}
             onOpen={setSelectedOrder}
             onMarkPaid={() => updateStatus(order.id, "PAID")}
+            onDelivered={async () => {
+              try {
+                const res = await apiFetch(
+                  `/shipping/${order.shipment!.id}/status`,
+                  {
+                    method: "PATCH",
+
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+
+                    body: JSON.stringify({
+                      status: "DELIVERED",
+                    }),
+                  },
+                );
+
+                if (!res || !res.ok) {
+                  throw new Error();
+                }
+
+                toast.success("Pedido entregado");
+
+                await loadOrders();
+              } catch {
+                toast.error("No se pudo actualizar");
+              }
+            }}
           />
         ))}
       </div>
@@ -350,7 +379,11 @@ function isOrderLike(value: unknown): value is Order {
 function buildOrderStats(orders: Order[]) {
   return orders.reduce(
     (acc, order) => {
-      if (order.status === "PAID" || order.status === "SHIPPED") {
+      if (
+        order.status === "PAID" ||
+        order.status === "SHIPPED" ||
+        order.status === "DELIVERED"
+      ) {
         acc.revenue += safeNumber(order.totalAmount);
         acc.paid += 1;
       }
@@ -412,10 +445,12 @@ function OrderMobileCard({
   order,
   onOpen,
   onMarkPaid,
+  onDelivered,
 }: {
   order: Order;
   onOpen: (order: Order) => void;
   onMarkPaid: () => void;
+  onDelivered: () => void;
 }) {
   return (
     <article className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20">
@@ -439,6 +474,14 @@ function OrderMobileCard({
           className="mt-4 w-full rounded-2xl bg-emerald-300 px-3 py-2 text-sm font-semibold text-black"
         >
           Marcar como pagada
+        </button>
+      )}
+      {order.shipment?.status === "SHIPPED" && (
+        <button
+          onClick={onDelivered}
+          className="rounded-xl border border-sky-400/20 bg-sky-400/10 px-3 py-2 text-xs font-semibold text-sky-200"
+        >
+          Marcar entregado
         </button>
       )}
     </article>

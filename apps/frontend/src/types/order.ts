@@ -3,10 +3,11 @@ export type OrderStatus =
   | "PAYMENT_PROCESSING"
   | "PAID"
   | "SHIPPED"
+  | "DELIVERED"
   | "CANCELLED"
   | "FAILED"
   | "PARTIALLY_REFUNDED"
-  | "REFUNDED";
+  | "REFUNDED"
 
 export type OrderItem = {
   id: string;
@@ -45,7 +46,7 @@ export type Order = {
   postalCode: string;
   country: string;
   totalAmount: number;
-  status: OrderStatus | string;
+  status: OrderStatus | string ;
   createdAt: string;
   stripePaymentIntentId?: string | null;
   items: OrderItem[];

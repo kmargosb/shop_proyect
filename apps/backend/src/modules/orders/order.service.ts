@@ -202,6 +202,8 @@ export async function getOrders(params: {
     prisma.order.findMany({
       where,
       include: {
+        shipment: true,
+
         items: {
           include: {
             product: {
@@ -212,13 +214,16 @@ export async function getOrders(params: {
             },
           },
         },
+
         invoice: {
           select: {
             id: true,
             invoiceNumber: true,
           },
         },
+
         refunds: true,
+
         transactions: true,
       },
       orderBy: {
@@ -276,7 +281,9 @@ export async function updateOrderStatus(
 
       FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
 
-      SHIPPED: [],
+      SHIPPED: ["DELIVERED"],
+
+      DELIVERED: [],
 
       CANCELLED: [],
 
@@ -500,7 +507,10 @@ export async function searchOrders(params: {
     prisma.order.findMany({
       where,
       include: {
+        shipment: true,
+
         items: true,
+
         invoice: true,
       },
       orderBy: {
