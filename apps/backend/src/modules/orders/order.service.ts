@@ -72,9 +72,12 @@ export async function createOrder(data: CreateOrderInput) {
         throw new Error("Producto no encontrado");
       }
 
-      if (item.quantity > product.stock) {
-        throw new Error(`Stock insuficiente para ${product.name}`);
-      }
+      const availableStock =
+  product.stock - product.reservedStock;
+
+if (item.quantity > availableStock) {
+  throw new Error(`Stock insuficiente para ${product.name}`);
+}
 
       totalAmount += product.price * item.quantity;
 
