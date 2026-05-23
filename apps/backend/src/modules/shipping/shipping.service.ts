@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ShipmentStatus } from "@prisma/client";
 import { sendShipmentEmail } from "@/modules/email/sendOrderEmail";
+import { getIO } from "@/lib/socket";
 
 export const ShippingService = {
   /* ==========================================
@@ -41,6 +42,7 @@ export const ShippingService = {
         shippedAt: new Date(),
       },
     });
+
     await prisma.order.update({
       where: { id: orderId },
 
@@ -48,6 +50,7 @@ export const ShippingService = {
         status: "SHIPPED",
       },
     });
+
     await prisma.orderEvent.create({
       data: {
         orderId,
@@ -55,7 +58,20 @@ export const ShippingService = {
         message: `Order shipped via ${carrier}`,
       },
     });
+
     await sendShipmentEmail(orderId);
+
+    /* =========================
+       REALTIME EVENT
+    ========================= */
+
+    const io = getIO();
+
+    console.log("📡 emitting orderUpdated", orderId);
+
+    io.emit("orderUpdated", {
+      orderId,
+    });
 
     return shipment;
   },
@@ -64,7 +80,10 @@ export const ShippingService = {
      UPDATE TRACKING STATUS
   ========================================== */
 
-  async updateShipmentStatus(shipmentId: string, status: ShipmentStatus) {
+  async updateShipmentStatus(
+    shipmentId: string,
+    status: ShipmentStatus,
+  ) {
     const shipment = await prisma.shipment.findUnique({
       where: { id: shipmentId },
     });
@@ -75,16 +94,21 @@ export const ShippingService = {
 
     const updatedShipment = await prisma.shipment.update({
       where: { id: shipmentId },
+
       data: {
         status,
+
         deliveredAt:
-          status === ShipmentStatus.DELIVERED ? new Date() : undefined,
+          status === ShipmentStatus.DELIVERED
+            ? new Date()
+            : undefined,
       },
     });
 
     if (status === ShipmentStatus.SHIPPED) {
       await prisma.order.update({
         where: { id: shipment.orderId },
+
         data: {
           status: "SHIPPED",
         },
@@ -94,11 +118,27 @@ export const ShippingService = {
     if (status === ShipmentStatus.DELIVERED) {
       await prisma.order.update({
         where: { id: shipment.orderId },
+
         data: {
           status: "DELIVERED",
         },
       });
     }
+
+    /* =========================
+       REALTIME EVENT
+    ========================= */
+
+    const io = getIO();
+
+    console.log(
+      "📡 emitting orderUpdated",
+      shipment.orderId,
+    );
+
+    io.emit("orderUpdated", {
+      orderId: shipment.orderId,
+    });
 
     return updatedShipment;
   },

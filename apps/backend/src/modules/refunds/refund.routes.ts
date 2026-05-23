@@ -1,8 +1,11 @@
-import { Router } from "express"
-import { RefundController } from "./refund.controller"
+import { Router } from "express";
+import { RefundController } from "./refund.controller";
+import { protect, adminOnly } from "@/common/middleware/auth.middleware";
 
-const router = Router()
+const router = Router();
 
-router.post("/", RefundController.create)
+router.post("/", RefundController.create);
+router.post("/:refundId/approve", protect, adminOnly, RefundController.approve);
+router.post("/:refundId/reject", protect, adminOnly, RefundController.reject);
 
-export default router
+export default router;

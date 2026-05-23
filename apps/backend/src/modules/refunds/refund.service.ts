@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { RefundRepository } from "./refund.repository";
 import { RefundReason } from "@prisma/client";
+import { getIO } from "@/lib/socket";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
@@ -56,10 +57,10 @@ export const RefundService = {
       }
 
       const refundedQuantity = order.refunds
-  .filter((r) => r.status === "SUCCEEDED")
-  .flatMap((r) => r.items)
-  .filter((ri) => ri.orderItemId === item.orderItemId)
-  .reduce((sum, ri) => sum + ri.quantity, 0);
+        .filter((r) => r.status === "SUCCEEDED")
+        .flatMap((r) => r.items)
+        .filter((ri) => ri.orderItemId === item.orderItemId)
+        .reduce((sum, ri) => sum + ri.quantity, 0);
 
       const remainingQuantity = orderItem.quantity - refundedQuantity;
 
@@ -106,39 +107,32 @@ export const RefundService = {
     //console.log("💳 PAYMENT INTENT:", order.stripePaymentIntentId);
 
     /* =========================
-       STRIPE REFUND
-    ========================= */
-
-    const stripeReasonMap: Record<string, any> = {
-      REQUESTED_BY_CUSTOMER: "requested_by_customer",
-      DUPLICATE: "duplicate",
-      FRAUDULENT: "fraudulent",
-    };
-
-    const stripeRefund = await stripe.refunds.create({
-      payment_intent: order.stripePaymentIntentId,
-      amount: refundAmount,
-      reason: stripeReasonMap[reason as string] || "requested_by_customer",
-    });
-
-    /* =========================
        DB REFUND
     ========================= */
 
     const dbRefund = await RefundRepository.create({
       orderId,
-      stripeRefundId: stripeRefund.id,
+
       amount: refundAmount,
-      currency: stripeRefund.currency,
+
+      currency: order.currency,
+
       reason,
     });
-    
+
     await prisma.orderEvent.create({
       data: {
         orderId,
         type: "REFUND_CREATED",
         message: "Refund created",
       },
+    });
+    const io = getIO();
+
+    console.log("📡 emitting refund update", orderId);
+
+    io.emit("orderUpdated", {
+      orderId,
     });
 
     /* =========================
@@ -165,4 +159,97 @@ export const RefundService = {
       status: dbRefund.status,
     };
   },
+
+  async approveRefund(refundId: string) {
+    const refund = await prisma.refund.findUnique({
+      where: { id: refundId },
+
+      include: {
+        order: true,
+      },
+    });
+
+    if (!refund) {
+      throw new Error("Refund not found");
+    }
+
+    if (refund.status !== "PENDING_REVIEW") {
+      throw new Error("Refund already processed");
+    }
+
+    if (!refund.order.stripePaymentIntentId) {
+      throw new Error("Order has no payment intent");
+    }
+
+    const stripeRefund = await stripe.refunds.create({
+      payment_intent: refund.order.stripePaymentIntentId,
+
+      amount: refund.amount,
+
+      reason: "requested_by_customer",
+    });
+
+    const updatedRefund = await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
+
+      data: {
+        status: "SUCCEEDED",
+
+        stripeRefundId: stripeRefund.id,
+
+        reviewedAt: new Date(),
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+
+        type: "REFUND_COMPLETED",
+
+        message: "Refund completed",
+      },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: refund.orderId,
+    });
+
+    return updatedRefund;
+  },
+  async rejectRefund(refundId: string, rejectionReason?: string) {
+  const refund = await prisma.refund.findUnique({
+    where: { id: refundId },
+  });
+
+  if (!refund) {
+    throw new Error("Refund not found");
+  }
+
+  if (refund.status !== "PENDING_REVIEW") {
+    throw new Error("Refund already processed");
+  }
+
+  const updatedRefund = await prisma.refund.update({
+    where: {
+      id: refundId,
+    },
+
+    data: {
+      status: "REJECTED",
+
+      rejectionReason,
+
+      reviewedAt: new Date(),
+    },
+  });
+
+  getIO().emit("orderUpdated", {
+    orderId: refund.orderId,
+  });
+
+  return updatedRefund;
+},
 };

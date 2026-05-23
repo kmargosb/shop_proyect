@@ -37,8 +37,8 @@ export default function ProductList({ brand }: Props) {
   const skeletons = Array.from({ length: 8 });
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold mb-10">
+    <section className="max-w-7xl mx-auto px-6 py-6">
+      <h1 className="text-4xl font-bold mb-10">
         {brand ? `Productos de ${brand}` : "Latest Drops"}
       </h1>
 

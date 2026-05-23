@@ -30,6 +30,7 @@ import {
   ActionTile,
   safeNumber,
 } from "./order-ui";
+import { socket } from "@/shared/lib/socket";
 
 type FilterStatus = "ALL" | OrderStatus;
 
@@ -70,8 +71,16 @@ export default function AdminOrders() {
     }
   };
   useEffect(() => {
+  loadOrders();
+
+  socket.on("orderUpdated", () => {
     loadOrders();
-  }, []);
+  });
+
+  return () => {
+    socket.off("orderUpdated");
+  };
+}, []);
 
   useEffect(() => {
     setPage(1);

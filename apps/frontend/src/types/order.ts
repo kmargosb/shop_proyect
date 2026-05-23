@@ -35,6 +35,13 @@ export type Shipment = {
   deliveredAt?: string | null;
 };
 
+export type Refund = {
+  id: string;
+  status: string;
+  amount: number;
+  reason?: string | null;
+};
+
 export type Order = {
   id: string;
   fullName: string;
@@ -52,4 +59,5 @@ export type Order = {
   items: OrderItem[];
   invoice?: Invoice | null;
   shipment?: Shipment | null;
+  refunds?: Refund[];
 };

@@ -59,11 +59,17 @@ export default function StripePaymentForm({ orderId }: Props) {
             onReady={() => {
               setElementReady(true);
             }}
-            onLoadError={(err: unknown) => {
-              console.error("Stripe load error:", err);
-              setElementError(true);
-              setErrorMessage("Error loading payment form");
-            }}
+            onLoadError={() => {
+  setElementError(true);
+
+  setErrorMessage(
+    "Esta sesión de pago ya no es válida",
+  );
+
+  setTimeout(() => {
+    window.location.href = "/shop";
+  }, 2500);
+}}
           />
         </div>
       ) : (

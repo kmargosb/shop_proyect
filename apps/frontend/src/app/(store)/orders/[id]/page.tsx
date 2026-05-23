@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import ShipmentStatusCard from "@/features/orders/components/ShipmentStatusCard";
+import { socket } from "@/shared/lib/socket";
 
 import {
   CheckCircle2,
@@ -39,49 +40,70 @@ export default function Page() {
   const [refundItems, setRefundItems] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (!id) return;
+  if (!id) return;
 
-    const loadOrder = async () => {
-      try {
-        /* =========================
-           AUTH USER
-        ========================= */
+  const loadOrder = async () => {
+    try {
+      /* =========================
+         AUTH USER
+      ========================= */
 
-        let res = await apiFetch(`/orders/${id}`);
+      let res = await apiFetch(`/orders/${id}`);
 
-        if (res && res.ok) {
-          const data = await res.json();
+      if (res && res.ok) {
+        const data = await res.json();
 
-          setOrder(data);
+        setOrder(data);
 
-          return;
-        }
-
-        /* =========================
-           GUEST FALLBACK
-        ========================= */
-
-        const email =
-          searchParams.get("email") || localStorage.getItem("orderEmail");
-
-        if (!email) return;
-
-        res = await apiFetch(`/orders/public/${id}?email=${email}`);
-
-        if (res && res.ok) {
-          const data = await res.json();
-
-          setOrder(data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    loadOrder();
-  }, [id, searchParams]);
+      /* =========================
+         GUEST FALLBACK
+      ========================= */
+
+      const email =
+        searchParams.get("email") ||
+        localStorage.getItem("orderEmail");
+
+      if (!email) return;
+
+      res = await apiFetch(
+        `/orders/public/${id}?email=${email}`,
+      );
+
+      if (res && res.ok) {
+        const data = await res.json();
+
+        setOrder(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* =========================
+     INITIAL LOAD
+  ========================= */
+
+  loadOrder();
+
+  /* =========================
+     REALTIME UPDATES
+  ========================= */
+
+  socket.on("orderUpdated", ({ orderId }) => {
+    if (orderId === id) {
+      loadOrder();
+    }
+  });
+
+  return () => {
+    socket.off("orderUpdated");
+  };
+}, [id, searchParams]);
 
   /* =========================
      LOADING
@@ -109,13 +131,14 @@ export default function Page() {
     order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
 
   const canCancel =
-    order.status === "PENDING" ||
-    order.status === "PAYMENT_PROCESSING"
+  order.status === "PENDING" ||
+  order.status === "PAYMENT_PROCESSING" ||
+  order.status === "PAID";
 
   const canRefund =
-    order.status === "PAID" ||
-    order.status === "SHIPPED" ||
-    order.status === "PARTIALLY_REFUNDED";
+  order.status === "SHIPPED" ||
+  order.status === "DELIVERED" ||
+  order.status === "PARTIALLY_REFUNDED";
 
   const handleDownloadInvoice = () => {
     const email =

@@ -2,8 +2,14 @@ import { FileText, RotateCcw, Truck, X } from "lucide-react";
 
 import type { Order } from "@/types/order";
 import StatusBadge from "./StatusBadge";
-import { formatMoney, CustomerPreview, OrderTimeline, ActionTile } from "./order-ui";
-
+import {
+  formatMoney,
+  CustomerPreview,
+  OrderTimeline,
+  ActionTile,
+} from "./order-ui";
+import { apiFetch } from "@/shared/lib/api";
+import { toast } from "sonner";
 
 type Props = {
   order: Order;
@@ -20,6 +26,55 @@ export default function QuickViewModal({
   onOpenRefund,
   onCancel,
 }: Props) {
+  const pendingRefund = order.refunds?.find(
+    (refund) => refund.status === "PENDING_REVIEW",
+  );
+
+  const approveRefund = async () => {
+    if (!pendingRefund) return;
+
+    try {
+      const res = await apiFetch(`/refunds/${pendingRefund.id}/approve`, {
+        method: "POST",
+      });
+
+      if (!res || !res.ok) {
+        throw new Error();
+      }
+
+      toast.success("Refund aprobado");
+      window.location.reload();
+    } catch {
+      toast.error("Error aprobando refund");
+    }
+  };
+
+  const rejectRefund = async () => {
+    if (!pendingRefund) return;
+
+    try {
+      const res = await apiFetch(`/refunds/${pendingRefund.id}/reject`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          rejectionReason: "Rejected by admin",
+        }),
+      });
+
+      if (!res || !res.ok) {
+        throw new Error();
+      }
+
+      toast.success("Refund rechazado");
+      window.location.reload();
+    } catch {
+      toast.error("Error rechazando refund");
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center sm:p-6">
       <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-white/10 bg-neutral-950 p-5 shadow-2xl sm:rounded-3xl sm:p-6">
@@ -73,6 +128,23 @@ export default function QuickViewModal({
             <ActionTile icon={RotateCcw} label="Refund" />
             <ActionTile icon={Truck} label="Tracking" />
             <ActionTile icon={FileText} label="Invoice" />
+            {pendingRefund && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={approveRefund}
+                  className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white"
+                >
+                  Aprobar refund
+                </button>
+
+                <button
+                  onClick={rejectRefund}
+                  className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-semibold text-white"
+                >
+                  Rechazar refund
+                </button>
+              </div>
+            )}
           </div>
           {(order.status === "PAID" ||
             order.status === "PARTIALLY_REFUNDED") && (
