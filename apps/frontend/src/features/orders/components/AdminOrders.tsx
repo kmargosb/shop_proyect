@@ -86,6 +86,24 @@ export default function AdminOrders() {
     setPage(1);
   }, [search, filter]);
 
+  useEffect(() => {
+    const mapById = new Map(orders.map((order) => [order.id, order]));
+
+    if (selectedOrder) {
+      const next = mapById.get(selectedOrder.id);
+      setSelectedOrder(next ?? null);
+    }
+    if (refundOrder) {
+      const next = mapById.get(refundOrder.id);
+      setRefundOrder(next ?? null);
+    }
+    if (shipmentOrder) {
+      const next = mapById.get(shipmentOrder.id);
+      setShipmentOrder(next ?? null);
+    }
+  }, [orders]);
+
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return orders.filter((order) => {

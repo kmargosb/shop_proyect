@@ -174,6 +174,13 @@ export const getPublicOrderController = asyncHandler(
         invoice: true,
         shipment: true,
 
+        refunds: {
+          include: {
+            items: true,
+            evidence: true,
+          },
+        },
+
         events: {
           orderBy: {
             createdAt: "asc",
@@ -352,6 +359,13 @@ export const getMyOrderByIdController = asyncHandler(
 
         invoice: true,
         shipment: true,
+
+        refunds: {
+          include: {
+            items: true,
+            evidence: true,
+          },
+        },
 
         events: {
           orderBy: {

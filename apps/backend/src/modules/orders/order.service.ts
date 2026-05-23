@@ -225,7 +225,12 @@ export async function getOrders(params: {
           },
         },
 
-        refunds: true,
+        refunds: {
+          include: {
+            items: { include: { orderItem: true } },
+            evidence: true,
+          },
+        },
 
         transactions: true,
       },

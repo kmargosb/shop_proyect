@@ -1,4 +1,4 @@
-import { FileText, RotateCcw, Truck, X } from "lucide-react";
+import { FileText, Loader2, RotateCcw, Truck, X } from "lucide-react";
 
 import type { Order } from "@/types/order";
 import StatusBadge from "./StatusBadge";
@@ -10,6 +10,7 @@ import {
 } from "./order-ui";
 import { apiFetch } from "@/shared/lib/api";
 import { toast } from "sonner";
+import { useState } from "react";
 
 type Props = {
   order: Order;
@@ -32,10 +33,13 @@ export default function QuickViewModal({
     (refund) => refund.status === "PENDING_REVIEW",
   );
 
+  const [processingAction, setProcessingAction] = useState<"approve" | "reject" | null>(null);
+
   const approveRefund = async () => {
     if (!pendingRefund) return;
 
     try {
+      setProcessingAction("approve");
       const res = await apiFetch(`/refunds/${pendingRefund.id}/approve`, {
         method: "POST",
       });
@@ -48,6 +52,8 @@ export default function QuickViewModal({
       await onRefresh();
     } catch {
       toast.error("Error aprobando refund");
+    } finally {
+      setProcessingAction(null);
     }
   };
 
@@ -55,6 +61,7 @@ export default function QuickViewModal({
     if (!pendingRefund) return;
 
     try {
+      setProcessingAction("reject");
       const res = await apiFetch(`/refunds/${pendingRefund.id}/reject`, {
         method: "POST",
 
@@ -75,6 +82,8 @@ export default function QuickViewModal({
       await onRefresh();
     } catch {
       toast.error("Error rechazando refund");
+    } finally {
+      setProcessingAction(null);
     }
   };
   return (
@@ -133,10 +142,17 @@ export default function QuickViewModal({
               <p className="mt-2 text-neutral-300">Reason: {pendingRefund.reason ?? "—"}</p>
               <p className="mt-1 text-neutral-400">Note: {pendingRefund.note ?? "—"}</p>
               {pendingRefund.items?.length ? (
-                <div className="mt-2 text-neutral-400">
-                  {pendingRefund.items.map((ri) => (
-                    <p key={ri.orderItemId}>Item {ri.orderItemId.slice(0,6)}… · qty {ri.quantity}</p>
-                  ))}
+                <div className="mt-2 space-y-1 text-neutral-300">
+                  {pendingRefund.items.map((ri) => {
+                    const orderItem = order.items?.find((item) => item.id === ri.orderItemId);
+                    const purchased = orderItem?.quantity ?? 0;
+                    const name = orderItem?.product?.name ?? orderItem?.productName ?? ri.orderItemId.slice(0, 6);
+                    return (
+                      <p key={ri.orderItemId}>
+                        {name}: Refund requested {ri.quantity} / {purchased}
+                      </p>
+                    );
+                  })}
                 </div>
               ) : null}
               {pendingRefund.evidence?.length ? (
@@ -157,16 +173,18 @@ export default function QuickViewModal({
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
                   onClick={approveRefund}
+                  disabled={processingAction !== null}
                   className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white"
                 >
-                  Aprobar refund
+                  {processingAction === "approve" ? (<span className="inline-flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Approving refund...</span>) : "Aprobar refund"}
                 </button>
 
                 <button
                   onClick={rejectRefund}
+                  disabled={processingAction !== null}
                   className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-semibold text-white"
                 >
-                  Rechazar refund
+                  {processingAction === "reject" ? (<span className="inline-flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Rejecting refund...</span>) : "Rechazar refund"}
                 </button>
               </div>
             )}

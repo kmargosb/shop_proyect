@@ -453,6 +453,25 @@ export default function Page() {
           </div>
         )}
 
+
+        {order.refunds?.length > 0 && (
+          <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
+            <h2 className="text-xl font-semibold">Refund status</h2>
+            <div className="mt-4 space-y-3">
+              {order.refunds.map((refund: any) => (
+                <div key={refund.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-neutral-400">{refund.reason ?? "Refund"}</p>
+                    <span className="text-xs text-white">{refund.status === "PENDING_REVIEW" ? "Under review" : refund.status === "SUCCEEDED" ? "Approved" : refund.status === "REJECTED" ? "Rejected" : refund.status}</span>
+                  </div>
+                  {refund.status === "PENDING_REVIEW" && <p className="mt-2 text-sm text-amber-300">Refund under review</p>}
+                  {refund.rejectionReason && <p className="mt-2 text-sm text-red-300">Reason: {refund.rejectionReason}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ACTIONS */}
 
         <div className="flex flex-col gap-4 md:flex-row">
@@ -601,7 +620,7 @@ export default function Page() {
                 <select
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
-                  className="dashboard-input"
+                  className="dashboard-input bg-neutral-900 text-white"
                 >
                   <option value="DAMAGED">DAMAGED</option>
                   <option value="WRONG_ITEM">WRONG_ITEM</option>
@@ -614,14 +633,14 @@ export default function Page() {
                   multiple
                   accept="image/*"
                   onChange={(e) => setRefundFiles(Array.from(e.target.files ?? []))}
-                  className="dashboard-input"
+                  className="dashboard-input bg-neutral-900 text-white"
                 />
               </div>
               <textarea
                 value={refundNote}
                 onChange={(e) => setRefundNote(e.target.value)}
                 placeholder="Tell us what happened..."
-                className="dashboard-input mt-3 min-h-24"
+                className="dashboard-input mt-3 min-h-24 bg-neutral-900 text-white placeholder:text-neutral-500"
               />
               {refundFiles.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
