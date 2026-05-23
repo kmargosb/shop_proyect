@@ -17,6 +17,7 @@ import {
 
 import { apiFetch } from "@/shared/lib/api";
 import { Button } from "@/shared/ui/button";
+import { toast } from "sonner";
 
 type OrderEvent = {
   id: string;
@@ -38,6 +39,9 @@ export default function Page() {
   const [refundError, setRefundError] = useState<string | null>(null);
   const [refundSuccess, setRefundSuccess] = useState(false);
   const [refundItems, setRefundItems] = useState<Record<string, number>>({});
+  const [refundReason, setRefundReason] = useState("CUSTOMER_RETURN");
+  const [refundNote, setRefundNote] = useState("");
+  const [refundFiles, setRefundFiles] = useState<File[]>([]);
 
   useEffect(() => {
   if (!id) return;
@@ -136,9 +140,9 @@ export default function Page() {
   order.status === "PAID";
 
   const canRefund =
-  order.status === "SHIPPED" ||
+  (order.status === "SHIPPED" ||
   order.status === "DELIVERED" ||
-  order.status === "PARTIALLY_REFUNDED";
+  order.status === "PARTIALLY_REFUNDED") && hasRefundableItems;
 
   const handleDownloadInvoice = () => {
     const email =
@@ -185,13 +189,32 @@ export default function Page() {
     }
   };
 
+  const getRefundedQty = (item: any) =>
+    (item.refundItems?.reduce((sum: number, ri: any) => sum + ri.quantity, 0) ?? 0);
+
+  const refundableItems = order.items.filter((item: any) => getRefundedQty(item) < item.quantity);
+  const hasRefundableItems = refundableItems.length > 0;
+
   const handleRefund = async () => {
     try {
       setProcessingRefund(true);
 
       setRefundError(null);
 
-      const items = order.items
+      let uploadedEvidence: { url: string; publicId: string }[] = [];
+      if (refundFiles.length > 0) {
+        const fd = new FormData();
+        refundFiles.forEach((file) => fd.append("files", file));
+        const uploadRes = await apiFetch("/refunds/upload-evidence", { method: "POST", body: fd });
+        const uploadData = await uploadRes?.json();
+        if (!uploadRes || !uploadRes.ok) {
+          setRefundError(uploadData?.message || "No se pudo subir evidencia");
+          return;
+        }
+        uploadedEvidence = uploadData.files || [];
+      }
+
+      const items = refundableItems
         .filter((item: any) => (refundItems[item.id] || 0) > 0)
         .map((item: any) => ({
           orderItemId: item.id,
@@ -209,7 +232,9 @@ export default function Page() {
         body: JSON.stringify({
           orderId: order.id,
           items,
-          reason: "CUSTOMER_RETURN",
+          reason: refundReason,
+          note: refundNote,
+          evidence: uploadedEvidence,
         }),
       });
 
@@ -487,6 +512,10 @@ export default function Page() {
 
                 setRefundSuccess(false);
 
+                if (!hasRefundableItems) {
+                  toast.error("No products available for refund");
+                  return;
+                }
                 setShowRefundModal(true);
               }}
             >
@@ -508,16 +537,7 @@ export default function Page() {
               <h2 className="text-2xl font-semibold">Solicitar devolución</h2>
 
               <div className="mt-6 space-y-4">
-                {order.items
-                  .filter((item: any) => {
-                    const refunded =
-                      item.refundItems?.reduce(
-                        (sum: number, ri: any) => sum + ri.quantity,
-                        0,
-                      ) || 0;
-
-                    return refunded < item.quantity;
-                  })
+                {refundableItems
                   .map((item: any) => {
                     const refunded =
                       item.refundItems?.reduce(
@@ -575,6 +595,41 @@ export default function Page() {
                     );
                   })}
               </div>
+
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <select
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="dashboard-input"
+                >
+                  <option value="DAMAGED">DAMAGED</option>
+                  <option value="WRONG_ITEM">WRONG_ITEM</option>
+                  <option value="CUSTOMER_RETURN">CUSTOMER_RETURN</option>
+                  <option value="ORDER_CANCELLED">ORDER_CANCELLED</option>
+                  <option value="OTHER">OTHER</option>
+                </select>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => setRefundFiles(Array.from(e.target.files ?? []))}
+                  className="dashboard-input"
+                />
+              </div>
+              <textarea
+                value={refundNote}
+                onChange={(e) => setRefundNote(e.target.value)}
+                placeholder="Tell us what happened..."
+                className="dashboard-input mt-3 min-h-24"
+              />
+              {refundFiles.length > 0 && (
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {refundFiles.map((file, idx) => (
+                    <img key={`${file.name}-${idx}`} src={URL.createObjectURL(file)} alt={file.name} className="h-16 w-full rounded-lg object-cover" />
+                  ))}
+                </div>
+              )}
 
               {refundError && (
                 <p className="mt-4 text-sm text-red-400">{refundError}</p>

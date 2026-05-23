@@ -13,6 +13,8 @@ export const RefundService = {
     orderId: string,
     items: { orderItemId: string; quantity: number }[],
     reason?: RefundReason,
+    note?: string,
+    evidence: { url: string; publicId?: string }[] = [],
   ) {
     /* =========================
        PROTECCIÓN 1
@@ -118,7 +120,9 @@ export const RefundService = {
       currency: order.currency,
 
       reason,
+      note,
     });
+
 
     await prisma.orderEvent.create({
       data: {
@@ -153,6 +157,17 @@ export const RefundService = {
         },
       });
     }
+
+
+    if (evidence.length > 0) {
+      await prisma.refundEvidence.createMany({
+        data: evidence.map((item) => ({
+          refundId: dbRefund.id,
+          url: item.url,
+          publicId: item.publicId ?? null,
+        })),
+      });
+    }
     return {
       refundId: dbRefund.id,
       amount: dbRefund.amount,
@@ -163,9 +178,13 @@ export const RefundService = {
   async approveRefund(refundId: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },
-
       include: {
         order: true,
+        items: {
+          include: {
+            orderItem: true,
+          },
+        },
       },
     });
 
@@ -202,6 +221,17 @@ export const RefundService = {
         reviewedAt: new Date(),
       },
     });
+
+    if (refund.items.length > 0) {
+      await prisma.$transaction(
+        refund.items.map((item) =>
+          prisma.product.update({
+            where: { id: item.orderItem.productId },
+            data: { stock: { increment: item.quantity } },
+          }),
+        ),
+      );
+    }
 
     await prisma.orderEvent.create({
       data: {

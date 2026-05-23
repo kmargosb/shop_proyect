@@ -344,6 +344,7 @@ export default function AdminOrders() {
           onClose={() => setSelectedOrder(null)}
           onCreateShipment={() => setShipmentOrder(selectedOrder)}
           onCancel={() => cancelOrder(selectedOrder.id)}
+          onRefresh={loadOrders}
           onOpenRefund={() => setRefundOrder(selectedOrder)}
         />
       )}

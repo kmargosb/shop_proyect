@@ -17,6 +17,7 @@ type Props = {
   onCreateShipment: () => void;
   onOpenRefund: () => void;
   onCancel: () => void;
+  onRefresh: () => Promise<void> | void;
 };
 
 export default function QuickViewModal({
@@ -25,6 +26,7 @@ export default function QuickViewModal({
   onCreateShipment,
   onOpenRefund,
   onCancel,
+  onRefresh,
 }: Props) {
   const pendingRefund = order.refunds?.find(
     (refund) => refund.status === "PENDING_REVIEW",
@@ -43,7 +45,7 @@ export default function QuickViewModal({
       }
 
       toast.success("Refund aprobado");
-      window.location.reload();
+      await onRefresh();
     } catch {
       toast.error("Error aprobando refund");
     }
@@ -70,7 +72,7 @@ export default function QuickViewModal({
       }
 
       toast.success("Refund rechazado");
-      window.location.reload();
+      await onRefresh();
     } catch {
       toast.error("Error rechazando refund");
     }
@@ -124,6 +126,29 @@ export default function QuickViewModal({
               </div>
             ))}
           </div>
+
+          {pendingRefund && (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4 text-sm">
+              <p className="font-semibold text-white">Refund en revisión</p>
+              <p className="mt-2 text-neutral-300">Reason: {pendingRefund.reason ?? "—"}</p>
+              <p className="mt-1 text-neutral-400">Note: {pendingRefund.note ?? "—"}</p>
+              {pendingRefund.items?.length ? (
+                <div className="mt-2 text-neutral-400">
+                  {pendingRefund.items.map((ri) => (
+                    <p key={ri.orderItemId}>Item {ri.orderItemId.slice(0,6)}… · qty {ri.quantity}</p>
+                  ))}
+                </div>
+              ) : null}
+              {pendingRefund.evidence?.length ? (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {pendingRefund.evidence.map((ev, idx) => (
+                    <img key={`${ev.url}-${idx}`} src={ev.url} className="h-16 w-full rounded-lg object-cover" alt="refund evidence" />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          )}
+
           <div className="grid gap-3 min-[420px]:grid-cols-3">
             <ActionTile icon={RotateCcw} label="Refund" />
             <ActionTile icon={Truck} label="Tracking" />

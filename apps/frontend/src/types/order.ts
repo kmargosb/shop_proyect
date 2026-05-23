@@ -35,11 +35,19 @@ export type Shipment = {
   deliveredAt?: string | null;
 };
 
+export type RefundEvidence = { id?: string; url: string; publicId?: string | null };
+
+export type RefundItem = { orderItemId: string; quantity: number };
+
 export type Refund = {
   id: string;
-  status: string;
+  status: "PENDING_REVIEW" | "SUCCEEDED" | "REJECTED" | string;
   amount: number;
   reason?: string | null;
+  note?: string | null;
+  rejectionReason?: string | null;
+  items?: RefundItem[];
+  evidence?: RefundEvidence[];
 };
 
 export type Order = {
