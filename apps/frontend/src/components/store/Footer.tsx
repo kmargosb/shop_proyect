@@ -42,10 +42,10 @@ const footerLinks = {
 export default function Footer() {
   return (
     <footer className="border-t border-white/5 bg-black text-neutral-400">
-      <div className="mx-auto max-w-7xl px-5 py-14 md:px-6 md:py-20">
+      <div className="mx-auto max-w-7xl px-5 py-14 md:px-6 md:py-10">
         {/* TOP */}
 
-        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-12 md:grid-cols-[1.4fr_auto_1fr_1fr_1fr]">
           {/* BRAND */}
 
           <div>
@@ -53,43 +53,55 @@ export default function Footer() {
               Camarguette
             </h2>
 
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-neutral-500">
+            <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-neutral-400">
               Minimal products, premium experience and
               digital craftsmanship.
             </p>
 
             {/* FOUNDER */}
 
-            <div className="mt-8 border-t border-white/5 pt-6">
-              <p className="text-[12px] uppercase tracking-[0.3em] text-neutral-500">
+            <div className="mt-8 border-t border-white/10 pt-6">
+              <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
                 Founder
               </p>
 
-              <p className="mt-3 max-w-sm text-sm leading-relaxed text-neutral-400">
+              <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-neutral-300">
                 Designed & developed by Nelson Camargo —
                 Building premium digital experiences.
               </p>
 
               <Link
                 href="/founder"
-                className="mt-4 inline-flex text-sm text-white transition hover:text-neutral-300"
+                className="mt-4 inline-flex text-[15px] text-white transition hover:text-neutral-300"
               >
                 About the founder →
               </Link>
             </div>
           </div>
 
-          {/* MOBILE GRID */}
+          {/* DIVIDER */}
 
-          <div className="grid grid-cols-2 gap-x-10 gap-y-10 md:contents">
+          <div className="relative">
+            {/* MOBILE */}
+
+            <div className="h-px w-full bg-white/20 md:hidden" />
+
+            {/* DESKTOP */}
+
+            <div className="hidden h-full w-px self-stretch bg-white/20 md:block" />
+          </div>
+
+          {/* LINKS */}
+
+          <div className="grid grid-cols-2 gap-x-10 gap-y-10 md:grid-cols-3 md:col-span-3">
             {/* SHOP */}
 
             <div>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-white">
                 Shop
               </h3>
 
-              <ul className="mt-5 space-y-3 text-sm">
+              <ul className="mt-5 space-y-3 text-[15px]">
                 {footerLinks.shop.map((link) => (
                   <li key={link.href}>
                     <Link
@@ -106,11 +118,11 @@ export default function Footer() {
             {/* SUPPORT */}
 
             <div>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-white">
                 Support
               </h3>
 
-              <ul className="mt-5 space-y-3 text-sm">
+              <ul className="mt-5 space-y-3 text-[15px]">
                 {footerLinks.support.map((link) => (
                   <li key={link.href}>
                     <Link
@@ -127,11 +139,11 @@ export default function Footer() {
             {/* LEGAL */}
 
             <div>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-white">
                 Legal
               </h3>
 
-              <ul className="mt-5 space-y-3 text-sm">
+              <ul className="mt-5 space-y-3 text-[15px]">
                 {footerLinks.legal.map((link) => (
                   <li key={link.href}>
                     <Link
@@ -149,8 +161,8 @@ export default function Footer() {
 
         {/* BOTTOM */}
 
-        <div className="mt-14 border-t border-white/5 pt-5">
-          <div className="flex flex-col gap-2 text-[11px] text-neutral-600 md:flex-row md:items-center md:justify-between">
+        <div className="mt-14 border-t border-white/10 pt-6">
+          <div className="flex flex-col gap-3 text-sm text-neutral-500 md:flex-row md:items-center md:justify-between">
             <p>
               © {new Date().getFullYear()} Camarguette.
               All rights reserved.
