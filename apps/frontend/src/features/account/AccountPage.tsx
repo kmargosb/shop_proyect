@@ -19,6 +19,16 @@ export type Order = {
   status: string;
   totalAmount: number;
   createdAt: string;
+
+  items: {
+    id: string;
+    quantity: number;
+
+    product?: {
+      name?: string;
+      images?: string[];
+    };
+  }[];
 };
 
 export default function AccountPage() {

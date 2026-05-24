@@ -45,51 +45,139 @@ export default function OrdersTab({ orders }: Props) {
       ) : (
         <div className="flex-1 overflow-y-auto pr-1 premium-scrollbar">
           <div className="grid gap-4">
-            {paginatedOrders.map((order) => (
-              <div
-                key={order.id}
-                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b 
-                from-white/[0.05] to-white/[0.02] p-5 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06]
-                hover:shadow-[0_0_40px_rgba(255,255,255,0.03)] active:scale-[0.995]"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-neutral-500">Pedido</p>
+            {paginatedOrders.map((order) => {
+              const totalProducts = order.items.reduce(
+                (sum, item) => sum + item.quantity,
+                0,
+              );
 
-                    <p className="mt-1 font-semibold">
-                      #{order.id.slice(0, 6)}
-                    </p>
+              const previewImages = order.items
+                .flatMap((item) => item.product?.images || [])
+                .slice(0, 3);
+
+              return (
+                <div
+                  key={order.id}
+                  className="
+        group
+        rounded-3xl
+        border border-white/10
+        bg-gradient-to-b from-white/[0.03] to-transparent
+        p-5
+        transition-all duration-300
+        hover:border-white/20
+        hover:bg-white/[0.04]
+      "
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    {/* LEFT */}
+
+                    <div className="min-w-0 flex-1">
+                      {/* IMAGES */}
+
+                      {previewImages.length > 0 && (
+                        <div className="mb-4 flex items-center">
+                          {previewImages.map((image, index) => (
+                            <div
+                              key={image + index}
+                              className="
+                    relative
+                    -ml-2 first:ml-0
+                    h-12 w-12 overflow-hidden
+                    rounded-2xl
+                    border border-white/10
+                    bg-neutral-900
+                  "
+                            >
+                              <img
+                                src={image}
+                                alt=""
+                                className="
+                      h-full w-full object-cover
+                      transition-transform duration-300
+                      group-hover:scale-110
+                    "
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
+                        Pedido
+                      </p>
+
+                      <h3 className="mt-2 text-xl font-semibold text-white">
+                        #{order.id.slice(0, 6)}
+                      </h3>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+                        <span>
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
+
+                        <span className="text-neutral-700">•</span>
+
+                        <span>
+                          {totalProducts}{" "}
+                          {totalProducts === 1 ? "producto" : "productos"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* RIGHT */}
+
+                    <div className="flex flex-col items-end gap-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          order.status === "PAID"
+                            ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : order.status === "SHIPPED"
+                              ? "border border-amber-500/20 bg-amber-500/10 text-amber-300"
+                              : order.status === "REFUNDED"
+                                ? "border border-cyan-500/20 bg-cyan-500/10 text-cyan-300"
+                                : order.status === "PARTIALLY_REFUNDED"
+                                  ? "border border-orange-500/20 bg-orange-500/10 text-orange-300"
+                                  : order.status === "CANCELLED"
+                                    ? "border border-red-500/20 bg-red-500/10 text-red-300"
+                                    : "border border-white/10 bg-white/[0.04] text-neutral-300"
+                        }`}
+                      >
+                        {order.status}
+                      </span>
+
+                      <div className="text-right">
+                        <p className="text-xs text-neutral-500">Total</p>
+
+                        <p className="text-2xl font-bold text-white">
+                          €{(order.totalAmount / 100).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <span
-                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold tracking-wide ${
-                      order.status === "PAID"
-                        ? "border-green-500/20 bg-green-500/10 text-green-300"
-                        : "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
+                  {/* CTA */}
+
+                  <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
+                    <p className="text-xs text-neutral-600">
+                      Ver detalles completos del pedido
+                    </p>
+
+                    <Link
+                      href={`/orders/${order.id}`}
+                      className="
+            inline-flex items-center gap-2
+            text-sm font-medium text-white
+            transition-all duration-200
+            group-hover:translate-x-1
+          "
+                    >
+                      Ver detalles →
+                    </Link>
+                  </div>
                 </div>
-
-                <div className="mt-5 flex items-center justify-between">
-                  <p className="text-sm text-neutral-500">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
-
-                  <p className="text-lg font-bold">
-                    €{(order.totalAmount / 100).toFixed(2)}
-                  </p>
-                </div>
-
-                <Link
-                  href={`/orders/${order.id}`}
-                  className="mt-5 inline-flex text-sm text-white underline underline-offset-4"
-                >
-                  Ver pedido
-                </Link>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
