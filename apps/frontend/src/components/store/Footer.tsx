@@ -1,50 +1,167 @@
 import Link from "next/link";
 
+const footerLinks = {
+  shop: [
+    {
+      label: "All products",
+      href: "/shop",
+    },
+    {
+      label: "Brands",
+      href: "/brands",
+    },
+  ],
+
+  support: [
+    {
+      label: "Contact",
+      href: "/contact",
+    },
+    {
+      label: "Shipping",
+      href: "/shipping",
+    },
+    {
+      label: "Returns",
+      href: "/returns",
+    },
+  ],
+
+  legal: [
+    {
+      label: "Privacy Policy",
+      href: "/privacy",
+    },
+    {
+      label: "Terms of Service",
+      href: "/terms",
+    },
+  ],
+};
+
 export default function Footer() {
   return (
-    <footer className="bg-black text-neutral-400 border-t border-neutral-800 mt-20">
-      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-10">
-        {/* BRAND */}
-        <div>
-          <h2 className="text-white font-bold text-lg mb-4">
-            Koky Store
-          </h2>
-          <p className="text-sm">
-            Minimal design. Premium quality.
-          </p>
+    <footer className="border-t border-white/5 bg-black text-neutral-400">
+      <div className="mx-auto max-w-7xl px-5 py-14 md:px-6 md:py-20">
+        {/* TOP */}
+
+        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          {/* BRAND */}
+
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              Camarguette
+            </h2>
+
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-neutral-500">
+              Minimal products, premium experience and
+              digital craftsmanship.
+            </p>
+
+            {/* FOUNDER */}
+
+            <div className="mt-8 border-t border-white/5 pt-6">
+              <p className="text-[12px] uppercase tracking-[0.3em] text-neutral-500">
+                Founder
+              </p>
+
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-neutral-400">
+                Designed & developed by Nelson Camargo —
+                Building premium digital experiences.
+              </p>
+
+              <Link
+                href="/founder"
+                className="mt-4 inline-flex text-sm text-white transition hover:text-neutral-300"
+              >
+                About the founder →
+              </Link>
+            </div>
+          </div>
+
+          {/* MOBILE GRID */}
+
+          <div className="grid grid-cols-2 gap-x-10 gap-y-10 md:contents">
+            {/* SHOP */}
+
+            <div>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+                Shop
+              </h3>
+
+              <ul className="mt-5 space-y-3 text-sm">
+                {footerLinks.shop.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="transition hover:text-white"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* SUPPORT */}
+
+            <div>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+                Support
+              </h3>
+
+              <ul className="mt-5 space-y-3 text-sm">
+                {footerLinks.support.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="transition hover:text-white"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* LEGAL */}
+
+            <div>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white">
+                Legal
+              </h3>
+
+              <ul className="mt-5 space-y-3 text-sm">
+                {footerLinks.legal.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="transition hover:text-white"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
 
-        {/* SHOP */}
-        <div>
-          <h3 className="text-white font-medium mb-4">Shop</h3>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/shop">All products</Link></li>
-            <li><Link href="/brands">Brands</Link></li>
-          </ul>
-        </div>
+        {/* BOTTOM */}
 
-        {/* SUPPORT */}
-        <div>
-          <h3 className="text-white font-medium mb-4">Support</h3>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="#">Contact</Link></li>
-            <li><Link href="#">Shipping</Link></li>
-            <li><Link href="#">Returns</Link></li>
-          </ul>
-        </div>
+        <div className="mt-14 border-t border-white/5 pt-5">
+          <div className="flex flex-col gap-2 text-[11px] text-neutral-600 md:flex-row md:items-center md:justify-between">
+            <p>
+              © {new Date().getFullYear()} Camarguette.
+              All rights reserved.
+            </p>
 
-        {/* LEGAL */}
-        <div>
-          <h3 className="text-white font-medium mb-4">Legal</h3>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="#">Privacy Policy</Link></li>
-            <li><Link href="#">Terms of Service</Link></li>
-          </ul>
+            <p>
+              Crafted with Next.js, TypeScript, Prisma &
+              Stripe.
+            </p>
+          </div>
         </div>
-      </div>
-
-      <div className="text-center text-xs py-6 border-t border-neutral-800">
-        © {new Date().getFullYear()} Koky Store. All rights reserved.
       </div>
     </footer>
   );
