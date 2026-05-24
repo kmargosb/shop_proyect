@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import Autoplay from "embla-carousel-autoplay";
+
 import {
   Carousel,
   CarouselContent,
@@ -14,81 +16,217 @@ import {
 type Slide = {
   title: string;
   subtitle: string;
-  image: string;
+
+  imageDesktop: string;
+  imageMobile: string;
+
   link: string;
 };
 
 const slides: Slide[] = [
   {
-    title: "Luxphere",
-    subtitle: "Exclusive products available now",
-    image: "https://res.cloudinary.com/dhybf1y2t/image/upload/v1778447197/products/public/ChatGPT_Image_10_may_2026_08_47_48_p.m._n3k33e.png",
+    title: "Lust",
+    subtitle: "Women From A Broken Future",
+
+    imageDesktop:
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647059/refund-evidence/SarahConors_2_grbhik.png",
+
+    imageMobile:
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647059/refund-evidence/SarahConors_1_m5boum.png",
+
     link: "/shop",
   },
+
   {
     title: "Sunglasses",
-    subtitle: "New tecnology UV400",
-    image: "https://res.cloudinary.com/dhybf1y2t/image/upload/v1778447986/products/public/gafas2_brnayb.png",
+    subtitle: "New technology UV400",
+
+    imageDesktop:
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647540/refund-evidence/GafasCamarguette_fpuoxr.png",
+
+    imageMobile:
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647591/refund-evidence/ChatGPT_Image_24_may_2026_08_32_42_p.m._1_gcfwio.png",
+
     link: "/shop",
   },
+
   {
-    title: "New Collection",
-    subtitle: "Discover the latest arrivals",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+    title: "1988",
+    subtitle: "Retro skate essentials",
+
+    imageDesktop:
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647999/refund-evidence/ChatGPT_Image_24_may_2026_08_38_33_p.m._1_caqfa6.png",
+
+    imageMobile:
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779648057/refund-evidence/ChatGPT_Image_24_may_2026_08_40_36_p.m._1_lnmvxq.png",
+
     link: "/shop",
   },
+
   {
     title: "Premium Essentials",
     subtitle: "Minimal design, maximum quality",
-    image: "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
+
+    imageDesktop:
+      "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
+
+    imageMobile:
+      "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
+
     link: "/shop",
   },
+
   {
     title: "Limited Drops",
     subtitle: "Exclusive products available now",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552",
+
+    imageDesktop:
+      "https://images.unsplash.com/photo-1519741497674-611481863552",
+
+    imageMobile:
+      "https://images.unsplash.com/photo-1519741497674-611481863552",
+
     link: "/shop",
   },
-  
 ];
 
 export default function HeroCarousel() {
+  const autoplay = Autoplay({
+    delay: 5000,
+    stopOnInteraction: true,
+  });
+
   return (
-    <section className="w-full">
+    <section className="relative w-full overflow-hidden bg-black">
       <Carousel
+        plugins={[autoplay]}
         opts={{
           loop: true,
         }}
         className="w-full"
+        onMouseEnter={autoplay.stop}
+        onMouseLeave={autoplay.reset}
+        onTouchStart={autoplay.stop}
+        onTouchEnd={() => {
+          setTimeout(() => {
+            autoplay.reset();
+          }, 5000);
+        }}
       >
         <CarouselContent>
           {slides.map((slide, index) => (
             <CarouselItem key={index}>
-              <div className="relative h-[70vh] w-full">
+              <div className="relative h-[78svh] min-h-[620px] w-full md:h-[82vh] md:min-h-0">
+                {/* DESKTOP IMAGE */}
+
                 <Image
-                  src={slide.image}
+                  src={slide.imageDesktop}
                   alt={slide.title}
                   fill
                   priority
-                  className="object-cover"
+                  className="
+                    hidden
+                    object-cover
+                    object-center
+                    md:block
+                  "
                 />
 
-                <div className="absolute inset-0 bg-black/40" />
+                {/* MOBILE IMAGE */}
 
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-white space-y-4">
-                    <h2 className="text-4xl md:text-6xl font-bold">
+                <Image
+                  src={slide.imageMobile}
+                  alt={slide.title}
+                  fill
+                  priority
+                  className="
+                    object-cover
+                    object-center
+                    md:hidden
+                  "
+                />
+
+                {/* OVERLAYS */}
+
+                <div className="absolute inset-0 bg-black/45 md:bg-black/35" />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent md:hidden" />
+
+                <div className="absolute inset-0 hidden bg-gradient-to-r from-black/50 via-transparent to-black/10 md:block" />
+
+                {/* CONTENT */}
+
+                <div className="absolute inset-0 flex items-end justify-center px-6 pb-20 md:items-center md:justify-start md:px-20 md:pb-0">
+                  <div className="max-w-xl text-center text-white md:text-left">
+                    {/* LABEL */}
+
+                    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.25em] text-neutral-300 backdrop-blur-sm">
+                      Camarguette Collective
+                    </div>
+
+                    {/* TITLE */}
+
+                    <h2 className="mt-6 text-5xl font-bold leading-[0.95] tracking-tight md:text-7xl">
                       {slide.title}
                     </h2>
 
-                    <p className="text-lg opacity-90">{slide.subtitle}</p>
+                    {/* SUBTITLE */}
 
-                    <Link
-                      href={slide.link}
-                      className="inline-block mt-4 px-6 py-3 bg-white text-black font-medium rounded-md hover:bg-neutral-200 transition"
-                    >
-                      Shop now
-                    </Link>
+                    <p className="mt-5 text-base leading-relaxed text-neutral-300 md:max-w-lg md:text-lg">
+                      {slide.subtitle}
+                    </p>
+
+                    {/* ACTIONS */}
+
+                    <div className="mt-8 flex flex-col items-center gap-3 md:flex-row md:items-start">
+                      <Link
+                        href={slide.link}
+                        className="
+                          inline-flex
+                          h-14
+                          w-[220px]
+                          items-center
+                          justify-center
+                          rounded-2xl
+                          bg-white
+                          px-7
+                          text-sm
+                          font-semibold
+                          text-black
+                          transition-all
+                          duration-300
+                          hover:scale-[1.02]
+                          hover:bg-neutral-200
+                        "
+                      >
+                        Shop now
+                      </Link>
+
+                      <Link
+                        href="/brands"
+                        className="
+                          inline-flex
+                          h-14
+                          w-[220px]
+                          items-center
+                          justify-center
+                          rounded-2xl
+                          border
+                          border-white/10
+                          bg-white/[0.04]
+                          px-7
+                          text-sm
+                          font-medium
+                          text-white
+                          backdrop-blur-sm
+                          transition-all
+                          duration-300
+                          hover:bg-white/[0.08]
+                        "
+                      >
+                        Explore brands
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -96,8 +234,33 @@ export default function HeroCarousel() {
           ))}
         </CarouselContent>
 
-        <CarouselPrevious className="left-4" />
-        <CarouselNext className="right-4" />
+        {/* ARROWS */}
+
+        <CarouselPrevious
+          className="
+            left-4
+            hidden
+            border-white/10
+            bg-black/40
+            text-white
+            backdrop-blur-md
+            hover:bg-black/60
+            md:flex
+          "
+        />
+
+        <CarouselNext
+          className="
+            right-4
+            hidden
+            border-white/10
+            bg-black/40
+            text-white
+            backdrop-blur-md
+            hover:bg-black/60
+            md:flex
+          "
+        />
       </Carousel>
     </section>
   );
