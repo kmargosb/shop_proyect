@@ -40,70 +40,67 @@ export default function Page() {
   const [refundItems, setRefundItems] = useState<Record<string, number>>({});
 
   useEffect(() => {
-  if (!id) return;
+    if (!id) return;
 
-  const loadOrder = async () => {
-    try {
-      /* =========================
+    const loadOrder = async () => {
+      try {
+        /* =========================
          AUTH USER
       ========================= */
 
-      let res = await apiFetch(`/orders/${id}`);
+        let res = await apiFetch(`/orders/${id}`);
 
-      if (res && res.ok) {
-        const data = await res.json();
+        if (res && res.ok) {
+          const data = await res.json();
 
-        setOrder(data);
+          setOrder(data);
 
-        return;
-      }
+          return;
+        }
 
-      /* =========================
+        /* =========================
          GUEST FALLBACK
       ========================= */
 
-      const email =
-        searchParams.get("email") ||
-        localStorage.getItem("orderEmail");
+        const email =
+          searchParams.get("email") || localStorage.getItem("orderEmail");
 
-      if (!email) return;
+        if (!email) return;
 
-      res = await apiFetch(
-        `/orders/public/${id}?email=${email}`,
-      );
+        res = await apiFetch(`/orders/public/${id}?email=${email}`);
 
-      if (res && res.ok) {
-        const data = await res.json();
+        if (res && res.ok) {
+          const data = await res.json();
 
-        setOrder(data);
+          setOrder(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  /* =========================
+    /* =========================
      INITIAL LOAD
   ========================= */
 
-  loadOrder();
+    loadOrder();
 
-  /* =========================
+    /* =========================
      REALTIME UPDATES
   ========================= */
 
-  socket.on("orderUpdated", ({ orderId }) => {
-    if (orderId === id) {
-      loadOrder();
-    }
-  });
+    socket.on("orderUpdated", ({ orderId }) => {
+      if (orderId === id) {
+        loadOrder();
+      }
+    });
 
-  return () => {
-    socket.off("orderUpdated");
-  };
-}, [id, searchParams]);
+    return () => {
+      socket.off("orderUpdated");
+    };
+  }, [id, searchParams]);
 
   /* =========================
      LOADING
@@ -131,14 +128,14 @@ export default function Page() {
     order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
 
   const canCancel =
-  order.status === "PENDING" ||
-  order.status === "PAYMENT_PROCESSING" ||
-  order.status === "PAID";
+    order.status === "PENDING" ||
+    order.status === "PAYMENT_PROCESSING" ||
+    order.status === "PAID";
 
   const canRefund =
-  order.status === "SHIPPED" ||
-  order.status === "DELIVERED" ||
-  order.status === "PARTIALLY_REFUNDED";
+    order.status === "SHIPPED" ||
+    order.status === "DELIVERED" ||
+    order.status === "PARTIALLY_REFUNDED";
 
   const handleDownloadInvoice = () => {
     const email =
@@ -282,14 +279,169 @@ export default function Page() {
           </div>
         </div>
 
+        {/* ORDER PROGRESS */}
+
+        {(() => {
+          const steps = [
+            {
+              key: "PENDING",
+              label: "Pedido",
+            },
+            {
+              key: "PAID",
+              label: "Pagado",
+            },
+            {
+              key: "SHIPPED",
+              label: "Enviado",
+            },
+            {
+              key: "DELIVERED",
+              label: "Entregado",
+            },
+          ];
+
+          const currentStep = (() => {
+            switch (order.status) {
+              case "PENDING":
+              case "PAYMENT_PROCESSING":
+                return 0;
+
+              case "PAID":
+              case "PARTIALLY_REFUNDED":
+              case "REFUNDED":
+                return 1;
+
+              case "SHIPPED":
+                return 2;
+
+              case "DELIVERED":
+                return 3;
+
+              default:
+                return 0;
+            }
+          })();
+
+          return (
+            <div className="overflow-hidden rounded-[28px] border border-white/10 bg-neutral-950 p-6">
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold">Estado del pedido</h2>
+
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm text-neutral-500">
+                    Seguimiento del progreso de tu pedido
+                  </p>
+
+                  {order.shipment && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                      <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1">
+                        {order.shipment.carrier}
+                      </span>
+
+                      {order.shipment.trackingNumber && (
+                        <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1">
+                          Tracking: {order.shipment.trackingNumber}
+                        </span>
+                      )}
+
+                      {order.shipment.shippedAt && (
+                        <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1">
+                          Enviado:{" "}
+                          {new Date(order.shipment.shippedAt).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                {steps.map((step, index) => {
+                  const active = index <= currentStep;
+
+                  const lineActive = index < currentStep;
+
+                  return (
+                    <div key={step.key} className="flex flex-1 items-center">
+                      <div className="flex flex-col items-center">
+                        {/* DOT */}
+
+                        <div
+                          className={`
+                    relative z-10
+                    flex h-11 w-11 items-center justify-center
+                    rounded-full border text-xs font-semibold
+                    transition-all duration-500
+
+                    ${
+                      active
+                        ? "border-white bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                        : "border-white/10 bg-white/[0.03] text-neutral-500"
+                    }
+                  `}
+                        >
+                          {index + 1}
+                        </div>
+
+                        {/* LABEL */}
+
+                        <p
+                          className={`
+                    mt-3 text-xs font-medium uppercase tracking-[0.15em]
+
+                    ${active ? "text-white" : "text-neutral-500"}
+                  `}
+                        >
+                          {step.label}
+                        </p>
+                      </div>
+
+                      {/* LINE */}
+
+                      {index !== steps.length - 1 && (
+                        <div className="relative mx-2 h-px flex-1 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className={`
+                      absolute left-0 top-0 h-full
+                      transition-all duration-700
+
+                      ${lineActive ? "w-full bg-white" : "w-0 bg-white"}
+                    `}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ITEMS */}
 
         <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Resumen del pedido</h2>
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Resumen del pedido</h2>
 
-            <span className="text-sm text-neutral-500">
-              {order.items.length} productos
+              <p className="mt-1 text-sm text-neutral-500">
+                Productos comprados y estado de devolución
+              </p>
+            </div>
+
+            <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm text-neutral-400">
+              {(() => {
+                const totalProducts = order.items.reduce(
+                  (sum: number, item: any) => sum + item.quantity,
+                  0,
+                );
+
+                return `${totalProducts} ${
+                  totalProducts === 1 ? "producto" : "productos"
+                }`;
+              })()}
             </span>
           </div>
 
@@ -308,69 +460,134 @@ export default function Page() {
               const isPartiallyRefunded =
                 refundedQuantity > 0 && remainingQuantity > 0;
 
+              const image =
+                item.product?.images?.[0]?.url || item.product?.image || null;
+
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] p-4"
+                  className="
+            group
+            overflow-hidden
+            rounded-3xl
+            border border-white/5
+            bg-gradient-to-b
+            from-white/[0.03]
+            to-white/[0.015]
+            p-5
+            transition-all duration-300
+
+            hover:border-white/10
+            hover:bg-white/[0.04]
+            hover:shadow-[0_0_40px_rgba(255,255,255,0.03)]
+          "
                 >
-                  <div>
-                    <p className="font-medium">
-                      {item.product?.name || item.productName}
-                    </p>
+                  <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                    {/* LEFT */}
 
-                    <p className="mt-1 text-sm text-neutral-500">
-                      Cantidad: {item.quantity}
-                    </p>
-                  </div>
-                  {isFullyRefunded && (
-                    <span className="mt-2 inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-300">
-                      Fully refunded
-                    </span>
-                  )}
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                      {/* IMAGE */}
 
-                  {isPartiallyRefunded && (
-                    <span className="mt-2 inline-flex rounded-full border border-orange-500/20 bg-orange-500/10 px-2 py-1 text-xs text-orange-300">
-                      Partially refunded
-                    </span>
-                  )}
+                      <div
+                        className="
+                  relative
+                  flex h-24 w-24 shrink-0
+                  items-center justify-center
+                  overflow-hidden
+                  rounded-2xl
+                  border border-white/10
+                  bg-white/[0.03]
+                "
+                      >
+                        {image ? (
+                          <img
+                            src={image}
+                            alt={item.product?.name || item.productName}
+                            className="
+                      h-full w-full object-cover
+                      transition duration-500
+                      group-hover:scale-105
+                    "
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 text-sm font-semibold text-neutral-500">
+                            {(item.product?.name || item.productName)
+                              ?.slice(0, 2)
+                              ?.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
 
-                  {refundedQuantity > 0 && (
-                    <div className="mt-2 space-y-1 text-xs">
-                      <p className="text-orange-400">
-                        Refunded: {refundedQuantity}
+                      {/* INFO */}
+
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-semibold">
+                          {item.product?.name || item.productName}
+                        </p>
+
+                        <p className="mt-2 text-sm text-neutral-500">
+                          Cantidad: {item.quantity}
+                        </p>
+
+                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-neutral-600">
+                          Premium product
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CENTER */}
+
+                    <div className="flex flex-wrap items-center gap-2 md:min-w-[260px] md:justify-center">
+                      {isFullyRefunded && (
+                        <span className="inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300">
+                          Refund completed
+                        </span>
+                      )}
+
+                      {isPartiallyRefunded && (
+                        <span className="inline-flex rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-300">
+                          Partially refunded
+                        </span>
+                      )}
+
+                      {refundedQuantity > 0 && (
+                        <>
+                          <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs text-orange-300">
+                            Refunded: {refundedQuantity}
+                          </span>
+
+                          <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs text-neutral-400">
+                            Remaining: {remainingQuantity}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* RIGHT */}
+
+                    <div className="text-left md:min-w-[140px] md:text-right">
+                      <p className="text-3xl font-semibold tracking-tight">
+                        €{((item.price * item.quantity) / 100).toFixed(2)}
                       </p>
 
-                      <p className="text-neutral-500">
-                        Remaining: {remainingQuantity}
+                      <p className="mt-1 text-xs text-neutral-500">
+                        €{(item.price / 100).toFixed(2)} c/u
                       </p>
                     </div>
-                  )}
-                  <div className="text-right">
-                    <p className="font-semibold">
-                      €{((item.price * item.quantity) / 100).toFixed(2)}
-                    </p>
-
-                    <p className="mt-1 text-xs text-neutral-500">
-                      €{(item.price / 100).toFixed(2)} c/u
-                    </p>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-6">
+          <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
             <span className="text-lg text-neutral-400">Total</span>
 
-            <span className="text-3xl font-semibold">
+            <span className="text-4xl font-semibold tracking-tight">
               €{(order.totalAmount / 100).toFixed(2)}
             </span>
           </div>
         </div>
-
-        {/* SHIPMENT */}
-
-        {order.shipment && <ShipmentStatusCard shipment={order.shipment} />}
 
         {/* TIMELINE */}
 
@@ -384,39 +601,42 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="space-y-8">
+            <div className="relative max-h-[420px] space-y-3 overflow-y-auto premium-scrollbar pr-1">
               {order.events.map((event: OrderEvent, index: number) => {
                 const config = getTimelineConfig(event.type);
 
                 return (
-                  <div key={event.id} className="relative flex gap-5">
-                    {/* LINE */}
+                  <div
+                    key={event.id}
+                    className="relative flex gap-3 rounded-xl border border-white/[0.03] bg-white/[0.015] px-3 py-2.5"
+                  >
+                    {/* CONNECTOR */}
 
                     {index !== order.events.length - 1 && (
-                      <div className="absolute left-[18px] top-10 h-full w-px bg-white/10" />
+                      <div className="absolute left-[13px] top-8 h-6 w-px bg-gradient-to-b from-white/20 to-transparent" />
                     )}
 
                     {/* ICON */}
 
                     <div
-                      className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${config.className}`}
+                      className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${config.className}`}
                     >
-                      <config.icon size={16} />
+                      <config.icon size={13} />
                     </div>
 
                     {/* CONTENT */}
 
-                    <div className="flex-1 pb-2">
+                    <div className="flex-1">
                       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                        <p className="font-medium">{config.label}</p>
+                        <p className="text-xs font-semibold">{config.label}</p>
 
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-[10px] text-neutral-600">
                           {new Date(event.createdAt).toLocaleString()}
                         </p>
                       </div>
 
                       {event.message && (
-                        <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+                        <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
                           {event.message}
                         </p>
                       )}
@@ -424,6 +644,7 @@ export default function Page() {
                   </div>
                 );
               })}
+              <div className="pointer-events-none absolute bottom-0 left-0  w-full bg-gradient-to-t from-neutral-950 " />
             </div>
           </div>
         )}
