@@ -52,7 +52,7 @@ const slides: Slide[] = [
 
   {
     title: "1988",
-    subtitle: "Retro skate essentials",
+    subtitle: "Skateboarding essentials",
 
     imageDesktop:
       "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647999/refund-evidence/ChatGPT_Image_24_may_2026_08_38_33_p.m._1_caqfa6.png",
@@ -64,14 +64,14 @@ const slides: Slide[] = [
   },
 
   {
-    title: "Premium Essentials",
+    title: "Luxphere",
     subtitle: "Minimal design, maximum quality",
 
     imageDesktop:
-      "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779648958/refund-evidence/ChatGPT_Image_24_may_2026_08_55_22_p.m._1_gsrxyk.png",
 
     imageMobile:
-      "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb",
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779649030/refund-evidence/ChatGPT_Image_24_may_2026_08_56_35_p.m._2_qhz8a6.png",
 
     link: "/shop",
   },
@@ -81,10 +81,10 @@ const slides: Slide[] = [
     subtitle: "Exclusive products available now",
 
     imageDesktop:
-      "https://images.unsplash.com/photo-1519741497674-611481863552",
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779649314/refund-evidence/ChatGPT_Image_24_may_2026_09_01_39_p.m._1_uleiro.png",
 
     imageMobile:
-      "https://images.unsplash.com/photo-1519741497674-611481863552",
+      "https://res.cloudinary.com/dhybf1y2t/image/upload/v1779649501/refund-evidence/ChatGPT_Image_24_may_2026_09_04_45_p.m._1_ygp9ev.png",
 
     link: "/shop",
   },
