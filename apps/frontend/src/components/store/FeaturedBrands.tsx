@@ -3,16 +3,23 @@ import { apiFetch } from "@/shared/lib/api";
 
 const brandImages: Record<string, string> = {
   "cobra-skate": "/brands/cobra-skate/hero.jpg",
-  "luxphere": "/brands/luxphere/hero.jpg",
-  "camarguette": "/brands/camarguette/hero.jpg",
-  "lust": "/brands/lust/hero.jpg",
+  luxphere: "/brands/luxphere/hero.jpg",
+  camarguette: "/brands/camarguette/hero.jpg",
+  lust: "/brands/lust/hero.jpg",
 };
 
 const brandDescriptions: Record<string, string> = {
-  "cobra-skate": "Underground skate culture and raw energy.",
-  "luxphere": "Creative night sessions and visual aesthetics.",
-  "camarguette": "Skateboarding, art and handmade identity.",
-  "lust": "Performance, movement and modern lifestyle.",
+  "cobra-skate":
+    "Underground skate culture and raw energy.",
+
+  luxphere:
+    "Creative night sessions and visual aesthetics.",
+
+  camarguette:
+    "Skateboarding, art and handmade identity.",
+
+  lust:
+    "Performance, movement and modern lifestyle.",
 };
 
 export default async function FeaturedBrands() {
@@ -23,23 +30,28 @@ export default async function FeaturedBrands() {
   if (!brands.length) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20 text-white">
-      <div className="mb-10 flex items-end justify-between">
+    <section className="mx-auto max-w-7xl px-5 py-16 text-white md:px-6 md:py-20">
+      {/* HEADER */}
+
+      <div className="mb-8 flex items-end justify-between md:mb-10">
         <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-neutral-500">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-neutral-500">
             Brands
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold md:text-5xl">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">
             Featured brands
           </h2>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* GRID */}
+
+      <div className="grid grid-cols-2 gap-3 md:gap-6 xl:grid-cols-4">
         {brands.map((brand: any) => {
           const image =
-            brandImages[brand.slug] ?? "/brands/camarguette/hero.jpg";
+            brandImages[brand.slug] ??
+            "/brands/camarguette/hero.jpg";
 
           const description =
             brandDescriptions[brand.slug] ??
@@ -49,32 +61,53 @@ export default async function FeaturedBrands() {
             <Link
               key={brand.id}
               href={`/brands/${brand.slug}`}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-neutral-900"
+              className="
+                group relative overflow-hidden
+                rounded-2xl border border-white/10
+                bg-neutral-900
+                transition-all duration-500
+                hover:-translate-y-1
+                hover:border-white/20
+              "
             >
-              <div className="relative h-[420px] overflow-hidden">
+              <div className="relative h-[240px] md:h-[420px] overflow-hidden">
+                {/* IMAGE */}
+
                 <img
                   src={image}
                   alt={brand.name}
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  className="
+                    h-full w-full object-cover
+                    transition duration-700
+                    group-hover:scale-105
+                  "
                 />
+
+                {/* OVERLAY */}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
-                <div className="absolute bottom-0 p-6">
-                  <p className="text-xs uppercase tracking-[0.25em] text-neutral-400">
+                {/* CONTENT */}
+
+                <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-neutral-400 md:text-xs">
                     {brand.slug}
                   </p>
 
-                  <h3 className="mt-2 text-2xl font-bold">
+                  <h3 className="mt-2 text-lg font-bold md:text-2xl">
                     {brand.name}
                   </h3>
 
-                  <p className="mt-3 text-sm leading-6 text-neutral-300">
+                  {/* DESCRIPTION */}
+
+                  <p className="mt-2 hidden text-sm leading-6 text-neutral-300 md:block">
                     {description}
                   </p>
 
-                  <div className="mt-5 inline-flex items-center text-sm text-white">
-                    Explore brand →
+                  {/* CTA */}
+
+                  <div className="mt-3 inline-flex items-center text-xs text-white md:mt-5 md:text-sm">
+                    Explore →
                   </div>
                 </div>
               </div>
@@ -82,6 +115,34 @@ export default async function FeaturedBrands() {
           );
         })}
       </div>
+      {/* ALL BRANDS CTA */}
+
+<div className="mt-10 flex justify-center md:mt-14">
+  <Link
+    href="/brands"
+    className="
+      group inline-flex items-center gap-3
+      rounded-2xl
+      border border-black/10
+      bg-black
+      px-6 py-4
+      text-sm font-medium text-white
+      transition-all duration-300
+      hover:bg-neutral-800
+    "
+  >
+    <span>View all brands</span>
+
+    <span
+      className="
+        transition-transform duration-300
+        group-hover:translate-x-1
+      "
+    >
+      →
+    </span>
+  </Link>
+</div>
     </section>
   );
 }
