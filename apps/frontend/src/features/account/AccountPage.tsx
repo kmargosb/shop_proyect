@@ -84,8 +84,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black px-4 py-10 text-white md:px-6">
-      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="h-[calc(100vh-72px)] overflow-hidden bg-black px-4 py-4 text-white md:px-6">
+      <div className="mx-auto grid h-full max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
         {/* MOBILE OVERLAY */}
 
         {sidebarOpen && (
@@ -97,7 +97,7 @@ export default function AccountPage() {
         )}
         <div
           className={`
-    fixed left-0 top-0 z-50 h-screen w-[300px]
+    fixed left-0 top-0 z-50 h-screen w-[85vw] max-w-[340px]
     transform transition-transform duration-300
     lg:relative lg:h-auto lg:w-auto lg:translate-x-0
     ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
@@ -115,13 +115,13 @@ export default function AccountPage() {
         <div className="lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 text-sm text-white"
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-neutral-950/90 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-white/10"
           >
             <Menu size={18} />
             Menú cuenta
           </button>
         </div>
-        <section className="space-y-6">
+        <section className="h-full overflow-y-auto pr-1 pb-10">
           {activeTab === "orders" && <OrdersTab orders={orders} />}
 
           {activeTab === "profile" && <ProfileTab user={user} />}

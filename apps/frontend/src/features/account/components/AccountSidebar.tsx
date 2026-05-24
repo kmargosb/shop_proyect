@@ -57,7 +57,18 @@ export default function AccountSidebar({
   setActiveTab,
 }: Props) {
   return (
-    <aside className="h-fit rounded-3xl border border-white/10 bg-neutral-950 p-5">
+    <aside
+  className="
+    h-full overflow-hidden border border-white/10
+    bg-neutral-950/95 p-5 backdrop-blur-xl
+
+    rounded-r-3xl
+    rounded-l-none
+
+    lg:sticky lg:top-0
+    lg:rounded-3xl
+  "
+>
       <div className="border-b border-white/10 pb-5">
         <p className="text-sm text-neutral-500">Cuenta</p>
 
