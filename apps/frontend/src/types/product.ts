@@ -12,19 +12,29 @@ export type ProductBrand = {
   slug?: string;
 };
 
+export type ProductVariant = {
+  id?: string;
+  size: string;
+  color: string;
+  stock: number;
+  reservedStock?: number;
+  sku?: string;
+};
+
 export type Product = {
   id: string;
   name: string;
   description?: string | null;
   price: number;
-  stock: number;
-  reservedStock?: number;
+  totalStock?: number;
   salesCount?: number;
   totalSold?: number;
   isActive?: boolean;
+  gender?: string;
   brand?: ProductBrand | null;
   brandId?: string | null;
   category?: string;
   images: ProductImage[];
+  variants?: ProductVariant[];
   createdAt: string;
 };

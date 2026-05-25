@@ -13,9 +13,15 @@ type Props = {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
-  const availableStock = (product.stock ?? 0) - (product.reservedStock ?? 0);
+  const availableStock =
+  product.variants?.reduce(
+    (total, variant) =>
+      total + (variant.stock ?? 0),
+    0,
+  ) ?? 0;
 
-  const outOfStock = availableStock <= 0;
+const outOfStock =
+  availableStock <= 0;
 
   const handleAddToCart = async () => {
     try {

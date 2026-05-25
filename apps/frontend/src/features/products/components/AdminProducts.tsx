@@ -86,8 +86,7 @@ export default function AdminProducts() {
         const status = getProductStatus(product);
         const searchable =
           `${product.name} ${product.description ?? ""} ${product.brand?.name ?? ""}`.toLowerCase();
-        const stock =
-          getSafeNumber(product.stock) - getSafeNumber(product.reservedStock);
+        const stock = getProductStock(product);
 
         if (query && !searchable.includes(query)) return false;
         if (statusFilter !== "all" && status !== statusFilter) return false;
@@ -285,12 +284,7 @@ export default function AdminProducts() {
                     {formatMoney(product.price)}
                   </td>
                   <td className="p-4">
-                    <StockBadge
-                      stock={
-                        getSafeNumber(product.stock) -
-                        getSafeNumber(product.reservedStock)
-                      }
-                    />
+                    <StockBadge stock={getProductStock(product)} />
                   </td>
                   <td className="p-4 text-neutral-300">{getSales(product)}</td>
                   <td className="p-4">
@@ -374,8 +368,24 @@ function getSafeNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
+function getProductStock(product: Product) {
+  return (
+    product.variants?.reduce(
+      (total, variant) =>
+        total +
+        (
+          getSafeNumber(variant.stock) -
+          getSafeNumber(
+            variant.reservedStock,
+          )
+        ),
+      0,
+    ) ?? 0
+  );
+}
+
 function getProductStatus(product: Product): ProductStatus {
-  if (getSafeNumber(product.stock) <= 0) return "out-of-stock";
+  if (getProductStock(product) <= 0) return "out-of-stock";
   if (product.isActive === false) return "draft";
   return "active";
 }
@@ -396,7 +406,7 @@ function compareProducts(
       new Date(a.createdAt).getTime() || 0,
       new Date(b.createdAt).getTime() || 0,
     ],
-    stock: [getSafeNumber(a.stock), getSafeNumber(b.stock)],
+    stock: [getProductStock(a), getProductStock(b)],
     sales: [getSales(a), getSales(b)],
     price: [getSafeNumber(a.price), getSafeNumber(b.price)],
     status: [
@@ -415,8 +425,7 @@ function statusWeight(status: ProductStatus) {
 function buildProductStats(products: Product[]) {
   return products.reduce(
     (acc, product) => {
-      const stock =
-        getSafeNumber(product.stock) - getSafeNumber(product.reservedStock);
+      const stock = getProductStock(product);
       acc.total += 1;
       acc.inventoryValue += getSafeNumber(product.price) * stock;
       if (getProductStatus(product) === "active") acc.active += 1;
@@ -476,7 +485,10 @@ function ProductMobileCard({
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
         <Metric label="Precio" value={formatMoney(product.price)} />
-        <Metric label="Stock"  value={getSafeNumber(product.stock) - getSafeNumber(product.reservedStock)}/>
+        <Metric
+          label="Stock"
+          value={getProductStock(product)}
+        />
         <Metric label="Ventas" value={getSales(product)} />
       </div>
       <div className="mt-4 flex gap-2">

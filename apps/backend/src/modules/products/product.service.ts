@@ -1,25 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import cloudinary from "@/common/utils/cloudinary";
-import { InventoryCache } from "@/modules/inventory/inventory.cache";
 
 /* ===============================
    HELPERS
 =============================== */
 
-async function syncStockCache(products: any[]) {
-  for (const product of products) {
-    try {
-      const cachedStock = await InventoryCache.getStock(product.id);
-
-      if (cachedStock !== null) {
-        product.stock = cachedStock;
-      } else {
-        await InventoryCache.setStock(product.id, product.stock);
-      }
-    } catch (error) {
-      console.error("Redis cache error:", error);
-    }
-  }
+function calculateProductStock(product: any) {
+  return product.variants.reduce(
+    (acc: number, variant: any) => acc + variant.stock,
+    0,
+  );
 }
 
 async function uploadImages(
@@ -53,7 +43,7 @@ async function uploadImages(
 }
 
 /* ===============================
-   BASE QUERY BUILDER (🔥 PRO)
+   BASE QUERY BUILDER
 =============================== */
 
 function buildProductFilters(query: any) {
@@ -79,8 +69,17 @@ function buildProductFilters(query: any) {
 
     ...((minPrice || maxPrice) && {
       price: {
-        ...(minPrice ? { gte: Number(minPrice) * 100 } : {}),
-        ...(maxPrice ? { lte: Number(maxPrice) * 100 } : {}),
+        ...(minPrice
+          ? {
+              gte: Number(minPrice) * 100,
+            }
+          : {}),
+
+        ...(maxPrice
+          ? {
+              lte: Number(maxPrice) * 100,
+            }
+          : {}),
       },
     }),
   };
@@ -93,97 +92,209 @@ function buildProductFilters(query: any) {
 export async function getProducts() {
   const products = await prisma.product.findMany({
     where: { isActive: true },
-    include: { images: true, brand: true },
-    orderBy: { createdAt: "desc" },
+
+    include: {
+      images: true,
+      brand: true,
+      variants: true,
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  await syncStockCache(products);
-  return products;
+  return products.map((product) => ({
+    ...product,
+    totalStock: calculateProductStock(product),
+  }));
 }
 
 export async function getProductsByBrand(brandSlug: string) {
   const products = await prisma.product.findMany({
     where: {
       isActive: true,
-      brand: { slug: brandSlug },
+      brand: {
+        slug: brandSlug,
+      },
     },
-    include: { images: true, brand: true },
-    orderBy: { createdAt: "desc" },
+
+    include: {
+      images: true,
+      brand: true,
+      variants: true,
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  await syncStockCache(products);
-  return products;
+  return products.map((product) => ({
+    ...product,
+    totalStock: calculateProductStock(product),
+  }));
 }
 
-/* 🔥 SHOP FILTERS */
+/* SHOP FILTERS */
+
 export async function getProductsWithFilters(query: any) {
   const where = buildProductFilters(query);
 
   const products = await prisma.product.findMany({
     where,
-    include: { images: true, brand: true },
-    orderBy: { createdAt: "desc" },
+
+    include: {
+      images: true,
+      brand: true,
+      variants: true,
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  await syncStockCache(products);
-  return products;
+  return products.map((product) => ({
+    ...product,
+    totalStock: calculateProductStock(product),
+  }));
 }
 
 export async function getProductById(id: string) {
-  return prisma.product.findUnique({
+  const product = await prisma.product.findUnique({
     where: { id },
-    include: { images: true, brand: true },
+
+    include: {
+      images: true,
+      brand: true,
+      variants: true,
+    },
   });
+
+  if (!product) return null;
+
+  return {
+    ...product,
+    totalStock: calculateProductStock(product),
+  };
 }
 
 export async function getRelatedProducts(productId: string) {
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    select: { brandId: true },
+
+    select: {
+      brandId: true,
+    },
   });
 
   const relatedProducts = await prisma.product.findMany({
     where: {
       isActive: true,
-      id: { not: productId },
-      ...(product?.brandId && { brandId: product.brandId }),
+
+      id: {
+        not: productId,
+      },
+
+      ...(product?.brandId && {
+        brandId: product.brandId,
+      }),
     },
-    include: { images: true },
+
+    include: {
+      images: true,
+      variants: true,
+    },
+
     take: 4,
-    orderBy: { createdAt: "desc" },
+
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  await syncStockCache(relatedProducts);
-  return relatedProducts;
+  return relatedProducts.map((product) => ({
+    ...product,
+    totalStock: calculateProductStock(product),
+  }));
 }
 
 /* ===============================
    MUTATIONS
 =============================== */
 
-export async function createProduct(data: any, files: Express.Multer.File[]) {
+export async function createProduct(
+  data: any,
+  files: Express.Multer.File[],
+) {
   return prisma.$transaction(async (tx) => {
-    const product = await tx.product.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        brandId: data.brandId || null,
-        category: data.category,
-      },
-    });
+    const variants =
+      typeof data.variants === "string"
+        ? JSON.parse(data.variants)
+        : data.variants;
 
-    await InventoryCache.setStock(product.id, product.stock);
+    const product =
+      await tx.product.create({
+        data: {
+          name: data.name,
+
+          description:
+            data.description,
+
+          price: Number(data.price),
+
+          gender: data.gender,
+
+          brandId:
+            data.brandId || null,
+
+          category: data.category,
+        },
+      });
+
+    /* VARIANTS */
+
+    if (variants?.length) {
+      await tx.productVariant.createMany({
+        data: variants.map(
+          (variant: any) => ({
+            productId: product.id,
+
+            size: variant.size,
+
+            color: variant.color,
+
+            stock: Number(
+              variant.stock,
+            ),
+          }),
+        ),
+      });
+    }
+
+    /* IMAGES */
 
     if (files?.length) {
-      const images = await uploadImages(files, product.id, true);
-      await tx.productImage.createMany({ data: images });
+      const images =
+        await uploadImages(
+          files,
+          product.id,
+          true,
+        );
+
+      await tx.productImage.createMany({
+        data: images,
+      });
     }
 
     return tx.product.findUnique({
       where: { id: product.id },
-      include: { images: true },
+
+      include: {
+        images: true,
+        variants: true,
+      },
     });
   });
 }
@@ -194,70 +305,158 @@ export async function updateProduct(
   files: Express.Multer.File[],
 ) {
   return prisma.$transaction(async (tx) => {
-    const product = await tx.product.findUnique({
-      where: { id },
-      include: { images: true },
-    });
+    const variants =
+      typeof data.variants === "string"
+        ? JSON.parse(data.variants)
+        : data.variants;
 
-    if (!product) throw new Error("Producto no encontrado");
+    const product =
+      await tx.product.findUnique({
+        where: { id },
 
-    const imagesToDelete = data.imagesToDelete
-      ? JSON.parse(data.imagesToDelete)
-      : [];
+        include: {
+          images: true,
+          variants: true,
+        },
+      });
 
-    /* DELETE */
-    for (const image of product.images.filter((img) =>
-      imagesToDelete.includes(img.id),
+    if (!product)
+      throw new Error(
+        "Producto no encontrado",
+      );
+
+    const imagesToDelete =
+      data.imagesToDelete
+        ? JSON.parse(data.imagesToDelete)
+        : [];
+
+    /* DELETE IMAGES */
+
+    for (const image of product.images.filter(
+      (img) =>
+        imagesToDelete.includes(img.id),
     )) {
-      await cloudinary.uploader.destroy(image.publicId);
-      await tx.productImage.delete({ where: { id: image.id } });
+      await cloudinary.uploader.destroy(
+        image.publicId,
+      );
+
+      await tx.productImage.delete({
+        where: { id: image.id },
+      });
     }
 
-    /* UPLOAD */
+    /* UPLOAD IMAGES */
+
     if (files?.length) {
-      const images = await uploadImages(files, id);
-      await tx.productImage.createMany({ data: images });
+      const images = await uploadImages(
+        files,
+        id,
+      );
+
+      await tx.productImage.createMany({
+        data: images,
+      });
     }
 
-    /* PRIMARY */
+    /* PRIMARY IMAGE */
+
     if (data.primaryImageId) {
       await tx.productImage.updateMany({
         where: { productId: id },
-        data: { isPrimary: false },
+
+        data: {
+          isPrimary: false,
+        },
       });
 
       await tx.productImage.update({
-        where: { id: data.primaryImageId },
-        data: { isPrimary: true },
+        where: {
+          id: data.primaryImageId,
+        },
+
+        data: {
+          isPrimary: true,
+        },
       });
     }
 
     /* ENSURE PRIMARY */
-    const finalImages = await tx.productImage.findMany({
-      where: { productId: id },
-    });
 
-    if (finalImages.length && !finalImages.some((i) => i.isPrimary)) {
+    const finalImages =
+      await tx.productImage.findMany({
+        where: {
+          productId: id,
+        },
+      });
+
+    if (
+      finalImages.length &&
+      !finalImages.some(
+        (i) => i.isPrimary,
+      )
+    ) {
       await tx.productImage.update({
-        where: { id: finalImages[0].id },
-        data: { isPrimary: true },
+        where: {
+          id: finalImages[0].id,
+        },
+
+        data: {
+          isPrimary: true,
+        },
       });
     }
 
-    const updated = await tx.product.update({
-      where: { id },
-      data: {
-        name: data.name,
-        description: data.description,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        brandId: data.brandId || null,
-        category: data.category,
-      },
-      include: { images: true },
-    });
+    /* UPDATE VARIANTS */
 
-    await InventoryCache.setStock(id, updated.stock);
+    if (variants) {
+      await tx.productVariant.deleteMany({
+        where: {
+          productId: id,
+        },
+      });
+
+      await tx.productVariant.createMany({
+        data: variants.map(
+          (variant: any) => ({
+            productId: id,
+
+            size: variant.size,
+
+            color: variant.color,
+
+            stock: Number(
+              variant.stock,
+            ),
+          }),
+        ),
+      });
+    }
+
+    const updated =
+      await tx.product.update({
+        where: { id },
+
+        data: {
+          name: data.name,
+
+          description:
+            data.description,
+
+          price: Number(data.price),
+
+          gender: data.gender,
+
+          brandId:
+            data.brandId || null,
+
+          category: data.category,
+        },
+
+        include: {
+          images: true,
+          variants: true,
+        },
+      });
 
     return updated;
   });
@@ -267,7 +466,10 @@ export async function deleteProduct(id: string) {
   return prisma.$transaction(async (tx) => {
     const product = await tx.product.findUnique({
       where: { id },
-      include: { images: true },
+
+      include: {
+        images: true,
+      },
     });
 
     if (!product) throw new Error("Producto no encontrado");
@@ -278,8 +480,15 @@ export async function deleteProduct(id: string) {
 
     return tx.product.update({
       where: { id },
-      data: { isActive: false },
-      include: { images: true },
+
+      data: {
+        isActive: false,
+      },
+
+      include: {
+        images: true,
+        variants: true,
+      },
     });
   });
 }

@@ -2,10 +2,21 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import type { ProductBrand } from "@/types/product";
-import { ImagePlus, Loader2, PackagePlus, X } from "lucide-react";
+
+import {
+  ImagePlus,
+  Loader2,
+  PackagePlus,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
+
 import { toast } from "sonner";
+
 import { apiFetch } from "@/shared/lib/api";
+
+import type { ProductBrand } from "@/types/product";
 
 const categories = [
   { value: "T_SHIRTS", label: "T-Shirts" },
@@ -27,39 +38,105 @@ const categories = [
   { value: "OTHER", label: "Other" },
 ];
 
+const genders = [
+  {
+    value: "MEN",
+    label: "Men",
+  },
+
+  {
+    value: "WOMEN",
+    label: "Women",
+  },
+
+  {
+    value: "UNISEX",
+    label: "Unisex",
+  },
+];
+
+const sizes = [
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "ONE_SIZE",
+];
+
+const colors = [
+  "BLACK",
+  "WHITE",
+  "BEIGE",
+  "GREY",
+  "GREEN",
+  "RED",
+  "BLUE",
+  "BROWN",
+];
+
 type Props = {
   onClose: () => void;
   onCreated: () => void;
+};
+
+type VariantForm = {
+  size: string;
+  color: string;
+  stock: string;
 };
 
 type ProductForm = {
   name: string;
   description: string;
   price: string;
-  stock: string;
   brandId: string;
   category: string;
+  gender: string;
+
+  variants: VariantForm[];
 };
 
 const emptyForm: ProductForm = {
   name: "",
   description: "",
   price: "",
-  stock: "",
   brandId: "",
   category: "OTHER",
+  gender: "UNISEX",
+
+  variants: [
+    {
+      size: "M",
+      color: "BLACK",
+      stock: "1",
+    },
+  ],
 };
 
-export default function CreateProductModal({ onClose, onCreated }: Props) {
+export default function CreateProductModal({
+  onClose,
+  onCreated,
+}: Props) {
   const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [brands, setBrands] = useState<ProductBrand[]>([]);
-  const [form, setForm] = useState<ProductForm>(emptyForm);
+
+  const [files, setFiles] = useState<File[]>(
+    [],
+  );
+
+  const [brands, setBrands] = useState<
+    ProductBrand[]
+  >([]);
+
+  const [form, setForm] =
+    useState<ProductForm>(emptyForm);
 
   useEffect(() => {
     async function loadBrands() {
       try {
-        const res = await apiFetch("/brands");
+        const res =
+          await apiFetch("/brands");
 
         if (!res) return;
 
@@ -73,6 +150,13 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
 
     loadBrands();
   }, []);
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
 
   const previews = useMemo(
     () =>
@@ -84,23 +168,84 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
   );
 
   const isValid =
-    form.name.trim() && Number(form.price) >= 0 && Number(form.stock) >= 0;
-
-  const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
+    form.name.trim() &&
+    Number(form.price) >= 0 &&
+    form.variants.length > 0;
 
   const handleChange = (
     event: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
     >,
   ) => {
-    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+    setForm((prev) => ({
+      ...prev,
+      [event.target.name]:
+        event.target.value,
+    }));
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) =>
+      prev.filter((_, i) => i !== index),
+    );
+  };
+
+  const updateVariant = (
+    index: number,
+    field: string,
+    value: string,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+
+      variants: prev.variants.map(
+        (variant, i) =>
+          i === index
+            ? {
+                ...variant,
+                [field]: value,
+              }
+            : variant,
+      ),
+    }));
+  };
+
+  const addVariant = () => {
+    setForm((prev) => ({
+      ...prev,
+
+      variants: [
+        ...prev.variants,
+
+        {
+          size: "M",
+          color: "BLACK",
+          stock: "1",
+        },
+      ],
+    }));
+  };
+
+  const removeVariant = (
+    index: number,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+
+      variants: prev.variants.filter(
+        (_, i) => i !== index,
+      ),
+    }));
   };
 
   const createProduct = async () => {
     if (!isValid) {
-      toast.error("Completa nombre, precio y stock con valores válidos");
+      toast.error(
+        "Complete required fields",
+      );
+
       return;
     }
 
@@ -108,155 +253,334 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
       setLoading(true);
 
       const formData = new FormData();
-      formData.append("name", form.name.trim());
-      formData.append("description", form.description.trim());
-      formData.append("price", String(Math.round(Number(form.price))));
+
       formData.append(
-        "stock",
-        String(Math.max(0, Math.round(Number(form.stock)))),
+        "name",
+        form.name.trim(),
       );
-      formData.append("brandId", form.brandId);
-      formData.append("category", form.category);
+
+      formData.append(
+        "description",
+        form.description.trim(),
+      );
+
+      formData.append(
+        "price",
+        String(Math.round(Number(form.price) * 100),),
+      );
+
+      formData.append(
+        "brandId",
+        form.brandId,
+      );
+
+      formData.append(
+        "category",
+        form.category,
+      );
+
+      formData.append(
+        "gender",
+        form.gender,
+      );
+
+      formData.append(
+        "variants",
+        JSON.stringify(form.variants),
+      );
 
       files.forEach((file) => {
         formData.append("images", file);
       });
 
-      const res = await apiFetch("/products", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await apiFetch(
+        "/products",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      if (!res || !res.ok) throw new Error("Create product failed");
+      if (!res || !res.ok) {
+        throw new Error(
+          "Create product failed",
+        );
+      }
 
-      toast.success("Producto creado correctamente");
+      toast.success(
+        "Product created successfully",
+      );
+
       onCreated();
       onClose();
     } catch {
-      toast.error("Error creando producto");
+      toast.error(
+        "Error creating product",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-6"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white/10 bg-neutral-950 shadow-2xl shadow-black/40 sm:rounded-3xl">
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-white/10 bg-neutral-950/95 p-5 backdrop-blur sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-6">
+      <div className="premium-scrollbar max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-t-3xl border border-white/10 bg-neutral-950 shadow-2xl shadow-black/50 sm:rounded-3xl">
+        {/* HEADER */}
+
+        <div className="sticky top-0 z-20 flex items-start justify-between border-b border-white/10 bg-neutral-950/95 p-5 backdrop-blur sm:p-6">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-              <PackagePlus size={14} /> Nuevo producto
+              <PackagePlus size={14} />
+              New product
             </div>
-            <h2 className="mt-3 text-xl font-semibold text-white">
-              Crear producto
+
+            <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl">
+              Create product
             </h2>
+
             <p className="mt-1 text-sm text-neutral-400">
-              Añade información comercial, inventario e imágenes listas para
-              publicar.
+              Premium inventory management
+              with variants and media.
             </p>
           </div>
+
           <button
             onClick={onClose}
             className="rounded-full p-2 text-neutral-500 transition hover:bg-white/10 hover:text-white"
-            aria-label="Cerrar modal"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="space-y-5 p-5 sm:p-6">
-          <Field label="Nombre" required>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Ej. Sneakers edición limitada"
-              className="dashboard-input"
-            />
-          </Field>
+        {/* CONTENT */}
 
-          <Field label="Descripción">
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Describe beneficios, materiales y detalles relevantes..."
-              className="dashboard-input resize-none"
-            />
-          </Field>
+        <div className="space-y-6 p-5 sm:p-6">
+          {/* BASIC */}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Precio en céntimos"
-              required
-              hint="Ej. 12999 = €129.99"
-            >
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="Product name" required>
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Women From A Broken Future Tee"
+                className="dashboard-input"
+              />
+            </Field>
+
+            <Field label="Price" required>
               <input
                 name="price"
                 type="number"
                 min="0"
                 value={form.price}
                 onChange={handleChange}
-                placeholder="12999"
-                className="dashboard-input"
-              />
-            </Field>
-            <Field label="Stock inicial" required>
-              <input
-                name="stock"
-                type="number"
-                min="0"
-                value={form.stock}
-                onChange={handleChange}
-                placeholder="48"
+                placeholder="4500"
                 className="dashboard-input"
               />
             </Field>
           </div>
-          <Field label="Categoría">
-            <select
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              className="dashboard-input"
-            >
-              {categories.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Marca">
-            <select
-              name="brandId"
-              value={form.brandId}
-              onChange={handleChange}
-              className="dashboard-input"
-            >
-              <option value="">Sin marca</option>
 
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </select>
+          <Field label="Description">
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              rows={5}
+              placeholder="Premium heavyweight cotton..."
+              className="dashboard-input resize-none"
+            />
           </Field>
+
+          {/* CATEGORY */}
+
+          <div className="grid gap-5 md:grid-cols-3">
+            <Field label="Category">
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className="dashboard-input"
+              >
+                {categories.map(
+                  (category) => (
+                    <option
+                      key={category.value}
+                      value={
+                        category.value
+                      }
+                    >
+                      {category.label}
+                    </option>
+                  ),
+                )}
+              </select>
+            </Field>
+
+            <Field label="Gender">
+              <select
+                name="gender"
+                value={form.gender}
+                onChange={handleChange}
+                className="dashboard-input"
+              >
+                {genders.map((gender) => (
+                  <option
+                    key={gender.value}
+                    value={gender.value}
+                  >
+                    {gender.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Brand">
+              <select
+                name="brandId"
+                value={form.brandId}
+                onChange={handleChange}
+                className="dashboard-input"
+              >
+                <option value="">
+                  No brand
+                </option>
+
+                {brands.map((brand) => (
+                  <option
+                    key={brand.id}
+                    value={brand.id}
+                  >
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          {/* VARIANTS */}
+
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white sm:text-base">
+                  Product variants
+                </h3>
+
+                <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                  Manage sizes, colors and
+                  inventory independently.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={addVariant}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs font-semibold text-white transition hover:bg-white/[0.06]"
+              >
+                <Plus size={14} />
+                Add variant
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {form.variants.map(
+                (variant, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-4"
+                  >
+                    <select
+                      value={variant.size}
+                      onChange={(e) =>
+                        updateVariant(
+                          index,
+                          "size",
+                          e.target.value,
+                        )
+                      }
+                      className="dashboard-input"
+                    >
+                      {sizes.map((size) => (
+                        <option
+                          key={size}
+                          value={size}
+                        >
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={variant.color}
+                      onChange={(e) =>
+                        updateVariant(
+                          index,
+                          "color",
+                          e.target.value,
+                        )
+                      }
+                      className="dashboard-input"
+                    >
+                      {colors.map(
+                        (color) => (
+                          <option
+                            key={color}
+                            value={color}
+                          >
+                            {color}
+                          </option>
+                        ),
+                      )}
+                    </select>
+
+                    <input
+                      type="number"
+                      min="0"
+                      value={variant.stock}
+                      onChange={(e) =>
+                        updateVariant(
+                          index,
+                          "stock",
+                          e.target.value,
+                        )
+                      }
+                      placeholder="Stock"
+                      className="dashboard-input"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeVariant(index)
+                      }
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                    >
+                      <Trash2 size={14} />
+                      Remove
+                    </button>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+
+          {/* IMAGES */}
 
           <div className="rounded-3xl border border-dashed border-white/15 bg-white/[0.03] p-5">
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-black/20 p-6 text-center transition hover:bg-white/[0.04]">
-              <ImagePlus className="text-neutral-500" size={28} />
-              <span className="mt-3 text-sm font-semibold text-white">
-                Subir imágenes
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl bg-black/20 p-8 text-center transition hover:bg-white/[0.04]">
+              <ImagePlus
+                className="text-neutral-500"
+                size={30}
+              />
+
+              <span className="mt-4 text-sm font-semibold text-white">
+                Upload product images
               </span>
+
               <span className="mt-1 text-xs text-neutral-500">
-                PNG, JPG o WebP. La primera imagen será portada.
+                PNG, JPG or WEBP. First image
+                becomes cover.
               </span>
 
               <input
@@ -267,60 +591,77 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
                 onChange={(event) =>
                   setFiles((prev) => [
                     ...prev,
-                    ...Array.from(event.target.files ?? []),
+                    ...Array.from(
+                      event.target.files ??
+                        [],
+                    ),
                   ])
                 }
               />
             </label>
 
             {previews.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
-                {previews.map((preview, index) => (
-                  <div
-                    key={`${preview.name}-${index}`}
-                    className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
-                  >
-                    <img
-                      src={preview.url}
-                      alt={preview.name}
-                      className="h-full w-full object-cover"
-                    />
-
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white opacity-100 transition hover:bg-rose-500 sm:opacity-0 sm:group-hover:opacity-100"
-                      aria-label="Eliminar imagen"
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                {previews.map(
+                  (preview, index) => (
+                    <div
+                      key={`${preview.name}-${index}`}
+                      className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
                     >
-                      <X size={14} />
-                    </button>
+                      <img
+                        src={preview.url}
+                        alt={preview.name}
+                        className="h-full w-full object-cover"
+                      />
 
-                    {index === 0 && (
-                      <span className="absolute bottom-2 left-2 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-black">
-                        Portada
-                      </span>
-                    )}
-                  </div>
-                ))}
+                      <button
+                        onClick={() =>
+                          removeFile(index)
+                        }
+                        className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white transition hover:bg-red-500"
+                      >
+                        <X size={14} />
+                      </button>
+
+                      {index === 0 && (
+                        <span className="absolute bottom-2 left-2 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-black">
+                          Cover
+                        </span>
+                      )}
+                    </div>
+                  ),
+                )}
               </div>
             )}
           </div>
         </div>
 
+        {/* FOOTER */}
+
         <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-white/10 bg-neutral-950/95 p-5 backdrop-blur sm:flex-row sm:justify-end sm:p-6">
           <button
             onClick={onClose}
             disabled={loading}
-            className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-white/10 disabled:opacity-60"
+            className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:bg-white/10"
           >
-            Cancelar
+            Cancel
           </button>
+
           <button
             onClick={createProduct}
             disabled={loading || !isValid}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:opacity-60"
           >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            {loading ? "Creando..." : "Crear producto"}
+            {loading && (
+              <Loader2
+                size={16}
+                className="animate-spin"
+              />
+            )}
+
+            {loading
+              ? "Creating..."
+              : "Create product"}
           </button>
         </div>
       </div>
@@ -331,21 +672,25 @@ export default function CreateProductModal({ onClose, onCreated }: Props) {
 function Field({
   label,
   required,
-  hint,
   children,
 }: {
   label: string;
   required?: boolean;
-  hint?: string;
   children: ReactNode;
 }) {
   return (
     <label className="block space-y-2">
       <span className="flex items-center gap-2 text-sm font-medium text-neutral-200">
-        {label} {required && <span className="text-emerald-300">*</span>}
+        {label}
+
+        {required && (
+          <span className="text-emerald-300">
+            *
+          </span>
+        )}
       </span>
+
       {children}
-      {hint && <span className="block text-xs text-neutral-500">{hint}</span>}
     </label>
   );
 }

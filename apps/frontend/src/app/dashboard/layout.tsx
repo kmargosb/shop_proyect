@@ -79,7 +79,7 @@ export default function DashboardLayout({
       {open && (
         <button
           aria-label="Cerrar navegación"
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm xl:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -92,7 +92,7 @@ export default function DashboardLayout({
           border-r border-white/10 bg-neutral-950/95 p-5 shadow-2xl shadow-black/40 backdrop-blur-xl
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0
+xl:translate-x-0
         `}
       >
         {/* TOP */}
@@ -118,7 +118,7 @@ export default function DashboardLayout({
 
             <button
               aria-label="Cerrar menú"
-              className="rounded-xl p-2 text-neutral-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+              className="rounded-xl p-2 text-neutral-400 transition hover:bg-white/10 hover:text-white xl:hidden"
               onClick={() => setOpen(false)}
             >
               <X size={20} />
@@ -170,13 +170,13 @@ export default function DashboardLayout({
       </aside>
 
       {/* MAIN */}
-      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col lg:ml-72">
+      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col xl:ml-72">
         {/* HEADER */}
         <header className="sticky top-0 z-30 flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#070707]/85 px-4 backdrop-blur-xl sm:px-6">
           <div className="flex items-center gap-3">
             <button
               aria-label="Abrir menú"
-              className="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-neutral-300 transition hover:bg-white/10 hover:text-white lg:hidden"
+              className="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-neutral-300 transition hover:bg-white/10 hover:text-white xl:hidden"
               onClick={() => setOpen(true)}
             >
               <Menu size={20} />
@@ -203,7 +203,7 @@ export default function DashboardLayout({
         </header>
 
         {/* CONTENT */}
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-5 xl:px-6 xl:py-6 2xl:px-8 2xl:py-8">
           <div className="mx-auto w-full min-w-0 max-w-[1600px]">
             {children}
           </div>
