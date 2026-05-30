@@ -4,16 +4,25 @@ import { asyncHandler } from "@/common/utils/asyncHandler";
 
 export const getAlertsController = asyncHandler(
   async (_req: Request, res: Response) => {
-
-    const lowStock = await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
-        stock: { lt: 5 },
+        isActive: true,
       },
-      select: {
-        name: true,
-        stock: true,
+
+      include: {
+        variants: true,
       },
-      take: 5,
+
+      take: 20,
+    });
+
+    const lowStock = products.filter((product) => {
+      const totalStock = product.variants.reduce(
+        (sum, variant) => sum + (variant.stock - variant.reservedStock),
+        0,
+      );
+
+      return totalStock < 5;
     });
 
     const refunds = await prisma.refund.aggregate({
@@ -37,5 +46,5 @@ export const getAlertsController = asyncHandler(
     }
 
     res.json(alerts);
-  }
+  },
 );

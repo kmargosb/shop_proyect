@@ -9,60 +9,39 @@ export const InventoryService = {
 
   async reserveStock(
     tx: any,
-    productId: string,
+    variantId: string,
     orderId: string,
     quantity: number,
   ) {
-    /* lock product row */
-
-    const rows: any[] = await tx.$queryRaw`
-      SELECT id, stock, "reservedStock"
-      FROM "Product"
-      WHERE id = ${productId}
-      FOR UPDATE
-    `;
-
-    const product = rows[0];
-
-    if (!product) {
-      throw new Error("Product not found");
-    }
-
-    const aggregate = await tx.inventoryReservation.aggregate({
+    const variant = await tx.productVariant.findUnique({
       where: {
-        productId,
-        expiresAt: {
-          gt: new Date(),
-        },
-      },
-      _sum: {
-        quantity: true,
+        id: variantId,
       },
     });
 
-    const reserved = aggregate._sum.quantity ?? 0;
+    if (!variant) {
+      throw new Error("Variant not found");
+    }
 
-    const availableStock = product.stock - reserved;
+    const availableStock = variant.stock - variant.reservedStock;
 
     if (availableStock < quantity) {
       throw new Error("Not enough stock available");
     }
 
-    /* create reservation */
-
     await tx.inventoryReservation.create({
       data: {
-        productId,
+        variantId,
         orderId,
         quantity,
         expiresAt: new Date(Date.now() + RESERVATION_TIME_MINUTES * 60 * 1000),
       },
     });
 
-    /* update reserved stock */
-
-    await tx.product.update({
-      where: { id: productId },
+    await tx.productVariant.update({
+      where: {
+        id: variantId,
+      },
       data: {
         reservedStock: {
           increment: quantity,
@@ -78,8 +57,9 @@ export const InventoryService = {
   async validateReservation(orderId: string) {
     const reservations = await prisma.inventoryReservation.findMany({
       where: { orderId },
+
       include: {
-        product: {
+        variant: {
           select: {
             id: true,
             stock: true,
@@ -95,11 +75,13 @@ export const InventoryService = {
     for (const reservation of reservations) {
       const aggregate = await prisma.inventoryReservation.aggregate({
         where: {
-          productId: reservation.productId,
+          variantId: reservation.variantId,
+
           expiresAt: {
             gt: now,
           },
         },
+
         _sum: {
           quantity: true,
         },
@@ -107,9 +89,9 @@ export const InventoryService = {
 
       const reserved = aggregate._sum.quantity ?? 0;
 
-      if (reserved > reservation.product.stock) {
+      if (reserved > reservation.variant.stock) {
         throw new Error(
-          `Stock mismatch detected for product ${reservation.productId}`,
+          `Stock mismatch detected for variant ${reservation.variantId}`,
         );
       }
     }
@@ -131,32 +113,40 @@ export const InventoryService = {
 
     await prisma.$transaction(async (tx) => {
       for (const reservation of reservations) {
-        const product = await tx.product.findUnique({
-          where: { id: reservation.productId },
-          select: { reservedStock: true },
+        const variant = await tx.productVariant.findUnique({
+          where: {
+            id: reservation.variantId,
+          },
+
+          select: {
+            stock: true,
+            reservedStock: true,
+          },
         });
 
-        if (!product || product.reservedStock < reservation.quantity) {
+        if (!variant || variant.reservedStock < reservation.quantity) {
           throw new Error("Inventory inconsistency detected");
         }
 
-        await tx.product.update({
-          where: { id: reservation.productId },
+        await tx.productVariant.update({
+          where: {
+            id: reservation.variantId,
+          },
+
           data: {
             stock: {
               decrement: reservation.quantity,
             },
+
             reservedStock: {
               decrement: reservation.quantity,
             },
           },
         });
 
-        /* sync redis stock cache */
-
         try {
           await InventoryCache.decrementStock(
-            reservation.productId,
+            reservation.variantId,
             reservation.quantity,
           );
         } catch (error) {
@@ -183,17 +173,25 @@ export const InventoryService = {
 
     await prisma.$transaction(async (tx) => {
       for (const reservation of reservations) {
-        const product = await tx.product.findUnique({
-          where: { id: reservation.productId },
-          select: { reservedStock: true },
+        const variant = await tx.productVariant.findUnique({
+          where: {
+            id: reservation.variantId,
+          },
+
+          select: {
+            reservedStock: true,
+          },
         });
 
-        if (!product) continue;
+        if (!variant) continue;
 
-        const decrement = Math.min(reservation.quantity, product.reservedStock);
+        const decrement = Math.min(reservation.quantity, variant.reservedStock);
 
-        await tx.product.update({
-          where: { id: reservation.productId },
+        await tx.productVariant.update({
+          where: {
+            id: reservation.variantId,
+          },
+
           data: {
             reservedStock: {
               decrement,
@@ -212,14 +210,16 @@ export const InventoryService = {
      INVENTORY CONSISTENCY GUARD (REPAIR SINGLE PRODUCT)
   ========================================================= */
 
-  async repairReservedStock(productId: string) {
+  async repairReservedStock(variantId: string) {
     const aggregate = await prisma.inventoryReservation.aggregate({
       where: {
-        productId,
+        variantId,
+
         expiresAt: {
           gt: new Date(),
         },
       },
+
       _sum: {
         quantity: true,
       },
@@ -227,8 +227,11 @@ export const InventoryService = {
 
     const realReserved = aggregate._sum.quantity ?? 0;
 
-    await prisma.product.update({
-      where: { id: productId },
+    await prisma.productVariant.update({
+      where: {
+        id: variantId,
+      },
+
       data: {
         reservedStock: realReserved,
       },
@@ -240,18 +243,22 @@ export const InventoryService = {
   ========================================================= */
 
   async repairAllReservedStock() {
-    const products = await prisma.product.findMany({
-      select: { id: true },
+    const variants = await prisma.productVariant.findMany({
+      select: {
+        id: true,
+      },
     });
 
-    for (const product of products) {
+    for (const variant of variants) {
       const aggregate = await prisma.inventoryReservation.aggregate({
         where: {
-          productId: product.id,
+          variantId: variant.id,
+
           expiresAt: {
             gt: new Date(),
           },
         },
+
         _sum: {
           quantity: true,
         },
@@ -259,8 +266,11 @@ export const InventoryService = {
 
       const realReserved = aggregate._sum.quantity ?? 0;
 
-      await prisma.product.update({
-        where: { id: product.id },
+      await prisma.productVariant.update({
+        where: {
+          id: variant.id,
+        },
+
         data: {
           reservedStock: realReserved,
         },

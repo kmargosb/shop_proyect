@@ -375,7 +375,7 @@ export default function CreateProductModal({
                 min="0"
                 value={form.price}
                 onChange={handleChange}
-                placeholder="4500"
+                placeholder="45.00"
                 className="dashboard-input"
               />
             </Field>

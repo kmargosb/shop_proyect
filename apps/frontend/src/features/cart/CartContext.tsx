@@ -17,6 +17,7 @@ const CART_KEY = "cartId";
 export type CartItem = {
   id: string;
   productId: string;
+  variantId: string;
   name: string;
   price: number;
   quantity: number;
@@ -28,7 +29,11 @@ type CartContextType = {
   open: boolean;
   setOpen: (value: boolean) => void;
 
-  addItem: (productId: string, quantity?: number) => Promise<void>;
+  addItem: (
+    productId: string,
+    variantId: string,
+    quantity?: number,
+  ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
 
   increaseQuantity: (itemId: string) => Promise<void>;
@@ -59,6 +64,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .map((item: any) => ({
         id: item.id,
         productId: item.productId,
+        variantId: item.variantId,
         name: item.product?.name ?? "Producto",
         price: item.price,
         quantity: item.quantity,
@@ -80,37 +86,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   /* ================= ENSURE VALID CART ================= */
 
-const ensureCart = async (): Promise<string | null> => {
-  let cartId = localStorage.getItem(CART_KEY);
+  const ensureCart = async (): Promise<string | null> => {
+    let cartId = localStorage.getItem(CART_KEY);
 
-  /* no cart */
+    /* no cart */
 
-  if (!cartId) {
-    return await createCart();
-  }
+    if (!cartId) {
+      return await createCart();
+    }
 
-  /* validate current cart */
+    /* validate current cart */
 
-  const res = await apiFetch(`/cart/${cartId}`);
+    const res = await apiFetch(`/cart/${cartId}`);
 
-  /* invalid / expired / converted */
+    /* invalid / expired / converted */
 
-  if (!res || !res.ok) {
-    localStorage.removeItem(CART_KEY);
+    if (!res || !res.ok) {
+      localStorage.removeItem(CART_KEY);
 
-    return await createCart();
-  }
+      return await createCart();
+    }
 
-  const cart = await res.json();
+    const cart = await res.json();
 
-  /* backend generated new cart */
+    /* backend generated new cart */
 
-  if (cart.id !== cartId) {
-    localStorage.setItem(CART_KEY, cart.id);
-  }
+    if (cart.id !== cartId) {
+      localStorage.setItem(CART_KEY, cart.id);
+    }
 
-  return cart.id;
-};
+    return cart.id;
+  };
 
   /* ================= FETCH CART ================= */
 
@@ -137,13 +143,21 @@ const ensureCart = async (): Promise<string | null> => {
 
   /* ================= ADD ITEM ================= */
 
-  const addItem = async (productId: string, quantity = 1) => {
+  const addItem = async (
+    productId: string,
+    variantId: string,
+    quantity = 1,
+  ) => {
     const cartId = await ensureCart();
     if (!cartId) return;
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
       method: "POST",
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify({
+        productId,
+        variantId,
+        quantity,
+      }),
     });
 
     if (!res) {
@@ -185,6 +199,7 @@ const ensureCart = async (): Promise<string | null> => {
       method: "POST",
       body: JSON.stringify({
         productId: item.productId,
+        variantId: item.variantId,
         quantity: 1,
       }),
     });
@@ -213,6 +228,7 @@ const ensureCart = async (): Promise<string | null> => {
       method: "POST",
       body: JSON.stringify({
         productId: item.productId,
+        variantId: item.variantId,
         quantity: -1,
       }),
     });

@@ -84,9 +84,18 @@ export const addItemController = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const { productId, quantity } = req.body;
+    const {
+  productId,
+  variantId,
+  quantity,
+} = req.body;
 
-    const cart = await CartService.addItem(cartId, productId, quantity);
+const cart = await CartService.addItem(
+  cartId,
+  productId,
+  variantId,
+  quantity
+);
 
     return res.json(cart);
   } catch (error: any) {

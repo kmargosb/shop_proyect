@@ -18,6 +18,10 @@ export default function ProductPage() {
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   /* ===============================
@@ -36,6 +40,12 @@ export default function ProductPage() {
       const data = await res.json();
 
       setProduct(data);
+
+      if (data.variants?.length) {
+        setSelectedSize(data.variants[0].size);
+        setSelectedColor(data.variants[0].color);
+      }
+
       setLoading(false);
     };
 
@@ -67,24 +77,44 @@ export default function ProductPage() {
   );
 
   const mainImage = images[selectedImage]?.url ?? "/placeholder-product.png";
-  const outOfStock = product.stock <= 0;
+
+  const variants = product.variants ?? [];
+
+  const sizes = Array.from(
+    new Set<string>(variants.map((v: any) => String(v.size))),
+  );
+
+  const colors = Array.from(
+    new Set<string>(variants.map((v: any) => String(v.color))),
+  );
+
+  const selectedVariant =
+    variants.find(
+      (variant: any) =>
+        variant.size === selectedSize && variant.color === selectedColor,
+    ) ?? null;
+
+  const availableStock =
+    (selectedVariant?.stock ?? 0) - (selectedVariant?.reservedStock ?? 0);
+
+  const outOfStock = availableStock <= 0;
 
   /* ===============================
-     STOCK STATUS
-  =============================== */
+   STOCK STATUS
+=============================== */
 
   let stockBadge = null;
 
-  if (product.stock === 0) {
-    stockBadge = <span className="text-red-500 font-semibold">Sin stock</span>;
-  } else if (product.stock <= 5) {
+  if (outOfStock) {
+    stockBadge = <span className="text-red-500 font-medium">Agotado</span>;
+  } else if (availableStock <= 5) {
     stockBadge = (
-      <span className="text-yellow-400 font-semibold">
-        Solo quedan {product.stock}
-      </span>
+      <span className="text-amber-400 font-medium">Últimas unidades</span>
     );
   } else {
-    stockBadge = <span className="text-green-500 font-semibold">En stock</span>;
+    stockBadge = (
+      <span className="text-emerald-500 font-medium">Disponible</span>
+    );
   }
 
   /* ===============================
@@ -92,26 +122,44 @@ export default function ProductPage() {
   =============================== */
 
   const handleAddToCart = async () => {
-    try {
-      await addItem(product.id, quantity);
-
-      toast.success("Producto añadido al carrito");
-    } catch (error: any) {
-      toast.error(error?.message || "No hay suficiente stock");
+  try {
+    if (!selectedVariant) {
+      toast.error("Selecciona una talla y color");
+      return;
     }
-  };
+
+    await addItem(
+      product.id,
+      selectedVariant.id,
+      quantity
+    );
+
+    toast.success("Producto añadido al carrito");
+  } catch (error: any) {
+    toast.error(error?.message || "No hay suficiente stock");
+  }
+};
 
   const handleBuyNow = async () => {
-    try {
-      await addItem(product.id, quantity);
-
-      toast.success("Producto añadido al carrito");
-
-      router.push("/checkout");
-    } catch (error: any) {
-      toast.error(error?.message || "No hay suficiente stock");
+  try {
+    if (!selectedVariant) {
+      toast.error("Selecciona una talla y color");
+      return;
     }
-  };
+
+    await addItem(
+      product.id,
+      selectedVariant.id,
+      quantity
+    );
+
+    toast.success("Producto añadido al carrito");
+
+    router.push("/checkout");
+  } catch (error: any) {
+    toast.error(error?.message || "No hay suficiente stock");
+  }
+};
 
   /* ===============================
      UI
@@ -172,6 +220,54 @@ export default function ProductPage() {
 
           {stockBadge}
 
+          <div className="space-y-6">
+            <div>
+              <p className="mb-3 text-xs uppercase tracking-[0.25em] text-neutral-500">
+                Size
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`h-11 min-w-[52px] rounded-xl border px-4 transition
+          ${
+            selectedSize === size
+              ? "border-white bg-white text-black"
+              : "border-neutral-700 hover:border-neutral-500"
+          }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-3 text-xs uppercase tracking-[0.25em] text-neutral-500">
+                Color
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={`h-11 rounded-xl border px-4 transition
+          ${
+            selectedColor === color
+              ? "border-white bg-white text-black"
+              : "border-neutral-700 hover:border-neutral-500"
+          }`}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {product.description && (
             <p className="text-neutral-400 leading-relaxed">
               {product.description}
@@ -199,7 +295,7 @@ export default function ProductPage() {
               <button
                 disabled={outOfStock}
                 onClick={() =>
-                  setQuantity((q) => Math.min(product.stock || 10, q + 1))
+                  setQuantity((q) => Math.min(availableStock, q + 1))
                 }
                 className="px-3 py-1 hover:bg-neutral-800 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
               >

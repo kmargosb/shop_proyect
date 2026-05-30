@@ -30,6 +30,7 @@ const CART_INCLUDE = {
           images: true,
         },
       },
+      variant: true,
     },
   },
 };
@@ -89,7 +90,12 @@ export const CartService = {
      ADD ITEM
   ========================================================= */
 
-  async addItem(cartId: string, productId: string, quantity: number) {
+  async addItem(
+    cartId: string,
+    productId: string,
+    variantId: string,
+    quantity: number,
+  ) {
     if (quantity === 0) {
       throw new Error("Invalid quantity");
     }
@@ -113,11 +119,16 @@ export const CartService = {
         throw new Error("Cart expired");
       }
 
-      const product = await tx.product.findUnique({
-        where: { id: productId },
+      const variant = await tx.productVariant.findUnique({
+        where: {
+          id: variantId,
+        },
+        include: {
+          product: true,
+        },
       });
 
-      if (!product || !product.isActive) {
+      if (!variant || !variant.product.isActive) {
         throw new Error("Product not available");
       }
 
@@ -125,6 +136,7 @@ export const CartService = {
         where: {
           cartId,
           productId,
+          variantId,
         },
       });
 
@@ -139,8 +151,7 @@ export const CartService = {
 
       /* real available stock */
 
-      const availableStock =
-        product.stock - product.reservedStock;
+      const availableStock = variant.stock - variant.reservedStock;
 
       if (nextQty > availableStock) {
         throw new Error("Not enough stock available");
@@ -154,28 +165,23 @@ export const CartService = {
             where: { id: existingItem.id },
           });
         }
-      }
-
-      /* update quantity */
-
-      else if (existingItem) {
+      } else if (existingItem) {
+        /* update quantity */
         await tx.cartItem.update({
           where: { id: existingItem.id },
           data: {
             quantity: nextQty,
           },
         });
-      }
-
-      /* create item */
-
-      else {
+      } else {
+        /* create item */
         await tx.cartItem.create({
           data: {
             cartId,
             productId,
+            variantId,
             quantity: nextQty,
-            price: product.price,
+            price: variant.product.price,
           },
         });
       }
@@ -185,9 +191,7 @@ export const CartService = {
       await tx.cart.update({
         where: { id: cartId },
         data: {
-          expiresAt: new Date(
-            Date.now() + CART_EXPIRATION_HOURS * 3600000,
-          ),
+          expiresAt: new Date(Date.now() + CART_EXPIRATION_HOURS * 3600000),
         },
       });
 
@@ -238,11 +242,7 @@ export const CartService = {
 
     /* invalid cart → regenerate */
 
-    if (
-      !cart ||
-      cart.status !== "ACTIVE" ||
-      cart.expiresAt < new Date()
-    ) {
+    if (!cart || cart.status !== "ACTIVE" || cart.expiresAt < new Date()) {
       cart = await this.getOrCreateCart(userId);
     }
 
@@ -265,13 +265,14 @@ export const CartService = {
       where: { cartId },
       include: {
         product: true,
+        variant: true,
       },
     });
 
     for (const item of items) {
       /* deleted / inactive */
 
-      if (!item.product || !item.product.isActive) {
+      if (!item.product || !item.product.isActive || !item.variant) {
         await prisma.cartItem.delete({
           where: { id: item.id },
         });
@@ -279,9 +280,11 @@ export const CartService = {
         continue;
       }
 
+      const availableStock = item.variant.stock - item.variant.reservedStock;
+
       /* out of stock */
 
-      if (item.product.stock <= 0) {
+      if (availableStock <= 0) {
         await prisma.cartItem.delete({
           where: { id: item.id },
         });
@@ -291,11 +294,11 @@ export const CartService = {
 
       /* adjust quantity */
 
-      if (item.quantity > item.product.stock) {
+      if (item.quantity > availableStock) {
         await prisma.cartItem.update({
           where: { id: item.id },
           data: {
-            quantity: item.product.stock,
+            quantity: availableStock,
           },
         });
       }
@@ -344,10 +347,7 @@ export const CartService = {
      CONVERT CART TO ORDER
   ========================================================= */
 
-  async convertCartToOrder(
-    cartId: string,
-    checkoutData: CheckoutData,
-  ) {
+  async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
     await this.validateCart(cartId);
 
     return prisma.$transaction(async (tx) => {
@@ -372,8 +372,7 @@ export const CartService = {
         throw new Error("Cart empty");
       }
 
-      const { createOrder } =
-        await import("@/modules/orders/order.service");
+      const { createOrder } = await import("@/modules/orders/order.service");
 
       /* create order */
 
@@ -383,6 +382,7 @@ export const CartService = {
 
         items: cart.items.map((item) => ({
           productId: item.productId,
+          variantId: item.variantId ?? undefined,
           quantity: item.quantity,
         })),
       });
@@ -418,6 +418,7 @@ export const CartService = {
         items: {
           include: {
             product: true,
+            variant: true,
           },
         },
       },
@@ -440,26 +441,18 @@ export const CartService = {
     }
 
     for (const item of cart.items) {
-      if (!item.product) {
-        throw new Error(
-          `Product ${item.productId} not found`,
-        );
+      if (!item.product || !item.variant) {
+        throw new Error(`Product ${item.productId} not found`);
       }
 
       if (!item.product.isActive) {
-        throw new Error(
-          `Product ${item.product.name} not available`,
-        );
+        throw new Error(`Product ${item.product.name} not available`);
       }
 
-      const availableStock =
-        item.product.stock -
-        item.product.reservedStock;
+      const availableStock = item.variant.stock - item.variant.reservedStock;
 
       if (availableStock < item.quantity) {
-        throw new Error(
-          `Not enough stock for ${item.product.name}`,
-        );
+        throw new Error(`Not enough stock for ${item.product.name}`);
       }
     }
 
@@ -490,6 +483,7 @@ export const CartService = {
         where: {
           cartId: userCart.id,
           productId: item.productId,
+          variantId: item.variantId,
         },
       });
 
@@ -510,6 +504,7 @@ export const CartService = {
           data: {
             cartId: userCart.id,
             productId: item.productId,
+            variantId: item.variantId,
             quantity: item.quantity,
             price: item.price,
           },

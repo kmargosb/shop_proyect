@@ -4,8 +4,10 @@ import { RefundService } from "@/modules/refunds/refund.service";
 
 type CreateOrderInput = {
   userId?: string;
+
   items: {
     productId: string;
+    variantId?: string;
     quantity: number;
   }[];
 
@@ -46,8 +48,14 @@ export async function createOrder(data: CreateOrderInput) {
 
     const orderItemsData: {
       productId: string;
+      variantId?: string;
+
       productName: string;
       productSku?: string | null;
+
+      size?: any;
+      color?: any;
+
       quantity: number;
       price: number;
     }[] = [];
@@ -57,36 +65,39 @@ export async function createOrder(data: CreateOrderInput) {
     ========================= */
 
     for (const item of items) {
-      const product = await tx.product.findUnique({
-        where: { id: item.productId },
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          stock: true,
-          reservedStock: true,
+      const variant = await tx.productVariant.findUnique({
+        where: {
+          id: item.variantId,
+        },
+        include: {
+          product: true,
         },
       });
 
-      if (!product) {
-        throw new Error("Producto no encontrado");
+      if (!variant) {
+        throw new Error("Variante no encontrada");
       }
 
-      const availableStock =
-  product.stock - product.reservedStock;
+      const availableStock = variant.stock - variant.reservedStock;
 
-if (item.quantity > availableStock) {
-  throw new Error(`Stock insuficiente para ${product.name}`);
-}
+      if (item.quantity > availableStock) {
+        throw new Error(`Stock insuficiente para ${variant.product.name}`);
+      }
 
-      totalAmount += product.price * item.quantity;
+      totalAmount += variant.product.price * item.quantity;
 
       orderItemsData.push({
-        productId: product.id,
-        productName: product.name,
-        productSku: null,
+        productId: variant.product.id,
+        variantId: variant.id,
+
+        productName: variant.product.name,
+        productSku: variant.sku ?? null,
+
+        size: variant.size,
+        color: variant.color,
+
         quantity: item.quantity,
-        price: product.price,
+        price: variant.product.price,
       });
     }
 
@@ -158,13 +169,17 @@ if (item.quantity > availableStock) {
       await import("@/modules/inventory/inventory.service");
 
     for (const item of order.items) {
-      await InventoryService.reserveStock(
-        tx,
-        item.productId,
-        order.id,
-        item.quantity,
-      );
-    }
+  if (!item.variantId) {
+    throw new Error("Order item sin variantId");
+  }
+
+  await InventoryService.reserveStock(
+    tx,
+    item.variantId,
+    order.id,
+    item.quantity,
+  );
+}
 
     /* =========================
        ORDER TIMELINE

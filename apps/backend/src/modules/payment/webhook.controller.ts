@@ -209,7 +209,7 @@ async function handleRefundCreated(refund: any) {
       stripeRefundId: refund.id,
       amount: refund.amount,
       currency: refund.currency,
-      status: "PENDING",
+      status: "PENDING_REVIEW",
     },
   });
 
@@ -260,7 +260,7 @@ async function handleRefundUpdated(refund: any) {
       ? "SUCCEEDED"
       : refund.status === "failed"
         ? "FAILED"
-        : "PENDING";
+        : "PENDING_REVIEW";
 
   await prisma.refund.update({
     where: { stripeRefundId: refund.id },
@@ -289,22 +289,28 @@ async function handleRefundUpdated(refund: any) {
 
   if (refundItems.length > 0) {
     for (const item of refundItems) {
-      await prisma.product.update({
-        where: { id: item.orderItem.productId },
-        data: {
-          stock: {
-            increment: item.quantity,
+      if (item.orderItem.variantId) {
+        await prisma.productVariant.update({
+          where: {
+            id: item.orderItem.variantId,
           },
-        },
-      });
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        });
+      }
 
       /* sync redis */
 
       try {
-        await InventoryCache.incrementStock(
-          item.orderItem.productId,
-          item.quantity,
-        );
+        if (item.orderItem.variantId) {
+          await InventoryCache.incrementStock(
+            item.orderItem.variantId,
+            item.quantity,
+          );
+        }
       } catch (error) {
         console.error("Redis stock restore error:", error);
       }
@@ -317,19 +323,25 @@ async function handleRefundUpdated(refund: any) {
     });
 
     for (const item of orderItems) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            increment: item.quantity,
+      if (item.variantId) {
+        await prisma.productVariant.update({
+          where: {
+            id: item.variantId,
           },
-        },
-      });
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        });
+      }
 
       /* sync redis */
 
       try {
-        await InventoryCache.incrementStock(item.productId, item.quantity);
+        if (item.variantId) {
+          await InventoryCache.incrementStock(item.variantId, item.quantity);
+        }
       } catch (error) {
         console.error("Redis stock restore error:", error);
       }
