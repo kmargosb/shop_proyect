@@ -449,12 +449,12 @@ export default function Page() {
                 Entrega en
               </p>
 
-              <p className="mt-2 text-sm font-medium text-white">
-                {order.fullName}
-              </p>
-
               <p className="text-sm text-neutral-400">
                 {order.city}, {order.country}
+              </p>
+
+              <p className="mt-2 text-sm font-medium text-white">
+                {order.fullName}
               </p>
             </div>
           </div>

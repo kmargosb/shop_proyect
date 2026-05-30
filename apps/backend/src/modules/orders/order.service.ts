@@ -169,17 +169,17 @@ export async function createOrder(data: CreateOrderInput) {
       await import("@/modules/inventory/inventory.service");
 
     for (const item of order.items) {
-  if (!item.variantId) {
-    throw new Error("Order item sin variantId");
-  }
+      if (!item.variantId) {
+        throw new Error("Order item sin variantId");
+      }
 
-  await InventoryService.reserveStock(
-    tx,
-    item.variantId,
-    order.id,
-    item.quantity,
-  );
-}
+      await InventoryService.reserveStock(
+        tx,
+        item.variantId,
+        order.id,
+        item.quantity,
+      );
+    }
 
     /* =========================
        ORDER TIMELINE
@@ -441,7 +441,7 @@ export async function cancelOrder(orderId: string) {
   ========================= */
 
   if (order.status === "PAID") {
-    await RefundService.createRefund(
+    const refund = await RefundService.createRefund(
       order.id,
 
       order.items.map((item) => ({
@@ -452,9 +452,14 @@ export async function cancelOrder(orderId: string) {
       "ORDER_CANCELLED",
     );
 
+    await RefundService.approveRefund(refund.refundId);
+
+    const { InventoryService } = await import("@/modules/inventory/inventory.service");
+
+    await InventoryService.releaseReservation(order.id);
+
     await prisma.order.update({
       where: { id: order.id },
-
       data: {
         status: "REFUNDED",
       },
@@ -463,16 +468,12 @@ export async function cancelOrder(orderId: string) {
     await prisma.orderEvent.create({
       data: {
         orderId: order.id,
-
         type: "ORDER_CANCELLED",
-
         message: "Order cancelled and refunded",
       },
     });
-
     return;
   }
-
   throw new Error("Order cannot be cancelled");
 }
 
