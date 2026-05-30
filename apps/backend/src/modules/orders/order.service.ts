@@ -454,9 +454,21 @@ export async function cancelOrder(orderId: string) {
 
     await RefundService.approveRefund(refund.refundId);
 
-    const { InventoryService } = await import("@/modules/inventory/inventory.service");
+    for (const item of order.items) {
+      if (!item.variantId) continue;
 
-    await InventoryService.releaseReservation(order.id);
+      await prisma.productVariant.update({
+        where: {
+          id: item.variantId,
+        },
+
+        data: {
+          stock: {
+            increment: item.quantity,
+          },
+        },
+      });
+    }
 
     await prisma.order.update({
       where: { id: order.id },
