@@ -33,6 +33,7 @@ type CartContextType = {
     productId: string,
     variantId: string,
     quantity?: number,
+    openDrawer?: boolean,
   ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
 
@@ -68,7 +69,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         name: item.product?.name ?? "Producto",
         price: item.price,
         quantity: item.quantity,
-        image: item.product?.images?.[0]?.url || null,
+        image:
+          item.product?.images?.find((img: any) => img.isPrimary)?.url ??
+          item.product?.images?.[0]?.url ??
+          null,
       }));
 
   /* ================= CREATE CART ================= */
@@ -147,6 +151,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     productId: string,
     variantId: string,
     quantity = 1,
+    openDrawer = true,
   ) => {
     const cartId = await ensureCart();
     if (!cartId) return;
@@ -172,7 +177,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const cart = await res.json();
     setItems(mapItems(cart));
-    setOpen(true);
+
+    if (openDrawer) {
+      setOpen(true);
+    }
   };
 
   /* ================= REMOVE ITEM ================= */

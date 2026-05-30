@@ -42,10 +42,25 @@ export default function ProductPage() {
       setProduct(data);
 
       if (data.variants?.length) {
+        const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
+
+        const COLOR_ORDER = ["White", "Black"];
+
+        const sortedVariants = [...data.variants].sort((a: any, b: any) => {
+          const colorDiff =
+            COLOR_ORDER.indexOf(a.color) - COLOR_ORDER.indexOf(b.color);
+
+          if (colorDiff !== 0) {
+            return colorDiff;
+          }
+
+          return SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size);
+        });
+
         const firstAvailableVariant =
-          data.variants.find(
+          sortedVariants.find(
             (variant: any) => variant.stock - variant.reservedStock > 0,
-          ) ?? data.variants[0];
+          ) ?? sortedVariants[0];
 
         setSelectedSize(firstAvailableVariant.size);
         setSelectedColor(firstAvailableVariant.color);
@@ -85,13 +100,29 @@ export default function ProductPage() {
 
   const variants = product.variants ?? [];
 
+  const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
+
   const sizes = Array.from(
     new Set<string>(variants.map((v: any) => String(v.size))),
-  );
+  ).sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+
+  const COLOR_ORDER = ["White", "Black"];
 
   const colors = Array.from(
     new Set<string>(variants.map((v: any) => String(v.color))),
-  );
+  ).sort((a, b) => {
+    const ai = COLOR_ORDER.indexOf(a);
+    const bi = COLOR_ORDER.indexOf(b);
+
+    if (ai === -1 && bi === -1) {
+      return a.localeCompare(b);
+    }
+
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+
+    return ai - bi;
+  });
 
   const selectedVariant =
     variants.find(
@@ -148,7 +179,7 @@ export default function ProductPage() {
         return;
       }
 
-      await addItem(product.id, selectedVariant.id, quantity);
+      await addItem(product.id, selectedVariant.id, quantity, false);
 
       toast.success("Producto añadido al carrito");
 
@@ -227,12 +258,15 @@ export default function ProductPage() {
                 {sizes.map((size) => (
                   <button
                     key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`h-11 min-w-[52px] rounded-xl border px-4 transition
+                    onClick={() => {
+                      setSelectedSize(size);
+                      setQuantity(1);
+                    }}
+                    className={`h-11 min-w-[52px] rounded-xl border px-4 cursor-pointer transition-all duration-200
           ${
             selectedSize === size
-              ? "border-white bg-white text-black"
-              : "border-neutral-700 hover:border-neutral-500"
+              ? "border-white bg-neutral-900 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]"
+              : "border-neutral-700 hover:border-neutral-500 text-neutral-700"
           }`}
                   >
                     {size}
@@ -250,12 +284,15 @@ export default function ProductPage() {
                 {colors.map((color) => (
                   <button
                     key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`h-11 rounded-xl border px-4 transition
+                    onClick={() => {
+                      setSelectedColor(color);
+                      setQuantity(1);
+                    }}
+                    className={`h-11 min-w-[52px] rounded-xl border px-4 cursor-pointer transition-all duration-200
           ${
             selectedColor === color
-              ? "border-white bg-white text-black"
-              : "border-neutral-700 hover:border-neutral-500"
+              ? "border-white bg-neutral-900 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]"
+              : "border-neutral-700 hover:border-neutral-500 text-neutral-700"
           }`}
                   >
                     {color}

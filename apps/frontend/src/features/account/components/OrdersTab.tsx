@@ -21,6 +21,7 @@ export default function OrdersTab({ orders }: Props) {
 
     return orders.slice(start, start + ITEMS_PER_PAGE);
   }, [orders, page]);
+
   return (
     <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-neutral-950 p-6 overflow-hidden">
       <div className="mb-6">
@@ -52,7 +53,17 @@ export default function OrdersTab({ orders }: Props) {
               );
 
               const previewImages = order.items
-                .flatMap((item) => item.product?.images || [])
+                .map((item) => {
+                  const images = item.product?.images;
+
+                  if (!images?.length) return undefined;
+
+                  return (
+                    images.find((img: any) => img.isPrimary)?.url ??
+                    images[0]?.url
+                  );
+                })
+                .filter((image): image is string => Boolean(image))
                 .slice(0, 3);
 
               return (
@@ -110,6 +121,31 @@ export default function OrdersTab({ orders }: Props) {
                       <h3 className="mt-2 text-xl font-semibold text-white">
                         #{order.id.slice(0, 6)}
                       </h3>
+                      <div className="mt-3 space-y-1">
+                        {order.items.slice(0, 2).map((item) => (
+                          <p
+                            key={item.id}
+                            className="truncate text-sm text-neutral-400"
+                          >
+                            {item.product?.name}
+
+                            {(item.color || item.size) && (
+                              <>
+                                {" "}
+                                · {item.color}
+                                {item.color && item.size ? " · " : ""}
+                                {item.size}
+                              </>
+                            )}
+                          </p>
+                        ))}
+
+                        {order.items.length > 2 && (
+                          <p className="text-xs text-neutral-500">
+                            +{order.items.length - 2} productos más
+                          </p>
+                        )}
+                      </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
                         <span>

@@ -313,8 +313,18 @@ export const getMyOrdersController = asyncHandler(
     const orders = await prisma.order.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
+
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                images: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -344,7 +354,11 @@ export const getMyOrderByIdController = asyncHandler(
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                images: true,
+              },
+            },
 
             refundItems: true,
           },

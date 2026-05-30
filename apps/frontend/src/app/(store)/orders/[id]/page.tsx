@@ -133,9 +133,7 @@ export default function Page() {
     order.status === "PAID";
 
   const canRefund =
-    order.status === "SHIPPED" ||
-    order.status === "DELIVERED" ||
-    order.status === "PARTIALLY_REFUNDED";
+    order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED";
 
   const handleDownloadInvoice = () => {
     const email =
@@ -422,27 +420,43 @@ export default function Page() {
         {/* ITEMS */}
 
         <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Resumen del pedido</h2>
+          <div className="mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Artículos del pedido</h2>
 
-              <p className="mt-1 text-sm text-neutral-500">
-                Productos comprados y estado de devolución
-              </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Productos comprados y estado de devolución
+                </p>
+              </div>
+
+              <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm text-neutral-400">
+                {(() => {
+                  const totalProducts = order.items.reduce(
+                    (sum: number, item: any) => sum + item.quantity,
+                    0,
+                  );
+
+                  return `${totalProducts} ${
+                    totalProducts === 1 ? "producto" : "productos"
+                  }`;
+                })()}
+              </span>
             </div>
 
-            <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm text-neutral-400">
-              {(() => {
-                const totalProducts = order.items.reduce(
-                  (sum: number, item: any) => sum + item.quantity,
-                  0,
-                );
+            <div className="mt-5 border-t border-white/10 pt-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
+                Entrega en
+              </p>
 
-                return `${totalProducts} ${
-                  totalProducts === 1 ? "producto" : "productos"
-                }`;
-              })()}
-            </span>
+              <p className="mt-2 text-sm font-medium text-white">
+                {order.fullName}
+              </p>
+
+              <p className="text-sm text-neutral-400">
+                {order.city}, {order.country}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -461,7 +475,10 @@ export default function Page() {
                 refundedQuantity > 0 && remainingQuantity > 0;
 
               const image =
-                item.product?.images?.[0]?.url || item.product?.image || null;
+                item.product?.images?.find((img: any) => img.isPrimary)?.url ??
+                item.product?.images?.[0]?.url ??
+                item.product?.image ??
+                null;
 
               return (
                 <div
@@ -525,6 +542,14 @@ export default function Page() {
                           {item.product?.name || item.productName}
                         </p>
 
+                        {(item.color || item.size) && (
+                          <p className="mt-1 text-sm text-neutral-400">
+                            {item.color}
+                            {item.color && item.size ? " · " : ""}
+                            {item.size}
+                          </p>
+                        )}
+
                         <p className="mt-2 text-sm text-neutral-500">
                           Cantidad: {item.quantity}
                         </p>
@@ -571,7 +596,7 @@ export default function Page() {
                       </p>
 
                       <p className="mt-1 text-xs text-neutral-500">
-                        €{(item.price / 100).toFixed(2)} c/u
+                        {item.quantity} × €{(item.price / 100).toFixed(2)}
                       </p>
                     </div>
                   </div>

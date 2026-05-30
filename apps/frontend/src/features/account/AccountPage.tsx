@@ -24,9 +24,14 @@ export type Order = {
     id: string;
     quantity: number;
 
+    size?: string;
+    color?: string;
+
     product?: {
       name?: string;
-      images?: string[];
+      images?: {
+        url: string;
+      }[];
     };
   }[];
 };

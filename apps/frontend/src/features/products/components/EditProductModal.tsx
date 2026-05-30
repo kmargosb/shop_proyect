@@ -3,25 +3,13 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  ImagePlus,
-  Loader2,
-  Plus,
-  Save,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ImagePlus, Loader2, Plus, Save, Star, Trash2, X } from "lucide-react";
 
 import { toast } from "sonner";
 
 import { apiFetch } from "@/shared/lib/api";
 
-import type {
-  Product,
-  ProductBrand,
-  ProductImage,
-} from "@/types/product";
+import type { Product, ProductBrand, ProductImage } from "@/types/product";
 
 const categories = [
   { value: "T_SHIRTS", label: "T-Shirts" },
@@ -64,15 +52,7 @@ const genders = [
   },
 ];
 
-const sizes = [
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "XXL",
-  "ONE_SIZE",
-];
+const sizes = ["XS", "S", "M", "L", "XL", "XXL", "ONE_SIZE"];
 
 const colors = [
   "BLACK",
@@ -113,75 +93,52 @@ export default function EditProductModal({
   onClose,
   onUpdated,
 }: Props) {
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [files, setFiles] = useState<
-    File[]
-  >([]);
+  const [files, setFiles] = useState<File[]>([]);
 
-  const [brands, setBrands] = useState<
-    ProductBrand[]
-  >([]);
+  const [brands, setBrands] = useState<ProductBrand[]>([]);
 
-  const [images, setImages] = useState<
-    ProductImage[]
-  >(product.images ?? []);
+  const [images, setImages] = useState<ProductImage[]>(product.images ?? []);
 
-  const [
-    imagesToDelete,
-    setImagesToDelete,
-  ] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
-  const [
-    primaryImageId,
-    setPrimaryImageId,
-  ] = useState<string | null>(
-    product.images?.find(
-      (img) => img.isPrimary,
-    )?.id ??
+  const [primaryImageId, setPrimaryImageId] = useState<string | null>(
+    product.images?.find((img) => img.isPrimary)?.id ??
       product.images?.[0]?.id ??
       null,
   );
 
-  const [form, setForm] =
-    useState<ProductForm>({
-      name: product.name,
+  const [form, setForm] = useState<ProductForm>({
+    name: product.name,
 
-      description:
-        product.description ?? "",
+    description: product.description ?? "",
 
-      price: String(product.price),
+    price: String((product.price / 100).toFixed(2)),
 
-      brandId: product.brandId ?? "",
+    brandId: product.brandId ?? "",
 
-      category:
-        product.category ?? "OTHER",
+    category: product.category ?? "OTHER",
 
-      gender:
-        product.gender ?? "UNISEX",
+    gender: product.gender ?? "UNISEX",
 
-      variants:
-        product.variants?.map(
-          (variant: any) => ({
-            size: variant.size,
-            color: variant.color,
-            stock: String(variant.stock),
-          }),
-        ) ?? [],
-    });
+    variants:
+      product.variants?.map((variant: any) => ({
+        size: variant.size,
+        color: variant.color,
+        stock: String(variant.stock),
+      })) ?? [],
+  });
 
   /* ===============================
      BODY LOCK
   =============================== */
 
   useEffect(() => {
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow =
-        "";
+      document.body.style.overflow = "";
     };
   }, []);
 
@@ -192,8 +149,7 @@ export default function EditProductModal({
   useEffect(() => {
     async function loadBrands() {
       try {
-        const res =
-          await apiFetch("/brands");
+        const res = await apiFetch("/brands");
 
         if (!res) return;
 
@@ -226,9 +182,7 @@ export default function EditProductModal({
   =============================== */
 
   const isValid =
-    form.name.trim() &&
-    Number(form.price) >= 0 &&
-    form.variants.length > 0;
+    form.name.trim() && Number(form.price) >= 0 && form.variants.length > 0;
 
   /* ===============================
      HANDLERS
@@ -236,35 +190,27 @@ export default function EditProductModal({
 
   const handleChange = (
     event: React.ChangeEvent<
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
     setForm((prev) => ({
       ...prev,
 
-      [event.target.name]:
-        event.target.value,
+      [event.target.name]: event.target.value,
     }));
   };
 
-  const updateVariant = (
-    index: number,
-    field: string,
-    value: string,
-  ) => {
+  const updateVariant = (index: number, field: string, value: string) => {
     setForm((prev) => ({
       ...prev,
 
-      variants: prev.variants.map(
-        (variant, i) =>
-          i === index
-            ? {
-                ...variant,
-                [field]: value,
-              }
-            : variant,
+      variants: prev.variants.map((variant, i) =>
+        i === index
+          ? {
+              ...variant,
+              [field]: value,
+            }
+          : variant,
       ),
     }));
   };
@@ -285,30 +231,18 @@ export default function EditProductModal({
     }));
   };
 
-  const removeVariant = (
-    index: number,
-  ) => {
+  const removeVariant = (index: number) => {
     setForm((prev) => ({
       ...prev,
 
-      variants: prev.variants.filter(
-        (_, i) => i !== index,
-      ),
+      variants: prev.variants.filter((_, i) => i !== index),
     }));
   };
 
-  const markImageForDeletion = (
-    id: string,
-  ) => {
-    setImages((prev) =>
-      prev.filter((img) => img.id !== id),
-    );
+  const markImageForDeletion = (id: string) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
 
-    setImagesToDelete((prev) =>
-      prev.includes(id)
-        ? prev
-        : [...prev, id],
-    );
+    setImagesToDelete((prev) => (prev.includes(id) ? prev : [...prev, id]));
 
     if (primaryImageId === id) {
       setPrimaryImageId(null);
@@ -321,9 +255,7 @@ export default function EditProductModal({
 
   const updateProduct = async () => {
     if (!isValid) {
-      toast.error(
-        "Complete required fields",
-      );
+      toast.error("Complete required fields");
 
       return;
     }
@@ -333,80 +265,41 @@ export default function EditProductModal({
 
       const formData = new FormData();
 
-      formData.append(
-        "name",
-        form.name.trim(),
-      );
+      formData.append("name", form.name.trim());
 
-      formData.append(
-        "description",
-        form.description.trim(),
-      );
+      formData.append("description", form.description.trim());
 
-      formData.append(
-        "price",
-        String(
-          Math.round(Number(form.price) * 100),),
-      );
+      formData.append("price", String(Math.round(Number(form.price) * 100)));
 
-      formData.append(
-        "brandId",
-        form.brandId,
-      );
+      formData.append("brandId", form.brandId);
 
-      formData.append(
-        "category",
-        form.category,
-      );
+      formData.append("category", form.category);
 
-      formData.append(
-        "gender",
-        form.gender,
-      );
+      formData.append("gender", form.gender);
 
-      formData.append(
-        "variants",
-        JSON.stringify(form.variants),
-      );
+      formData.append("variants", JSON.stringify(form.variants));
 
-      formData.append(
-        "imagesToDelete",
-        JSON.stringify(imagesToDelete),
-      );
+      formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
 
-      formData.append(
-        "primaryImageId",
-        primaryImageId ?? "",
-      );
+      formData.append("primaryImageId", primaryImageId ?? "");
 
-      files.forEach((file) =>
-        formData.append("images", file),
-      );
+      files.forEach((file) => formData.append("images", file));
 
-      const res = await apiFetch(
-        `/products/${product.id}`,
-        {
-          method: "PUT",
-          body: formData,
-        },
-      );
+      const res = await apiFetch(`/products/${product.id}`, {
+        method: "PUT",
+        body: formData,
+      });
 
       if (!res || !res.ok) {
-        throw new Error(
-          "Update product failed",
-        );
+        throw new Error("Update product failed");
       }
 
-      toast.success(
-        "Product updated successfully",
-      );
+      toast.success("Product updated successfully");
 
       onUpdated();
       onClose();
     } catch {
-      toast.error(
-        "Error updating product",
-      );
+      toast.error("Error updating product");
     } finally {
       setLoading(false);
     }
@@ -433,8 +326,7 @@ export default function EditProductModal({
             </h2>
 
             <p className="mt-1 text-sm text-neutral-400">
-              Update variants, media and
-              inventory from the dashboard.
+              Update variants, media and inventory from the dashboard.
             </p>
           </div>
 
@@ -493,18 +385,11 @@ export default function EditProductModal({
                 onChange={handleChange}
                 className="dashboard-input"
               >
-                {categories.map(
-                  (category) => (
-                    <option
-                      key={category.value}
-                      value={
-                        category.value
-                      }
-                    >
-                      {category.label}
-                    </option>
-                  ),
-                )}
+                {categories.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
               </select>
             </Field>
 
@@ -516,10 +401,7 @@ export default function EditProductModal({
                 className="dashboard-input"
               >
                 {genders.map((gender) => (
-                  <option
-                    key={gender.value}
-                    value={gender.value}
-                  >
+                  <option key={gender.value} value={gender.value}>
                     {gender.label}
                   </option>
                 ))}
@@ -533,15 +415,10 @@ export default function EditProductModal({
                 onChange={handleChange}
                 className="dashboard-input"
               >
-                <option value="">
-                  No brand
-                </option>
+                <option value="">No brand</option>
 
                 {brands.map((brand) => (
-                  <option
-                    key={brand.id}
-                    value={brand.id}
-                  >
+                  <option key={brand.id} value={brand.id}>
                     {brand.name}
                   </option>
                 ))}
@@ -559,8 +436,7 @@ export default function EditProductModal({
                 </h3>
 
                 <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                  Manage stock independently
-                  for each size and color.
+                  Manage stock independently for each size and color.
                 </p>
               </div>
 
@@ -575,83 +451,59 @@ export default function EditProductModal({
             </div>
 
             <div className="mt-5 space-y-4">
-              {form.variants.map(
-                (variant, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-4"
+              {form.variants.map((variant, index) => (
+                <div
+                  key={index}
+                  className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-4"
+                >
+                  <select
+                    value={variant.size}
+                    onChange={(e) =>
+                      updateVariant(index, "size", e.target.value)
+                    }
+                    className="dashboard-input"
                   >
-                    <select
-                      value={variant.size}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "size",
-                          e.target.value,
-                        )
-                      }
-                      className="dashboard-input"
-                    >
-                      {sizes.map((size) => (
-                        <option
-                          key={size}
-                          value={size}
-                        >
-                          {size}
-                        </option>
-                      ))}
-                    </select>
+                    {sizes.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
 
-                    <select
-                      value={variant.color}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "color",
-                          e.target.value,
-                        )
-                      }
-                      className="dashboard-input"
-                    >
-                      {colors.map(
-                        (color) => (
-                          <option
-                            key={color}
-                            value={color}
-                          >
-                            {color}
-                          </option>
-                        ),
-                      )}
-                    </select>
+                  <select
+                    value={variant.color}
+                    onChange={(e) =>
+                      updateVariant(index, "color", e.target.value)
+                    }
+                    className="dashboard-input"
+                  >
+                    {colors.map((color) => (
+                      <option key={color} value={color}>
+                        {color}
+                      </option>
+                    ))}
+                  </select>
 
-                    <input
-                      type="number"
-                      min="0"
-                      value={variant.stock}
-                      onChange={(e) =>
-                        updateVariant(
-                          index,
-                          "stock",
-                          e.target.value,
-                        )
-                      }
-                      className="dashboard-input"
-                    />
+                  <input
+                    type="number"
+                    min="0"
+                    value={variant.stock}
+                    onChange={(e) =>
+                      updateVariant(index, "stock", e.target.value)
+                    }
+                    className="dashboard-input"
+                  />
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeVariant(index)
-                      }
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
-                    >
-                      <Trash2 size={14} />
-                      Remove
-                    </button>
-                  </div>
-                ),
-              )}
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(index)}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                  >
+                    <Trash2 size={14} />
+                    Remove
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -660,20 +512,16 @@ export default function EditProductModal({
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="font-semibold text-white">
-                  Gallery
-                </h3>
+                <h3 className="font-semibold text-white">Gallery</h3>
 
                 <p className="mt-1 text-xs text-neutral-500">
-                  Manage cover image and media
-                  assets.
+                  Manage cover image and media assets.
                 </p>
               </div>
 
               <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-xs font-semibold text-white transition hover:bg-white/10">
                 <ImagePlus size={14} />
                 Add images
-
                 <input
                   type="file"
                   multiple
@@ -682,10 +530,7 @@ export default function EditProductModal({
                   onChange={(event) =>
                     setFiles((prev) => [
                       ...prev,
-                      ...Array.from(
-                        event.target
-                          .files ?? [],
-                      ),
+                      ...Array.from(event.target.files ?? []),
                     ])
                   }
                 />
@@ -705,35 +550,21 @@ export default function EditProductModal({
                   />
 
                   <button
-                    onClick={() =>
-                      setPrimaryImageId(
-                        img.id,
-                      )
-                    }
+                    onClick={() => setPrimaryImageId(img.id)}
                     className={`absolute bottom-2 left-2 rounded-full p-1.5 transition ${
-                      primaryImageId ===
-                      img.id
+                      primaryImageId === img.id
                         ? "bg-yellow-400 text-black"
                         : "bg-black/70 text-white hover:bg-yellow-400 hover:text-black"
                     }`}
                   >
                     <Star
                       size={14}
-                      fill={
-                        primaryImageId ===
-                        img.id
-                          ? "currentColor"
-                          : "none"
-                      }
+                      fill={primaryImageId === img.id ? "currentColor" : "none"}
                     />
                   </button>
 
                   <button
-                    onClick={() =>
-                      markImageForDeletion(
-                        img.id,
-                      )
-                    }
+                    onClick={() => markImageForDeletion(img.id)}
                     className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
                   >
                     <X size={14} />
@@ -741,38 +572,31 @@ export default function EditProductModal({
                 </div>
               ))}
 
-              {previews.map(
-                (preview, index) => (
-                  <div
-                    key={`${preview.name}-${index}`}
-                    className="relative aspect-square overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-400/10"
+              {previews.map((preview, index) => (
+                <div
+                  key={`${preview.name}-${index}`}
+                  className="relative aspect-square overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-400/10"
+                >
+                  <img
+                    src={preview.url}
+                    alt={preview.name}
+                    className="h-full w-full object-cover"
+                  />
+
+                  <span className="absolute bottom-2 left-2 rounded-full bg-emerald-300 px-2 py-1 text-[10px] font-bold text-black">
+                    New
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setFiles((prev) => prev.filter((_, i) => i !== index))
+                    }
+                    className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
                   >
-                    <img
-                      src={preview.url}
-                      alt={preview.name}
-                      className="h-full w-full object-cover"
-                    />
-
-                    <span className="absolute bottom-2 left-2 rounded-full bg-emerald-300 px-2 py-1 text-[10px] font-bold text-black">
-                      New
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        setFiles((prev) =>
-                          prev.filter(
-                            (_, i) =>
-                              i !== index,
-                          ),
-                        )
-                      }
-                      className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ),
-              )}
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -793,16 +617,9 @@ export default function EditProductModal({
             disabled={loading || !isValid}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:opacity-60"
           >
-            {loading && (
-              <Loader2
-                size={16}
-                className="animate-spin"
-              />
-            )}
+            {loading && <Loader2 size={16} className="animate-spin" />}
 
-            {loading
-              ? "Saving..."
-              : "Save changes"}
+            {loading ? "Saving..." : "Save changes"}
           </button>
         </div>
       </div>
@@ -824,11 +641,7 @@ function Field({
       <span className="flex items-center gap-2 text-sm font-medium text-neutral-200">
         {label}
 
-        {required && (
-          <span className="text-emerald-300">
-            *
-          </span>
-        )}
+        {required && <span className="text-emerald-300">*</span>}
       </span>
 
       {children}

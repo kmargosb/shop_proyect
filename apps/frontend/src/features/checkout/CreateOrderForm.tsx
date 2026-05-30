@@ -39,7 +39,14 @@ type CheckoutResponse = {
 };
 
 export default function CreateOrderForm() {
-  const { items, clearCart, totalPrice } = useCart();
+  const {
+    items,
+    clearCart,
+    totalPrice,
+    increaseQuantity,
+    decreaseQuantity,
+    removeItem,
+  } = useCart();
   const { refreshUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -216,8 +223,6 @@ export default function CreateOrderForm() {
       }
 
       const data: CheckoutResponse = await res.json();
-
-      clearCart();
 
       window.location.href = `/orders/${data.orderId}/pay?clientSecret=${data.payment.clientSecret}`;
     } catch (error: any) {
@@ -476,9 +481,35 @@ export default function CreateOrderForm() {
                 {/* INFO */}
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{item.name}</span>
-                  <span className="text-xs text-neutral-400">
-                    Cantidad: {item.quantity}
-                  </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => decreaseQuantity(item.id)}
+                      className="w-6 h-6 rounded border border-neutral-700 hover:border-white transition"
+                    >
+                      -
+                    </button>
+
+                    <span className="text-xs text-neutral-300 min-w-[20px] text-center">
+                      {item.quantity}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => increaseQuantity(item.id)}
+                      className="w-6 h-6 rounded border border-neutral-700 hover:border-white transition"
+                    >
+                      +
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      className="ml-2 text-xs text-neutral-500 hover:text-red-400 transition"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -10,7 +10,6 @@ type Props = {
 };
 
 export default function ProductCard({ product }: Props) {
-
   const availableStock =
     product.variants?.reduce(
       (total, variant) => total + (variant.stock ?? 0),
@@ -19,7 +18,11 @@ export default function ProductCard({ product }: Props) {
 
   const outOfStock = availableStock <= 0;
 
-  const primaryImage = product.images?.[0]?.url ?? "/placeholder-product.png";
+  const primaryImage =
+    product.images?.find((img) => img.isPrimary)?.url ??
+    product.images?.[0]?.url ??
+    "/placeholder-product.png";
+    
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
 
   return (
