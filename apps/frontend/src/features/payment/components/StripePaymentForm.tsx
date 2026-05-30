@@ -51,25 +51,26 @@ export default function StripePaymentForm({ orderId }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-full overflow-hidden space-y-6"
+    >
       {/* PAYMENT ELEMENT */}
       {!elementError ? (
-        <div className="bg-black/30 border border-white/[0.08] rounded-xl p-4">
+        <div className="w-full max-w-full overflow-hidden bg-black/30 border border-white/[0.08] rounded-xl p-3 md:p-4">
           <PaymentElement
             onReady={() => {
               setElementReady(true);
             }}
             onLoadError={() => {
-  setElementError(true);
+              setElementError(true);
 
-  setErrorMessage(
-    "Esta sesión de pago ya no es válida",
-  );
+              setErrorMessage("Esta sesión de pago ya no es válida");
 
-  setTimeout(() => {
-    window.location.href = "/shop";
-  }, 2500);
-}}
+              setTimeout(() => {
+                window.location.href = "/shop";
+              }, 2500);
+            }}
           />
         </div>
       ) : (

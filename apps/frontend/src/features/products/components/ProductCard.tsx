@@ -3,35 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useCart } from "@/features/cart/CartContext";
 import type { Product } from "@/types/product";
-import { toast } from "sonner";
 
 type Props = {
   product: Product;
 };
 
 export default function ProductCard({ product }: Props) {
-  const { addItem } = useCart();
+
   const availableStock =
-  product.variants?.reduce(
-    (total, variant) =>
-      total + (variant.stock ?? 0),
-    0,
-  ) ?? 0;
+    product.variants?.reduce(
+      (total, variant) => total + (variant.stock ?? 0),
+      0,
+    ) ?? 0;
 
-const outOfStock =
-  availableStock <= 0;
-
-  const handleAddToCart = async () => {
-    try {
-      await addItem(product.id, 1);
-
-      toast.success("Producto añadido al carrito");
-    } catch (error: any) {
-      toast.error(error?.message || "No hay suficiente stock");
-    }
-  };
+  const outOfStock = availableStock <= 0;
 
   const primaryImage = product.images?.[0]?.url ?? "/placeholder-product.png";
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
@@ -105,16 +91,16 @@ const outOfStock =
           )}
         </div>
 
-        <motion.button
-          onClick={handleAddToCart}
-          disabled={outOfStock}
-          whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: outOfStock ? 1 : 1.02 }}
-          transition={{ duration: 0.15 }}
-          className="w-full bg-white text-black py-2 rounded-md font-medium hover:bg-neutral-200 cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
-        >
-          {outOfStock ? "Sin stock" : "Añadir al carrito"}
-        </motion.button>
+        <Link href={`/product/${product.id}`} className="block">
+          <motion.div
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: outOfStock ? 1 : 1.02 }}
+            transition={{ duration: 0.15 }}
+            className="w-full bg-white text-black py-2 rounded-md font-medium text-center hover:bg-neutral-200"
+          >
+            Ver producto
+          </motion.div>
+        </Link>
       </div>
     </motion.div>
   );

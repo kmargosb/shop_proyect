@@ -31,14 +31,14 @@ export default function PayOrderView({
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-6 overflow-hidden">
+    <main className="relative overflow-x-hidden bg-[#0A0A0A] text-white px-4 py-6 min-h-[calc(100vh-64px)] flex items-center">
       
       {/* BACKGROUND LIGHT */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-white/5 blur-[160px] rounded-full" />
       </div>
 
-      <div className="relative w-full max-w-5xl grid md:grid-cols-2 gap-12 items-center">
+      <div className="relative mx-auto w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
         
         {/* LEFT */}
         <motion.div
@@ -48,11 +48,11 @@ export default function PayOrderView({
           className="space-y-8"
         >
           <div className="space-y-4">
-            <h1 className="text-5xl font-semibold tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-semibold tracking-tight">
               Checkout
             </h1>
 
-            <p className="text-neutral-400 text-lg">
+            <p className="text-neutral-400 text-base md:text-lg">
               Complete your payment securely
             </p>
           </div>
@@ -85,9 +85,9 @@ export default function PayOrderView({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="relative"
         >
-          <div className="absolute inset-0 bg-white/[0.06] blur-3xl rounded-3xl" />
+          <div className="absolute inset-0 pointer-events-none bg-white/[0.06] blur-3xl rounded-3xl" />
 
-          <div className="relative bg-white/[0.04] border border-white/[0.08] backdrop-blur-2xl p-8 rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
+          <div className="relative z-10 bg-white/[0.04] border border-white/[0.08] backdrop-blur-2xl p-4 md:p-8 rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
             <PaymentWrapper clientSecret={clientSecret}>
               <StripePaymentForm orderId={orderId} />
             </PaymentWrapper>

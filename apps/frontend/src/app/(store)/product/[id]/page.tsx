@@ -42,8 +42,13 @@ export default function ProductPage() {
       setProduct(data);
 
       if (data.variants?.length) {
-        setSelectedSize(data.variants[0].size);
-        setSelectedColor(data.variants[0].color);
+        const firstAvailableVariant =
+          data.variants.find(
+            (variant: any) => variant.stock - variant.reservedStock > 0,
+          ) ?? data.variants[0];
+
+        setSelectedSize(firstAvailableVariant.size);
+        setSelectedColor(firstAvailableVariant.color);
       }
 
       setLoading(false);
@@ -122,44 +127,36 @@ export default function ProductPage() {
   =============================== */
 
   const handleAddToCart = async () => {
-  try {
-    if (!selectedVariant) {
-      toast.error("Selecciona una talla y color");
-      return;
+    try {
+      if (!selectedVariant) {
+        toast.error("Selecciona una talla y color");
+        return;
+      }
+
+      await addItem(product.id, selectedVariant.id, quantity);
+
+      toast.success("Producto añadido al carrito");
+    } catch (error: any) {
+      toast.error(error?.message || "No hay suficiente stock");
     }
-
-    await addItem(
-      product.id,
-      selectedVariant.id,
-      quantity
-    );
-
-    toast.success("Producto añadido al carrito");
-  } catch (error: any) {
-    toast.error(error?.message || "No hay suficiente stock");
-  }
-};
+  };
 
   const handleBuyNow = async () => {
-  try {
-    if (!selectedVariant) {
-      toast.error("Selecciona una talla y color");
-      return;
+    try {
+      if (!selectedVariant) {
+        toast.error("Selecciona una talla y color");
+        return;
+      }
+
+      await addItem(product.id, selectedVariant.id, quantity);
+
+      toast.success("Producto añadido al carrito");
+
+      router.push("/checkout");
+    } catch (error: any) {
+      toast.error(error?.message || "No hay suficiente stock");
     }
-
-    await addItem(
-      product.id,
-      selectedVariant.id,
-      quantity
-    );
-
-    toast.success("Producto añadido al carrito");
-
-    router.push("/checkout");
-  } catch (error: any) {
-    toast.error(error?.message || "No hay suficiente stock");
-  }
-};
+  };
 
   /* ===============================
      UI
