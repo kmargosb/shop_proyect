@@ -233,7 +233,7 @@ export default function CreateOrderForm() {
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-10">
+    <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
       {/* LEFT */}
       <div className="space-y-6">
         {/* LOGIN APPLE STYLE */}
@@ -379,7 +379,7 @@ export default function CreateOrderForm() {
         )}
 
         {/* FORM */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
           <Input
             name="fullName"
             value={form.fullName}
@@ -435,18 +435,11 @@ export default function CreateOrderForm() {
               </option>
             ))}
           </select>
-
-          <Button
-            disabled={!isValid || loading}
-            className="w-full h-12 text-base"
-          >
-            {loading ? "Procesando..." : "Confirmar pedido"}
-          </Button>
         </form>
       </div>
 
       {/* RIGHT */}
-      <div className="bg-neutral-900 p-6 rounded-2xl border border-white/10 sticky top-6 space-y-6">
+      <div className="rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6 space-y-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Resumen</h2>
@@ -456,11 +449,11 @@ export default function CreateOrderForm() {
         </div>
 
         {/* ITEMS */}
-        <div className="space-y-4 max-h-[300px] overflow-auto pr-1">
+        <div className="space-y-4">
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between gap-3"
+              className="flex items-start justify-between gap-3"
             >
               <div className="flex items-center gap-3">
                 {/* IMAGE  */}
@@ -481,7 +474,16 @@ export default function CreateOrderForm() {
                 {/* INFO */}
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{item.name}</span>
-                  <div className="flex items-center gap-2 mt-1">
+
+                  {(item.size || item.color) && (
+                    <span className="mt-1 text-xs text-neutral-400">
+                      {item.size && `Talla ${item.size}`}
+                      {item.size && item.color && " · "}
+                      {item.color}
+                    </span>
+                  )}
+
+                  <div className="flex items-center gap-2 mt-2">
                     <button
                       type="button"
                       onClick={() => decreaseQuantity(item.id)}
@@ -490,7 +492,7 @@ export default function CreateOrderForm() {
                       -
                     </button>
 
-                    <span className="text-xs text-neutral-300 min-w-[20px] text-center">
+                    <span className="min-w-[24px] text-center text-xs text-neutral-300">
                       {item.quantity}
                     </span>
 
@@ -550,8 +552,19 @@ export default function CreateOrderForm() {
           </span>
         </div>
 
+        <Button
+  type="submit"
+  form="checkout-form"
+  disabled={!isValid || loading}
+  className="h-12 w-full rounded-xl !bg-white !text-black font-semibold border border-white/20 shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
+>
+  {loading
+    ? "Procesando..."
+    : `Pagar €${(totalPrice / 100).toFixed(2)}`}
+</Button>
+
         {/* TRUST / UX BOOST */}
-        <div className="text-xs text-neutral-500 space-y-1">
+        <div className="mt-20 text-xs text-neutral-500 space-y-1">
           <p>🔒 Pago seguro con cifrado SSL</p>
           <p>💳 Procesado por Stripe</p>
         </div>

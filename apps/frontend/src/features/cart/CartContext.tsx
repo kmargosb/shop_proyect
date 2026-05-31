@@ -22,6 +22,8 @@ export type CartItem = {
   price: number;
   quantity: number;
   image?: string | null;
+  size?: string | null;
+  color?: string | null;
 };
 
 type CartContextType = {
@@ -73,6 +75,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           item.product?.images?.find((img: any) => img.isPrimary)?.url ??
           item.product?.images?.[0]?.url ??
           null,
+        size: item.variant?.size ?? null,
+        color: item.variant?.color ?? null,
       }));
 
   /* ================= CREATE CART ================= */

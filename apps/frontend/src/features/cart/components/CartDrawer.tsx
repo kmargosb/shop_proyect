@@ -59,9 +59,7 @@ export default function CartDrawer() {
             <p className="text-xs text-neutral-400">
               {unlocked
                 ? "Envío gratis desbloqueado"
-                : `Añade €${remaining.toFixed(
-                    2
-                  )} para envío gratis`}
+                : `Añade €${remaining.toFixed(2)} para envío gratis`}
             </p>
           </div>
 
@@ -78,9 +76,7 @@ export default function CartDrawer() {
         {/* ITEMS */}
         <div className="flex-1 overflow-y-auto mt-6 space-y-4 pr-1">
           {items.length === 0 && (
-            <p className="text-neutral-500 text-sm">
-              Tu carrito está vacío
-            </p>
+            <p className="text-neutral-500 text-sm">Tu carrito está vacío</p>
           )}
 
           {items.map((item: CartItem) => (
@@ -103,9 +99,14 @@ export default function CartDrawer() {
 
               {/* INFO */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {item.name}
-                </p>
+                <p className="text-sm font-medium truncate">{item.name}</p>
+                {(item.size || item.color) && (
+                  <p className="mt-1 text-xs text-neutral-400">
+                    {item.size && `Talla ${item.size}`}
+                    {item.size && item.color && " · "}
+                    {item.color}
+                  </p>
+                )}
 
                 <p className="text-xs text-neutral-400 mt-1">
                   €{(item.price / 100).toFixed(2)}
