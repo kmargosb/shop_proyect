@@ -8,6 +8,17 @@ import type { Order } from "../AccountPage";
 type Props = {
   orders: Order[];
 };
+const statusLabels: Record<string, string> = {
+  PENDING: "Pendiente",
+  PAYMENT_PROCESSING: "Procesando",
+  PAID: "Pagado",
+  SHIPPED: "Enviado",
+  DELIVERED: "Entregado",
+  CANCELLED: "Cancelado",
+  FAILED: "Fallido",
+  PARTIALLY_REFUNDED: "Reembolso parcial",
+  REFUNDED: "Reembolsado",
+};
 
 export default function OrdersTab({ orders }: Props) {
   const [page, setPage] = useState(1);
@@ -74,27 +85,27 @@ export default function OrdersTab({ orders }: Props) {
         rounded-3xl
         border border-white/10
         bg-gradient-to-b from-white/[0.03] to-transparent
-        p-5
+        p-4
         transition-all duration-300
         hover:border-white/20
         hover:bg-white/[0.04]
       "
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     {/* LEFT */}
 
                     <div className="min-w-0 flex-1">
                       {/* IMAGES */}
 
                       {previewImages.length > 0 && (
-                        <div className="mb-4 flex items-center">
+                        <div className="mb-3 flex items-center">
                           {previewImages.map((image, index) => (
                             <div
                               key={image + index}
                               className="
                     relative
                     -ml-2 first:ml-0
-                    h-12 w-12 overflow-hidden
+                    h-16 w-16 overflow-hidden
                     rounded-2xl
                     border border-white/10
                     bg-neutral-900
@@ -118,7 +129,7 @@ export default function OrdersTab({ orders }: Props) {
                         Pedido
                       </p>
 
-                      <h3 className="mt-2 text-xl font-semibold text-white">
+                      <h3 className="mt-1 text-xl font-semibold text-white">
                         #{order.id.slice(0, 6)}
                       </h3>
                       <div className="mt-3 space-y-1">
@@ -163,9 +174,9 @@ export default function OrdersTab({ orders }: Props) {
 
                     {/* RIGHT */}
 
-                    <div className="flex flex-col items-end gap-4">
+                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end shrink-0">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        className={`rounded-full px-2 py-1 text-[11px] sm:px-3 sm:text-xs font-semibold ${
                           order.status === "PAID"
                             ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
                             : order.status === "SHIPPED"
@@ -179,7 +190,7 @@ export default function OrdersTab({ orders }: Props) {
                                     : "border border-white/10 bg-white/[0.04] text-neutral-300"
                         }`}
                       >
-                        {order.status}
+                        {statusLabels[order.status] ?? order.status}
                       </span>
 
                       <div className="text-right">
@@ -196,7 +207,7 @@ export default function OrdersTab({ orders }: Props) {
 
                   <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
                     <p className="text-xs text-neutral-600">
-                      Ver detalles completos del pedido
+                      Gracias por tu compra
                     </p>
 
                     <Link
