@@ -38,6 +38,8 @@ export default function Page() {
   const [refundError, setRefundError] = useState<string | null>(null);
   const [refundSuccess, setRefundSuccess] = useState(false);
   const [refundItems, setRefundItems] = useState<Record<string, number>>({});
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("CUSTOMER_REQUEST");
 
   useEffect(() => {
     if (!id) return;
@@ -719,7 +721,7 @@ export default function Page() {
           {canCancel && (
             <Button
               className="h-12 w-full rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-              onClick={handleCancelOrder}
+              onClick={() => setShowCancelModal(true)}
               disabled={cancelling}
             >
               {cancelling ? "Cancelando..." : "Cancelar pedido"}
@@ -847,6 +849,60 @@ export default function Page() {
                   disabled={processingRefund}
                 >
                   {processingRefund ? "Procesando..." : "Confirmar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showCancelModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">
+              <h2 className="text-2xl font-semibold">Cancelar pedido</h2>
+
+              <p className="mt-3 text-sm text-neutral-400">
+                Esta acción devolverá el dinero y restaurará el stock reservado.
+              </p>
+
+              <div className="mt-6">
+                <label className="mb-2 block text-sm text-neutral-400">
+                  Motivo
+                </label>
+
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                >
+                  <option value="WRONG_PRODUCT">
+                    Me equivoqué de producto
+                  </option>
+                  <option value="WRONG_SIZE">Me equivoqué de talla</option>
+                  <option value="WRONG_COLOR">Me equivoqué de color</option>
+                  <option value="CHANGED_MIND">Ya no lo quiero</option>
+                  <option value="ACCIDENTAL_ORDER">Compra por error</option>
+                  <option value="OTHER">Otro</option>
+                </select>
+              </div>
+
+              <div className="mt-6 flex gap-3 text-black">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowCancelModal(false)}
+                >
+                  Volver
+                </Button>
+
+                <Button
+                  className="w-full border border-red-500/20 bg-red-500/10 text-red-300"
+                  disabled={cancelling}
+                  onClick={async () => {
+                    setShowCancelModal(false);
+
+                    await handleCancelOrder();
+                  }}
+                >
+                  {cancelling ? "Cancelando..." : "Confirmar cancelación"}
                 </Button>
               </div>
             </div>
