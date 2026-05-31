@@ -26,9 +26,9 @@ type OrderEvent = {
 };
 
 const cancellationReasons: Record<string, string> = {
-  WRONG_PRODUCT: "Me equivoqué de producto",
-  WRONG_SIZE: "Me equivoqué de talla",
-  WRONG_COLOR: "Me equivoqué de color",
+  WRONG_PRODUCT: "Producto equivocado",
+  WRONG_SIZE: "Talla Equivocada",
+  WRONG_COLOR: "Color Equivocado",
   CHANGED_MIND: "Ya no lo quiero",
   ACCIDENTAL_ORDER: "Compra por error",
   OTHER: "Otro motivo",
