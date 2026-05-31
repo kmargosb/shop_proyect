@@ -146,8 +146,19 @@ export default function Page() {
     order.status === "PAYMENT_PROCESSING" ||
     order.status === "PAID";
 
+  const hasRefundableItems = order.items?.some((item: any) => {
+    const refunded =
+      item.refundItems?.reduce(
+        (sum: number, ri: any) => sum + ri.quantity,
+        0,
+      ) || 0;
+
+    return refunded < item.quantity;
+  });
+
   const canRefund =
-    order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED";
+    (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") &&
+    hasRefundableItems;
 
   const handleDownloadInvoice = () => {
     const email =
@@ -380,14 +391,17 @@ export default function Page() {
                   const lineActive = index < currentStep;
 
                   return (
-                    <div key={step.key} className="flex flex-1 items-center">
+                    <div
+  key={step.key}
+  className="relative flex flex-1 justify-center"
+>
                       <div className="flex flex-col items-center">
                         {/* DOT */}
 
                         <div
                           className={`
                     relative z-10
-                    flex h-11 w-11 items-center justify-center
+                    flex h-8 w-8 items-center justify-center
                     rounded-full border text-xs font-semibold
                     transition-all duration-500
 
@@ -405,10 +419,9 @@ export default function Page() {
 
                         <p
                           className={`
-                    mt-3 text-xs font-medium uppercase tracking-[0.15em]
-
-                    ${active ? "text-white" : "text-neutral-500"}
-                  `}
+                                      mt-2 text-[10px] font-medium uppercase text-center leading-tight
+                                      ${active ? "text-white" : "text-neutral-500"}
+                          `}
                         >
                           {step.label}
                         </p>
@@ -417,7 +430,7 @@ export default function Page() {
                       {/* LINE */}
 
                       {index !== steps.length - 1 && (
-                        <div className="relative mx-2 h-px flex-1 overflow-hidden rounded-full bg-white/10">
+                        <div className="absolute left-1/2 top-4 ml-6 h-px w-full overflow-hidden rounded-full bg-white/10">
                           <div
                             className={`
                       absolute left-0 top-0 h-full
@@ -663,7 +676,7 @@ export default function Page() {
                     {/* ICON */}
 
                     <div
-                      className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${config.className}`}
+                      className={`relative z-10 flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-full border ${config.className}`}
                     >
                       <config.icon size={13} />
                     </div>
@@ -822,9 +835,19 @@ export default function Page() {
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium">{item.product?.name}</p>
+                            <p className="font-medium">
+                              {item.product?.name ?? item.productName}
+                            </p>
 
-                            <p className="text-sm text-neutral-500">
+                            {(item.color || item.size) && (
+                              <p className="mt-1 text-sm text-neutral-400">
+                                {item.color}
+                                {item.color && item.size ? " · " : ""}
+                                {item.size}
+                              </p>
+                            )}
+
+                            <p className="mt-1 text-sm text-neutral-500">
                               Comprados: {item.quantity}
                             </p>
                           </div>
@@ -922,8 +945,7 @@ export default function Page() {
 
               <div className="mt-6 flex gap-3">
                 <Button
-                  className="w-full"
-                  variant="outline"
+                  className="w-full bg-white text-black hover:bg-neutral-200"
                   onClick={() => setShowRefundModal(false)}
                 >
                   Cancelar

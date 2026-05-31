@@ -37,6 +37,8 @@ export default function RefundModal({
     {},
   );
 
+  console.log(order.items);
+
   const processRefund = async () => {
     try {
       setLoading(true);
@@ -82,7 +84,7 @@ export default function RefundModal({
       setLoading(false);
     }
   };
-
+console.log("REFUND ITEMS", order.items);
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-neutral-950 p-6">
@@ -140,7 +142,7 @@ export default function RefundModal({
         <div className="mt-6 flex gap-3">
           <button
             onClick={onClose}
-            className="w-full rounded-2xl border border-white/10 px-4 py-3 text-white"
+            className="w-full rounded-2xl border border-white/10 px-4 py-3 text-black"
           >
             Cancelar
           </button>
