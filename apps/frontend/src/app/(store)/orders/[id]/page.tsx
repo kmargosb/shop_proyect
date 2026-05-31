@@ -25,6 +25,15 @@ type OrderEvent = {
   createdAt: string;
 };
 
+const cancellationReasons: Record<string, string> = {
+  WRONG_PRODUCT: "Me equivoqué de producto",
+  WRONG_SIZE: "Me equivoqué de talla",
+  WRONG_COLOR: "Me equivoqué de color",
+  CHANGED_MIND: "Ya no lo quiero",
+  ACCIDENTAL_ORDER: "Compra por error",
+  OTHER: "Otro motivo",
+};
+
 export default function Page() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -668,7 +677,13 @@ export default function Page() {
 
                       {event.message && (
                         <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
-                          {event.message}
+                          {event.message
+                            .replace("WRONG_PRODUCT", cancellationReasons.WRONG_PRODUCT)
+                            .replace("WRONG_SIZE", cancellationReasons.WRONG_SIZE)
+                            .replace("WRONG_COLOR", cancellationReasons.WRONG_COLOR)
+                            .replace("CHANGED_MIND", cancellationReasons.CHANGED_MIND)
+                            .replace("ACCIDENTAL_ORDER", cancellationReasons.ACCIDENTAL_ORDER)
+                            .replace("OTHER", cancellationReasons.OTHER)}
                         </p>
                       )}
                     </div>
