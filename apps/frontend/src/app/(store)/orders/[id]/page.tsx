@@ -158,6 +158,10 @@ export default function Page() {
 
       const res = await apiFetch(`/orders/${order.id}/cancel`, {
         method: "POST",
+
+        body: JSON.stringify({
+          reason: cancelReason,
+        }),
       });
 
       if (!res || !res.ok) {

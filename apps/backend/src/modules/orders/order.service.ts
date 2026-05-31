@@ -364,7 +364,7 @@ export async function updateOrderStatus(
    CANCEL ORDER
 ========================================================= */
 
-export async function cancelOrder(orderId: string) {
+export async function cancelOrder(orderId: string, reason?: string) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
 
@@ -429,7 +429,9 @@ export async function cancelOrder(orderId: string) {
 
         type: "ORDER_CANCELLED",
 
-        message: "Order cancelled before payment",
+        message: reason
+          ? `Order cancelled before payment (${reason})`
+          : "Order cancelled before payment",
       },
     });
 
@@ -481,7 +483,9 @@ export async function cancelOrder(orderId: string) {
       data: {
         orderId: order.id,
         type: "ORDER_CANCELLED",
-        message: "Order cancelled and refunded",
+        message: reason
+          ? `Order cancelled and refunded (${reason})`
+          : "Order cancelled and refunded",
       },
     });
     return;

@@ -102,7 +102,9 @@ export const cancelOrderController = asyncHandler(
     const orderId =
       typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
-    await cancelOrder(orderId);
+    const { reason } = req.body;
+
+    await cancelOrder(orderId, reason);
 
     getIO().emit("dashboard:update", {
       type: "ORDER_CANCELLED",
