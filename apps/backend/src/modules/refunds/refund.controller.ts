@@ -148,6 +148,30 @@ export const RefundController = {
     }
   },
 
+  async process(req: Request, res: Response) {
+  try {
+    const refundId =
+      typeof req.params.refundId === "string"
+        ? req.params.refundId
+        : req.params.refundId[0];
+
+    const refund =
+      await RefundService.processRefund(
+        refundId,
+      );
+
+    return res.json({
+      success: true,
+      refund,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+},
+
   async reject(req: Request, res: Response) {
     try {
       const refundId =

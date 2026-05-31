@@ -86,6 +86,18 @@ export default function DashboardOrderPage() {
       console.error(error);
     }
   };
+  
+  const processRefund = async (refundId: string) => {
+    try {
+      await apiFetch(`/refunds/${refundId}/process`, {
+        method: "POST",
+      });
+
+      await loadOrder();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   if (!order) {
     return <div className="p-6 text-white">Cargando pedido...</div>;
@@ -374,6 +386,14 @@ export default function DashboardOrderPage() {
                               className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white"
                             >
                               Producto recibido
+                            </button>
+                          )}
+                          {refund.status === "RECEIVED" && (
+                            <button
+                              onClick={() => processRefund(refund.id)}
+                              className="rounded-xl bg-violet-500 px-4 py-2 text-sm font-medium text-white"
+                            >
+                              Procesar reembolso
                             </button>
                           )}
                         </div>

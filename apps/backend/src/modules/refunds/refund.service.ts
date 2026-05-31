@@ -213,34 +213,29 @@ export const RefundService = {
   },
 
   async processRefund(refundId: string) {
-  const refund = await prisma.refund.findUnique({
-    where: { id: refundId },
+    const refund = await prisma.refund.findUnique({
+      where: { id: refundId },
 
-    include: {
-      order: true,
-      items: true,
-    },
-  });
+      include: {
+        order: true,
+        items: true,
+      },
+    });
 
-  if (!refund) {
-    throw new Error("Refund not found");
-  }
+    if (!refund) {
+      throw new Error("Refund not found");
+    }
 
-  if (refund.status !== "RECEIVED") {
-    throw new Error(
-      "Refund must be received first",
-    );
-  }
+    if (refund.status !== "RECEIVED") {
+      throw new Error("Refund must be received first");
+    }
 
-  const stripeRefund =
-    await stripe.refunds.create({
-      payment_intent:
-        refund.order.stripePaymentIntentId!,
+    const stripeRefund = await stripe.refunds.create({
+      payment_intent: refund.order.stripePaymentIntentId!,
       amount: refund.amount,
     });
 
-  const updatedRefund =
-    await prisma.refund.update({
+    const updatedRefund = await prisma.refund.update({
       where: {
         id: refundId,
       },
@@ -251,20 +246,45 @@ export const RefundService = {
       },
     });
 
-  await prisma.orderEvent.create({
-    data: {
+    const totalRefunded = await prisma.refund.aggregate({
+      where: {
+        orderId: refund.orderId,
+        status: "SUCCEEDED",
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const refundedAmount = totalRefunded._sum.amount ?? 0;
+
+    await prisma.order.update({
+      where: {
+        id: refund.orderId,
+      },
+
+      data: {
+        status:
+          refundedAmount >= refund.order.totalAmount
+            ? "REFUNDED"
+            : "PARTIALLY_REFUNDED",
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "REFUND_COMPLETED",
+        message: "Refund completed",
+      },
+    });
+
+    getIO().emit("orderUpdated", {
       orderId: refund.orderId,
-      type: "REFUND_COMPLETED",
-      message: "Refund completed",
-    },
-  });
+    });
 
-  getIO().emit("orderUpdated", {
-    orderId: refund.orderId,
-  });
-
-  return updatedRefund;
-},
+    return updatedRefund;
+  },
 
   async rejectRefund(refundId: string, rejectionReason?: string) {
     const refund = await prisma.refund.findUnique({
