@@ -80,10 +80,7 @@ export const ShippingService = {
      UPDATE TRACKING STATUS
   ========================================== */
 
-  async updateShipmentStatus(
-    shipmentId: string,
-    status: ShipmentStatus,
-  ) {
+  async updateShipmentStatus(shipmentId: string, status: ShipmentStatus) {
     const shipment = await prisma.shipment.findUnique({
       where: { id: shipmentId },
     });
@@ -99,9 +96,7 @@ export const ShippingService = {
         status,
 
         deliveredAt:
-          status === ShipmentStatus.DELIVERED
-            ? new Date()
-            : undefined,
+          status === ShipmentStatus.DELIVERED ? new Date() : undefined,
       },
     });
 
@@ -111,6 +106,14 @@ export const ShippingService = {
 
         data: {
           status: "SHIPPED",
+        },
+      });
+
+      await prisma.orderEvent.create({
+        data: {
+          orderId: shipment.orderId,
+          type: "ORDER_SHIPPED",
+          message: "Order shipped",
         },
       });
     }
@@ -123,6 +126,14 @@ export const ShippingService = {
           status: "DELIVERED",
         },
       });
+
+      await prisma.orderEvent.create({
+        data: {
+          orderId: shipment.orderId,
+          type: "ORDER_DELIVERED",
+          message: "Order delivered",
+        },
+      });
     }
 
     /* =========================
@@ -131,10 +142,7 @@ export const ShippingService = {
 
     const io = getIO();
 
-    console.log(
-      "📡 emitting orderUpdated",
-      shipment.orderId,
-    );
+    console.log("📡 emitting orderUpdated", shipment.orderId);
 
     io.emit("orderUpdated", {
       orderId: shipment.orderId,

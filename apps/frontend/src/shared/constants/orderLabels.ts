@@ -10,6 +10,12 @@ export const statusLabels: Record<string, string> = {
   REFUNDED: "Reembolsado",
 };
 
+export const shipmentStatusLabels: Record<string, string> = {
+  PENDING: "Pendiente",
+  SHIPPED: "Enviado",
+  DELIVERED: "Entregado",
+};
+
 export const colorLabels: Record<string, string> = {
   WHITE: "Blanco",
   BLACK: "Negro",

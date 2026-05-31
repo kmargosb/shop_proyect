@@ -176,39 +176,14 @@ export const RefundService = {
       throw new Error("Refund already processed");
     }
 
-    if (!refund.order.stripePaymentIntentId) {
-      throw new Error("Order has no payment intent");
-    }
-
-    const stripeRefund = await stripe.refunds.create({
-      payment_intent: refund.order.stripePaymentIntentId,
-
-      amount: refund.amount,
-
-      reason: "requested_by_customer",
-    });
-
     const updatedRefund = await prisma.refund.update({
       where: {
         id: refundId,
       },
 
       data: {
-        status: "SUCCEEDED",
-
-        stripeRefundId: stripeRefund.id,
-
+        status: "APPROVED",
         reviewedAt: new Date(),
-      },
-    });
-
-    await prisma.orderEvent.create({
-      data: {
-        orderId: refund.orderId,
-
-        type: "REFUND_COMPLETED",
-
-        message: "Refund completed",
       },
     });
 
@@ -218,6 +193,79 @@ export const RefundService = {
 
     return updatedRefund;
   },
+
+  async markRefundReceived(refundId: string) {
+    const refund = await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
+
+      data: {
+        status: "RECEIVED",
+      },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: refund.orderId,
+    });
+
+    return refund;
+  },
+
+  async processRefund(refundId: string) {
+  const refund = await prisma.refund.findUnique({
+    where: { id: refundId },
+
+    include: {
+      order: true,
+      items: true,
+    },
+  });
+
+  if (!refund) {
+    throw new Error("Refund not found");
+  }
+
+  if (refund.status !== "RECEIVED") {
+    throw new Error(
+      "Refund must be received first",
+    );
+  }
+
+  const stripeRefund =
+    await stripe.refunds.create({
+      payment_intent:
+        refund.order.stripePaymentIntentId!,
+      amount: refund.amount,
+    });
+
+  const updatedRefund =
+    await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
+
+      data: {
+        status: "SUCCEEDED",
+        stripeRefundId: stripeRefund.id,
+      },
+    });
+
+  await prisma.orderEvent.create({
+    data: {
+      orderId: refund.orderId,
+      type: "REFUND_COMPLETED",
+      message: "Refund completed",
+    },
+  });
+
+  getIO().emit("orderUpdated", {
+    orderId: refund.orderId,
+  });
+
+  return updatedRefund;
+},
+
   async rejectRefund(refundId: string, rejectionReason?: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },

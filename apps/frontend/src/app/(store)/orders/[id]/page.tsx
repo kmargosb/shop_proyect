@@ -582,7 +582,7 @@ export default function Page() {
                     {/* CENTER */}
 
                     <div className="flex flex-wrap items-center gap-2 md:min-w-[260px] md:justify-center">
-                      {isFullyRefunded && (
+                      {/* {isFullyRefunded && (
                         <span className="inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300">
                           Refund completed
                         </span>
@@ -604,7 +604,7 @@ export default function Page() {
                             Remaining: {remainingQuantity}
                           </span>
                         </>
-                      )}
+                      )} */}
                     </div>
 
                     {/* RIGHT */}
@@ -1034,6 +1034,13 @@ function getTimelineConfig(type: string) {
         label: "Pedido enviado",
         icon: Truck,
         className: "border-purple-500/20 bg-purple-500/10 text-purple-400",
+      };
+
+    case "ORDER_DELIVERED":
+      return {
+        label: "Pedido entregado",
+        icon: CheckCircle2,
+        className: "border-green-500/20 bg-green-500/10 text-green-400",
       };
 
     case "REFUND_CREATED":
