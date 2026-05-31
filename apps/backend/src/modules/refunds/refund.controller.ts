@@ -24,7 +24,7 @@ const allowedReasons: RefundReason[] = [
 export const RefundController = {
   async create(req: Request, res: Response) {
     try {
-      const { orderId, items, reason: incomingReason } = req.body;
+      const { orderId, items, reason: incomingReason, note } = req.body;
 
       /* =========================
          VALIDACIÓN
@@ -64,7 +64,12 @@ export const RefundController = {
          SERVICE
       ========================= */
 
-      const result = await RefundService.createRefund(orderId, items, reason);
+      const result = await RefundService.createRefund(
+        orderId,
+        items,
+        reason,
+        note,
+      );
 
       /* =========================
          RESPONSE LIMPIO
@@ -101,52 +106,50 @@ export const RefundController = {
       });
     }
   },
-async approve(req: Request, res: Response) {
-  try {
-    const refundId =
-      typeof req.params.refundId === "string"
-        ? req.params.refundId
-        : req.params.refundId[0];
+  async approve(req: Request, res: Response) {
+    try {
+      const refundId =
+        typeof req.params.refundId === "string"
+          ? req.params.refundId
+          : req.params.refundId[0];
 
-    const refund =
-      await RefundService.approveRefund(refundId);
+      const refund = await RefundService.approveRefund(refundId);
 
-    return res.json({
-      success: true,
-      refund,
-    });
-  } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-},
+      return res.json({
+        success: true,
+        refund,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
 
-async reject(req: Request, res: Response) {
-  try {
-    const refundId =
-  typeof req.params.refundId === "string"
-    ? req.params.refundId
-    : req.params.refundId[0];
+  async reject(req: Request, res: Response) {
+    try {
+      const refundId =
+        typeof req.params.refundId === "string"
+          ? req.params.refundId
+          : req.params.refundId[0];
 
-    const { rejectionReason } = req.body;
+      const { rejectionReason } = req.body;
 
-    const refund =
-      await RefundService.rejectRefund(
+      const refund = await RefundService.rejectRefund(
         refundId,
         rejectionReason,
       );
 
-    return res.json({
-      success: true,
-      refund,
-    });
-  } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-},
+      return res.json({
+        success: true,
+        refund,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
 };

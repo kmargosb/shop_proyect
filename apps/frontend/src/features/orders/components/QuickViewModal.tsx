@@ -164,6 +164,41 @@ export default function QuickViewModal({
               Crear envío + tracking
             </button>
           )}
+          {order.shipment?.status === "SHIPPED" && (
+            <button
+              onClick={async () => {
+                const shipmentId = order.shipment?.id;
+
+                if (!shipmentId) return;
+
+                try {
+                  const res = await apiFetch(`/shipping/${shipmentId}/status`, {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      status: "DELIVERED",
+                    }),
+                  });
+
+                  if (!res || !res.ok) {
+                    throw new Error();
+                  }
+
+                  toast.success("Pedido entregado");
+
+                  // window.location.reload();
+                  onClose();
+                } catch {
+                  toast.error("No se pudo actualizar");
+                }
+              }}
+              className="w-full rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200"
+            >
+              Marcar como entregado
+            </button>
+          )}
           {order.status !== "SHIPPED" &&
             order.status !== "REFUNDED" &&
             order.status !== "CANCELLED" && (

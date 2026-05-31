@@ -386,3 +386,57 @@ export const getMyOrderByIdController = asyncHandler(
     res.json(order);
   },
 );
+
+export const getAdminOrderByIdController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const orderId =
+      typeof req.params.id === "string"
+        ? req.params.id
+        : req.params.id[0];
+
+    const order = await prisma.order.findUnique({
+      where: {
+        id: orderId,
+      },
+
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+
+            refundItems: true,
+          },
+        },
+
+        invoice: true,
+
+        shipment: true,
+
+        refunds: {
+          include: {
+            items: true,
+            evidence: true,
+          },
+        },
+
+        events: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Pedido no encontrado",
+      });
+    }
+
+    res.json(order);
+  },
+);

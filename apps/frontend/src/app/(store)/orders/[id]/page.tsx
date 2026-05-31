@@ -47,6 +47,9 @@ export default function Page() {
   const [refundError, setRefundError] = useState<string | null>(null);
   const [refundSuccess, setRefundSuccess] = useState(false);
   const [refundItems, setRefundItems] = useState<Record<string, number>>({});
+  const [refundReason, setRefundReason] = useState("CUSTOMER_RETURN");
+  const [refundComment, setRefundComment] = useState("");
+  const [refundImages, setRefundImages] = useState<File[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("CUSTOMER_REQUEST");
 
@@ -219,7 +222,8 @@ export default function Page() {
         body: JSON.stringify({
           orderId: order.id,
           items,
-          reason: "CUSTOMER_RETURN",
+          reason: refundReason,
+          note: refundComment,
         }),
       });
 
@@ -678,11 +682,26 @@ export default function Page() {
                       {event.message && (
                         <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
                           {event.message
-                            .replace("WRONG_PRODUCT", cancellationReasons.WRONG_PRODUCT)
-                            .replace("WRONG_SIZE", cancellationReasons.WRONG_SIZE)
-                            .replace("WRONG_COLOR", cancellationReasons.WRONG_COLOR)
-                            .replace("CHANGED_MIND", cancellationReasons.CHANGED_MIND)
-                            .replace("ACCIDENTAL_ORDER", cancellationReasons.ACCIDENTAL_ORDER)
+                            .replace(
+                              "WRONG_PRODUCT",
+                              cancellationReasons.WRONG_PRODUCT,
+                            )
+                            .replace(
+                              "WRONG_SIZE",
+                              cancellationReasons.WRONG_SIZE,
+                            )
+                            .replace(
+                              "WRONG_COLOR",
+                              cancellationReasons.WRONG_COLOR,
+                            )
+                            .replace(
+                              "CHANGED_MIND",
+                              cancellationReasons.CHANGED_MIND,
+                            )
+                            .replace(
+                              "ACCIDENTAL_ORDER",
+                              cancellationReasons.ACCIDENTAL_ORDER,
+                            )
                             .replace("OTHER", cancellationReasons.OTHER)}
                         </p>
                       )}
@@ -841,6 +860,54 @@ export default function Page() {
                       </div>
                     );
                   })}
+              </div>
+
+              <div className="mt-6">
+                <label className="mb-2 block text-sm text-neutral-400">
+                  Motivo de la devolución
+                </label>
+
+                <select
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                >
+                  <option value="CUSTOMER_RETURN">Ya no lo quiero</option>
+
+                  <option value="WRONG_ITEM">Producto incorrecto</option>
+
+                  <option value="DAMAGED">Producto dañado</option>
+
+                  <option value="OTHER">Otro</option>
+                </select>
+                <div className="mt-4">
+                  <label className="mb-2 block text-sm text-neutral-400">
+                    Comentario
+                  </label>
+
+                  <textarea
+                    rows={4}
+                    value={refundComment}
+                    onChange={(e) => setRefundComment(e.target.value)}
+                    placeholder="Cuéntanos qué ha ocurrido..."
+                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                  />
+                  <div className="mt-4">
+                    <label className="mb-2 block text-sm text-neutral-400">
+                      Fotos (opcional)
+                    </label>
+
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) =>
+                        setRefundImages(Array.from(e.target.files || []))
+                      }
+                      className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                    />
+                  </div>
+                </div>
               </div>
 
               {refundError && (

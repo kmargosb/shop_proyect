@@ -31,6 +31,7 @@ import {
   safeNumber,
 } from "./order-ui";
 import { socket } from "@/shared/lib/socket";
+import Link from "next/link";
 
 type FilterStatus = "ALL" | OrderStatus;
 
@@ -71,16 +72,16 @@ export default function AdminOrders() {
     }
   };
   useEffect(() => {
-  loadOrders();
-
-  socket.on("orderUpdated", () => {
     loadOrders();
-  });
 
-  return () => {
-    socket.off("orderUpdated");
-  };
-}, []);
+    socket.on("orderUpdated", () => {
+      loadOrders();
+    });
+
+    return () => {
+      socket.off("orderUpdated");
+    };
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -312,6 +313,15 @@ export default function AdminOrders() {
                       >
                         <Eye size={15} />
                       </button>
+
+                      <Link
+                        href={`/dashboard/orders/${order.id}`}
+                        className="rounded-xl border border-white/10 p-2 text-neutral-300 transition hover:bg-white/10 hover:text-white"
+                        title="Pedido completo"
+                      >
+                        <FileText size={15} />
+                      </Link>
+
                       {order.status === "PENDING" && (
                         <button
                           onClick={() => updateStatus(order.id, "PAID")}

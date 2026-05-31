@@ -18,6 +18,7 @@ import {
   getMyOrderByIdController,
   searchOrdersController,
   cancelOrderController,
+  getAdminOrderByIdController,
 } from "./order.controller";
 
 import { getActivityFeedController } from "./order.activity.controller";
@@ -54,16 +55,13 @@ router.get("/search", protect, adminOnly, searchOrdersController);
 // Admin list
 router.get("/", protect, adminOnly, getOrdersController);
 
+router.get("/admin/:id", protect, adminOnly, getAdminOrderByIdController);
+
 // Timeline Orders
 router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
 
 // Reenviar email
-router.post(
-  "/:id/resend-email",
-  protect,
-  adminOnly,
-  resendOrderEmailController,
-);
+router.post("/:id/resend-email", protect, adminOnly, resendOrderEmailController);
 
 // Cambiar estado
 router.patch("/:id", protect, adminOnly, updateOrderStatusController);

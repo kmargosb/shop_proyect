@@ -13,6 +13,7 @@ export const RefundService = {
     orderId: string,
     items: { orderItemId: string; quantity: number }[],
     reason?: RefundReason,
+    note?: string,
   ) {
     /* =========================
        PROTECCIÓN 1
@@ -112,12 +113,10 @@ export const RefundService = {
 
     const dbRefund = await RefundRepository.create({
       orderId,
-
       amount: refundAmount,
-
       currency: order.currency,
-
       reason,
+      note,
     });
 
     await prisma.orderEvent.create({
@@ -220,36 +219,36 @@ export const RefundService = {
     return updatedRefund;
   },
   async rejectRefund(refundId: string, rejectionReason?: string) {
-  const refund = await prisma.refund.findUnique({
-    where: { id: refundId },
-  });
+    const refund = await prisma.refund.findUnique({
+      where: { id: refundId },
+    });
 
-  if (!refund) {
-    throw new Error("Refund not found");
-  }
+    if (!refund) {
+      throw new Error("Refund not found");
+    }
 
-  if (refund.status !== "PENDING_REVIEW") {
-    throw new Error("Refund already processed");
-  }
+    if (refund.status !== "PENDING_REVIEW") {
+      throw new Error("Refund already processed");
+    }
 
-  const updatedRefund = await prisma.refund.update({
-    where: {
-      id: refundId,
-    },
+    const updatedRefund = await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
 
-    data: {
-      status: "REJECTED",
+      data: {
+        status: "REJECTED",
 
-      rejectionReason,
+        rejectionReason,
 
-      reviewedAt: new Date(),
-    },
-  });
+        reviewedAt: new Date(),
+      },
+    });
 
-  getIO().emit("orderUpdated", {
-    orderId: refund.orderId,
-  });
+    getIO().emit("orderUpdated", {
+      orderId: refund.orderId,
+    });
 
-  return updatedRefund;
-},
+    return updatedRefund;
+  },
 };
