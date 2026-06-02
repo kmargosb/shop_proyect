@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import cloudinary from "@/common/utils/cloudinary";
+import { AppError } from "@/common/errors/AppError";
 
 /* ===============================
    HELPERS
@@ -224,64 +225,49 @@ export async function getRelatedProducts(productId: string) {
    MUTATIONS
 =============================== */
 
-export async function createProduct(
-  data: any,
-  files: Express.Multer.File[],
-) {
+export async function createProduct(data: any, files: Express.Multer.File[]) {
   return prisma.$transaction(async (tx) => {
     const variants =
       typeof data.variants === "string"
         ? JSON.parse(data.variants)
         : data.variants;
 
-    const product =
-      await tx.product.create({
-        data: {
-          name: data.name,
+    const product = await tx.product.create({
+      data: {
+        name: data.name,
 
-          description:
-            data.description,
+        description: data.description,
 
-          price: Number(data.price),
+        price: Number(data.price),
 
-          gender: data.gender,
+        gender: data.gender,
 
-          brandId:
-            data.brandId || null,
+        brandId: data.brandId || null,
 
-          category: data.category,
-        },
-      });
+        category: data.category,
+      },
+    });
 
     /* VARIANTS */
 
     if (variants?.length) {
       await tx.productVariant.createMany({
-        data: variants.map(
-          (variant: any) => ({
-            productId: product.id,
+        data: variants.map((variant: any) => ({
+          productId: product.id,
 
-            size: variant.size,
+          size: variant.size,
 
-            color: variant.color,
+          color: variant.color,
 
-            stock: Number(
-              variant.stock,
-            ),
-          }),
-        ),
+          stock: Number(variant.stock),
+        })),
       });
     }
 
     /* IMAGES */
 
     if (files?.length) {
-      const images =
-        await uploadImages(
-          files,
-          product.id,
-          true,
-        );
+      const images = await uploadImages(files, product.id, true);
 
       await tx.productImage.createMany({
         data: images,
@@ -310,35 +296,27 @@ export async function updateProduct(
         ? JSON.parse(data.variants)
         : data.variants;
 
-    const product =
-      await tx.product.findUnique({
-        where: { id },
+    const product = await tx.product.findUnique({
+      where: { id },
 
-        include: {
-          images: true,
-          variants: true,
-        },
-      });
+      include: {
+        images: true,
+        variants: true,
+      },
+    });
 
-    if (!product)
-      throw new Error(
-        "Producto no encontrado",
-      );
+    if (!product) throw new Error("Producto no encontrado");
 
-    const imagesToDelete =
-      data.imagesToDelete
-        ? JSON.parse(data.imagesToDelete)
-        : [];
+    const imagesToDelete = data.imagesToDelete
+      ? JSON.parse(data.imagesToDelete)
+      : [];
 
     /* DELETE IMAGES */
 
-    for (const image of product.images.filter(
-      (img) =>
-        imagesToDelete.includes(img.id),
+    for (const image of product.images.filter((img) =>
+      imagesToDelete.includes(img.id),
     )) {
-      await cloudinary.uploader.destroy(
-        image.publicId,
-      );
+      await cloudinary.uploader.destroy(image.publicId);
 
       await tx.productImage.delete({
         where: { id: image.id },
@@ -348,10 +326,7 @@ export async function updateProduct(
     /* UPLOAD IMAGES */
 
     if (files?.length) {
-      const images = await uploadImages(
-        files,
-        id,
-      );
+      const images = await uploadImages(files, id);
 
       await tx.productImage.createMany({
         data: images,
@@ -382,19 +357,13 @@ export async function updateProduct(
 
     /* ENSURE PRIMARY */
 
-    const finalImages =
-      await tx.productImage.findMany({
-        where: {
-          productId: id,
-        },
-      });
+    const finalImages = await tx.productImage.findMany({
+      where: {
+        productId: id,
+      },
+    });
 
-    if (
-      finalImages.length &&
-      !finalImages.some(
-        (i) => i.isPrimary,
-      )
-    ) {
+    if (finalImages.length && !finalImages.some((i) => i.isPrimary)) {
       await tx.productImage.update({
         where: {
           id: finalImages[0].id,
@@ -409,54 +378,70 @@ export async function updateProduct(
     /* UPDATE VARIANTS */
 
     if (variants) {
-      await tx.productVariant.deleteMany({
-        where: {
-          productId: id,
-        },
-      });
+      for (const variant of variants) {
+        const existingVariant = product.variants.find(
+          (v) => v.size === variant.size && v.color === variant.color,
+        );
 
-      await tx.productVariant.createMany({
-        data: variants.map(
-          (variant: any) => ({
+        if (existingVariant) {
+          const newStock = Number(variant.stock);
+
+          if (newStock < existingVariant.reservedStock) {
+            throw new AppError(
+              `Cannot reduce stock below reserved quantity (${existingVariant.reservedStock})`,
+              400,
+            );
+          }
+
+          await tx.productVariant.update({
+            where: {
+              id: existingVariant.id,
+            },
+
+            data: {
+              stock: newStock,
+            },
+          });
+
+          continue;
+        }
+
+        await tx.productVariant.create({
+          data: {
             productId: id,
 
             size: variant.size,
 
             color: variant.color,
 
-            stock: Number(
-              variant.stock,
-            ),
-          }),
-        ),
-      });
+            stock: Number(variant.stock),
+          },
+        });
+      }
     }
 
-    const updated =
-      await tx.product.update({
-        where: { id },
+    const updated = await tx.product.update({
+      where: { id },
 
-        data: {
-          name: data.name,
+      data: {
+        name: data.name,
 
-          description:
-            data.description,
+        description: data.description,
 
-          price: Number(data.price),
+        price: Number(data.price),
 
-          gender: data.gender,
+        gender: data.gender,
 
-          brandId:
-            data.brandId || null,
+        brandId: data.brandId || null,
 
-          category: data.category,
-        },
+        category: data.category,
+      },
 
-        include: {
-          images: true,
-          variants: true,
-        },
-      });
+      include: {
+        images: true,
+        variants: true,
+      },
+    });
 
     return updated;
   });

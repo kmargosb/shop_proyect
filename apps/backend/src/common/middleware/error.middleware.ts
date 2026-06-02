@@ -9,6 +9,13 @@ export function errorHandler(
 ) {
   console.error("🔥 Error:", err)
 
+  if ("statusCode" in err) {
+  return res.status(err.statusCode).json({
+    success: false,
+    message: err.message,
+  });
+}
+
   // Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     return res.status(400).json({
