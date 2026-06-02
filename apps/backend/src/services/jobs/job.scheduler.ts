@@ -12,7 +12,7 @@ export function startJobScheduler() {
      ORDER CLEANUP (🔥 CRÍTICO)
   =============================== */
 
-  cron.schedule("*/5 * * * *", async () => {
+  cron.schedule("* * * * *", async () => {
     console.log("🧹 Running order cleanup");
 
     try {

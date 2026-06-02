@@ -40,8 +40,19 @@ export default function StripePaymentForm({ orderId }: Props) {
       });
 
       if (result.error) {
-        setErrorMessage(result.error.message || "Payment failed");
+        const message = result.error.message ?? "";
+
+        if (
+          message.includes("status of canceled") ||
+          message.includes("PaymentIntent")
+        ) {
+          setErrorMessage("Este pedido ha expirado y ya no puede ser pagado.");
+        } else {
+          setErrorMessage(message || "Payment failed");
+        }
+
         setLoading(false);
+        return;
       }
     } catch (err) {
       console.error("Unexpected payment error:", err);

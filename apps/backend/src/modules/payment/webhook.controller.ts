@@ -37,6 +37,14 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     console.error("⚠ Order not linked to PaymentIntent:", paymentIntent.id);
     return;
   }
+  if (!["PENDING", "PAYMENT_PROCESSING"].includes(order.status)) {
+    console.error(
+      `❌ Payment received for invalid order status: ${order.status}`,
+      order.id,
+    );
+
+    return;
+  }
 
   if (
     order.totalAmount !== paymentIntent.amount ||
@@ -51,6 +59,7 @@ async function handlePaymentSucceeded(paymentIntent: any) {
   ========================= */
 
   if (order.status !== "PAID") {
+    await InventoryService.validateReservation(order.id);
     await prisma.order.update({
       where: { id: order.id },
       data: {
@@ -60,8 +69,7 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       },
     });
 
-    await InventoryService.validateReservation(order.id);
-    await InventoryService.confirmReservation(order.id);
+    await InventoryService.confirmReservation(order.id);    
 
     await prisma.orderTransaction.create({
       data: {

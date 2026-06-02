@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-const RESERVATION_TIME_MINUTES = 15;
+const RESERVATION_TIME_MINUTES = 1;
 
 export const InventoryService = {
   /* =========================================================

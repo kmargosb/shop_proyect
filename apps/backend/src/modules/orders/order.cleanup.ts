@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { InventoryService } from "@/modules/inventory/inventory.service";
+import { stripe } from "@/lib/stripe";
 
 export async function cleanupExpiredOrders() {
   /* ===============================
@@ -9,8 +10,8 @@ export async function cleanupExpiredOrders() {
 
   const now = Date.now();
 
-  const pendingLimit = new Date(now - 15 * 60 * 1000); // 15 min
-  const processingLimit = new Date(now - 30 * 60 * 1000); // 30 min
+  const pendingLimit = new Date(now - 1 * 60 * 1000); // 15 min
+  const processingLimit = new Date(now - 1 * 60 * 1000); // 30 min
 
   /* ===============================
      FIND EXPIRED ORDERS
@@ -28,8 +29,8 @@ export async function cleanupExpiredOrders() {
         {
           status: OrderStatus.PAYMENT_PROCESSING,
           createdAt: {
-  lt: processingLimit,
-},
+            lt: processingLimit,
+          },
         },
       ],
     },
@@ -46,6 +47,16 @@ export async function cleanupExpiredOrders() {
 
   for (const order of expiredOrders) {
     console.log("⏳ Expired order:", order.id, order.status);
+
+    if (order.stripePaymentIntentId) {
+      try {
+        await stripe.paymentIntents.cancel(order.stripePaymentIntentId);
+
+        console.log("🚫 PaymentIntent cancelled:", order.stripePaymentIntentId);
+      } catch (error) {
+        console.error("❌ Failed to cancel PaymentIntent:", error);
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
       /* =========================

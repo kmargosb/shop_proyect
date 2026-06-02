@@ -1,106 +1,99 @@
-import { prisma } from "@/lib/prisma"
-import { PaymentMethod } from "@prisma/client"
-import { getProviderFromMethod } from "@/modules/payment/payment-method.mapper"
-import { getPaymentProvider } from "@/modules/payment/payment.factory"
+import { prisma } from "@/lib/prisma";
+import { PaymentMethod } from "@prisma/client";
+import { getProviderFromMethod } from "@/modules/payment/payment-method.mapper";
+import { getPaymentProvider } from "@/modules/payment/payment.factory";
 import { stripe } from "@/lib/stripe";
 
 export const PaymentSessionService = {
-
   async createSession(orderId: string, method: PaymentMethod) {
-
     const order = await prisma.order.findUnique({
-      where: { id: orderId }
-    })
+      where: { id: orderId },
+    });
 
     if (!order) {
-      throw new Error("Order not found")
+      throw new Error("Order not found");
     }
 
-    if (order.status === "PAID") {
-      throw new Error("Order already paid")
+    if (!["PENDING", "PAYMENT_PROCESSING"].includes(order.status)) {
+      throw new Error(`Order cannot be paid in status ${order.status}`);
     }
 
     const existingSession = await prisma.paymentSession.findFirst({
-  where: {
-    orderId,
-    status: {
-      in: ["PENDING", "ACTIVE"],
-    },
-  },
-})
+      where: {
+        orderId,
+        status: {
+          in: ["PENDING", "ACTIVE"],
+        },
+      },
+    });
 
     if (existingSession) {
-  console.log(
-    "♻️ Reusing existing payment session:",
-    existingSession.id,
-  );
+      console.log("♻️ Reusing existing payment session:", existingSession.id);
 
-  return existingSession;
-}
+      return existingSession;
+    }
 
-    const provider = getProviderFromMethod(method)
+    const provider = getProviderFromMethod(method);
 
     const session = await prisma.paymentSession.create({
       data: {
         orderId: order.id,
         provider,
         method,
-        status: "PENDING"
-      }
-    })
+        status: "PENDING",
+      },
+    });
 
-    return session
+    return session;
   },
 
   async createPaymentIntent(sessionId: string) {
-    
     const session = await prisma.paymentSession.findUnique({
       where: { id: sessionId },
       include: {
-        order: true
-      }
-    })
+        order: true,
+      },
+    });
 
     if (!session) {
-      throw new Error("Payment session not found")
+      throw new Error("Payment session not found");
+    }
+    if (!["PENDING", "PAYMENT_PROCESSING"].includes(session.order.status)) {
+      throw new Error(`Order cannot be paid in status ${session.order.status}`);
     }
 
     if (session.status === "COMPLETED") {
-      throw new Error("Payment session already completed")
+      throw new Error("Payment session already completed");
     }
-if (session.paymentIntentId) {
-  const existingIntent =
-    await stripe.paymentIntents.retrieve(
-      session.paymentIntentId,
-    );
+    if (session.paymentIntentId) {
+      const existingIntent = await stripe.paymentIntents.retrieve(
+        session.paymentIntentId,
+      );
 
-  if (
-    existingIntent.status !== "canceled" &&
-    existingIntent.status !== "succeeded"
-  ) {
-    console.log(
-      "♻️ Reusing session PaymentIntent:",
-      existingIntent.id,
-    );
+      if (
+        existingIntent.status !== "canceled" &&
+        existingIntent.status !== "succeeded"
+      ) {
+        console.log("♻️ Reusing session PaymentIntent:", existingIntent.id);
 
-    return existingIntent;
-  }
-}
-    const provider = getPaymentProvider(session.provider)
+        return existingIntent;
+      }
+    }
+    const provider = getPaymentProvider(session.provider);
 
     const paymentIntent = await provider.createPaymentIntent(
       session.order.totalAmount,
       session.order.currency,
-      session.order.id
-    )
+      session.order.id,
+    );
 
     await prisma.paymentSession.update({
       where: { id: session.id },
       data: {
         paymentIntentId: paymentIntent.id,
-        status: "ACTIVE"
-      }
-    })
+        status: "ACTIVE",
+      },
+    });
 
     await prisma.order.update({
       where: { id: session.order.id },
@@ -108,53 +101,48 @@ if (session.paymentIntentId) {
         stripePaymentIntentId: paymentIntent.id,
         paymentProvider: session.provider,
         paymentMethod: session.method,
-        status: "PAYMENT_PROCESSING"
-      }
-    })
+        status: "PAYMENT_PROCESSING",
+      },
+    });
 
-    return paymentIntent
+    return paymentIntent;
   },
 
   async markSessionCompleted(paymentIntentId: string) {
-
     const session = await prisma.paymentSession.findFirst({
       where: {
-        paymentIntentId
-      }
-    })
+        paymentIntentId,
+      },
+    });
 
     if (!session) {
-      return
+      return;
     }
 
     await prisma.paymentSession.update({
       where: { id: session.id },
       data: {
-        status: "COMPLETED"
-      }
-    })
-
+        status: "COMPLETED",
+      },
+    });
   },
 
   async markSessionFailed(paymentIntentId: string) {
-
     const session = await prisma.paymentSession.findFirst({
       where: {
-        paymentIntentId
-      }
-    })
+        paymentIntentId,
+      },
+    });
 
     if (!session) {
-      return
+      return;
     }
 
     await prisma.paymentSession.update({
       where: { id: session.id },
       data: {
-        status: "FAILED"
-      }
-    })
-
-  }
-
-}
+        status: "FAILED",
+      },
+    });
+  },
+};
