@@ -40,6 +40,7 @@ export default function StripePaymentForm({ orderId }: Props) {
       });
 
       if (result.error) {
+        console.log("STRIPE ERROR", result.error);
         const message = result.error.message ?? "";
 
         if (

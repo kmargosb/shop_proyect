@@ -3,16 +3,30 @@
 import { motion } from "framer-motion";
 import PaymentWrapper from "./PaymentWrapper";
 import StripePaymentForm from "./StripePaymentForm";
+import { useEffect } from "react";
+import { socket } from "@/shared/lib/socket";
 
 type Props = {
   orderId: string;
   clientSecret: string;
 };
 
-export default function PayOrderView({
-  orderId,
-  clientSecret,
-}: Props) {
+export default function PayOrderView({ orderId, clientSecret }: Props) {
+  
+  useEffect(() => {
+    const handler = ({ orderId: updatedOrderId }: { orderId: string }) => {
+      if (updatedOrderId !== orderId) return;
+
+      window.location.reload();
+    };
+
+    socket.on("orderUpdated", handler);
+
+    return () => {
+      socket.off("orderUpdated", handler);
+    };
+  }, [orderId]);
+
   if (!clientSecret) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
@@ -32,14 +46,12 @@ export default function PayOrderView({
 
   return (
     <main className="relative overflow-x-hidden bg-[#0A0A0A] text-white px-4 py-6 min-h-[calc(100vh-64px)] flex items-center">
-      
       {/* BACKGROUND LIGHT */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-white/5 blur-[160px] rounded-full" />
       </div>
 
       <div className="relative mx-auto w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-        
         {/* LEFT */}
         <motion.div
           initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
@@ -58,9 +70,7 @@ export default function PayOrderView({
           </div>
 
           <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-6 rounded-2xl">
-            <p className="text-sm text-neutral-500 mb-2">
-              Order ID
-            </p>
+            <p className="text-sm text-neutral-500 mb-2">Order ID</p>
 
             <p className="text-sm font-mono text-neutral-300 break-all">
               {orderId}

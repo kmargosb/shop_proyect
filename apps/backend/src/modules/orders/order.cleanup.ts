@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { InventoryService } from "@/modules/inventory/inventory.service";
 import { stripe } from "@/lib/stripe";
+import { getIO } from "@/lib/socket";
 
 export async function cleanupExpiredOrders() {
   /* ===============================
@@ -86,6 +87,11 @@ export async function cleanupExpiredOrders() {
           type: "ORDER_CANCELLED",
           message: "Order expired (auto cleanup)",
         },
+      });
+      const io = getIO();
+
+      io.emit("orderUpdated", {
+        orderId: order.id,
       });
     });
   }
