@@ -20,10 +20,10 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
       window.location.reload();
     };
 
-    socket.on("orderUpdated", handler);
+    socket.on("orderCancelled", handler);
 
     return () => {
-      socket.off("orderUpdated", handler);
+      socket.off("orderCancelled", handler);
     };
   }, [orderId]);
 

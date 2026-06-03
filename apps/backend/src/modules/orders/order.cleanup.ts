@@ -6,13 +6,14 @@ import { getIO } from "@/lib/socket";
 
 export async function cleanupExpiredOrders() {
   /* ===============================
-     TIME WINDOWS (PRO)
+     TIME WINDOWS
   =============================== */
 
   const now = Date.now();
 
-  const pendingLimit = new Date(now - 1 * 60 * 1000); // 15 min
-  const processingLimit = new Date(now - 1 * 60 * 1000); // 30 min
+  const pendingLimit = new Date(now - 1 * 60 * 1000);
+
+  const processingLimit = new Date(now - 1 * 60 * 1000);
 
   /* ===============================
      FIND EXPIRED ORDERS
@@ -49,6 +50,10 @@ export async function cleanupExpiredOrders() {
   for (const order of expiredOrders) {
     console.log("⏳ Expired order:", order.id, order.status);
 
+    /* =========================
+       CANCEL STRIPE INTENT
+    ========================= */
+
     if (order.stripePaymentIntentId) {
       try {
         await stripe.paymentIntents.cancel(order.stripePaymentIntentId);
@@ -59,27 +64,21 @@ export async function cleanupExpiredOrders() {
       }
     }
 
-    await prisma.$transaction(async (tx) => {
-      /* =========================
-         RELEASE INVENTORY
-      ========================= */
+    /* =========================
+       DB TRANSACTION
+    ========================= */
 
+    await prisma.$transaction(async (tx) => {
       await InventoryService.releaseReservation(order.id);
 
-      /* =========================
-         UPDATE STATUS
-      ========================= */
-
       await tx.order.update({
-        where: { id: order.id },
+        where: {
+          id: order.id,
+        },
         data: {
           status: OrderStatus.CANCELLED,
         },
       });
-
-      /* =========================
-         TIMELINE EVENT (PRO)
-      ========================= */
 
       await tx.orderEvent.create({
         data: {
@@ -88,11 +87,14 @@ export async function cleanupExpiredOrders() {
           message: "Order expired (auto cleanup)",
         },
       });
-      const io = getIO();
+    });
 
-      io.emit("orderUpdated", {
-        orderId: order.id,
-      });
+    /* =========================
+       REALTIME EVENT
+    ========================= */
+
+    getIO().emit("orderCancelled", {
+      orderId: order.id,
     });
   }
 

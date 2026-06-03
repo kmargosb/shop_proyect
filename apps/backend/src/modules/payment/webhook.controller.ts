@@ -69,7 +69,11 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       },
     });
 
-    await InventoryService.confirmReservation(order.id);    
+    await InventoryService.confirmReservation(order.id);
+
+    getIO().emit("orderPaid", {
+      orderId: order.id,
+    });
 
     await prisma.orderTransaction.create({
       data: {
@@ -453,6 +457,10 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
       case "refund.updated":
         await handleRefundUpdated(event.data.object);
+        break;
+
+      case "payment_intent.canceled":
+        console.log("🚫 PaymentIntent cancelled:", event.data.object.id);
         break;
 
       default:
