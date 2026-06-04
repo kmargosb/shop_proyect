@@ -288,14 +288,14 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   });
 
   res.cookie("accessToken", newAccessToken, {
-    ...cookieOptions,
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
+  ...cookieOptions,
+  maxAge: 2 * 60 * 60 * 1000,
+});
 
-  res.cookie("refreshToken", newRefreshToken, {
-    ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+res.cookie("refreshToken", newRefreshToken, {
+  ...cookieOptions,
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+});
 
   res.json({
     message: "Tokens renovados correctamente",

@@ -71,6 +71,10 @@ async function handlePaymentSucceeded(paymentIntent: any) {
 
     await InventoryService.confirmReservation(order.id);
 
+    getIO().emit("orderUpdated", {
+      orderId: order.id,
+    });
+
     getIO().emit("orderPaid", {
       orderId: order.id,
     });

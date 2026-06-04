@@ -31,7 +31,7 @@ export async function sendEmail({
       attachments
     })
 
-    console.log("📨 Email sent:", response.data?.id)
+    console.log("📨 Email sent successfully to:",to)
 
     return response
 
