@@ -452,9 +452,15 @@ export async function cancelOrder(orderId: string, reason?: string) {
       })),
 
       "ORDER_CANCELLED",
+
+      reason,
     );
 
     await RefundService.approveRefund(refund.refundId);
+
+    await RefundService.markRefundReceived(refund.refundId);
+
+    await RefundService.processRefund(refund.refundId);
 
     for (const item of order.items) {
       if (!item.variantId) continue;
@@ -471,13 +477,6 @@ export async function cancelOrder(orderId: string, reason?: string) {
         },
       });
     }
-
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "REFUNDED",
-      },
-    });
 
     await prisma.orderEvent.create({
       data: {

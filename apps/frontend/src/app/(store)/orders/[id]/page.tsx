@@ -392,9 +392,9 @@ export default function Page() {
 
                   return (
                     <div
-  key={step.key}
-  className="relative flex flex-1 justify-center"
->
+                      key={step.key}
+                      className="relative flex flex-1 justify-center"
+                    >
                       <div className="flex flex-col items-center">
                         {/* DOT */}
 
@@ -482,11 +482,15 @@ export default function Page() {
               </p>
 
               <p className="text-sm text-neutral-400">
-                {order.city}, {order.country}
+                {order.addressLine1}
+              </p>
+                            
+              <p className="text-sm text-neutral-400">
+                {order.postalCode} {order.city}, {order.country}
               </p>
 
               <p className="mt-2 text-sm font-medium text-white">
-                {order.fullName}
+                {order.fullName} {order.phone}
               </p>
             </div>
           </div>
@@ -988,6 +992,7 @@ export default function Page() {
                   <option value="WRONG_COLOR">Me equivoqué de color</option>
                   <option value="CHANGED_MIND">Ya no lo quiero</option>
                   <option value="ACCIDENTAL_ORDER">Compra por error</option>
+                  <option value="Wrong shipping address">Direccion incorrecta</option>
                   <option value="OTHER">Otro</option>
                 </select>
               </div>
