@@ -194,6 +194,24 @@ export const RefundService = {
     return updatedRefund;
   },
 
+  async markCustomerSent(refundId: string) {
+    const refund = await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
+
+      data: {
+        status: "CUSTOMER_SENT",
+      },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: refund.orderId,
+    });
+
+    return refund;
+  },
+
   async markRefundReceived(refundId: string) {
     const refund = await prisma.refund.update({
       where: {

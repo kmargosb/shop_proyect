@@ -668,6 +668,7 @@ enum OrderStatus {
 enum RefundStatus {
   PENDING_REVIEW
   APPROVED
+  CUSTOMER_SENT
   RECEIVED
   REJECTED
   SUCCEEDED
