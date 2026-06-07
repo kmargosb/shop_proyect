@@ -76,3 +76,65 @@ export function shipmentConfirmationTemplate(
     </div>
   `;
 }
+
+
+export function helpRequestTemplate(
+  orderId: string,
+  customerName: string,
+  customerEmail: string,
+  orderPhone: string | null,
+  contactPhone: string | null,
+  message: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:24px;color:#111">
+
+      <h1>Nuevo mensaje de soporte</h1>
+
+      <div style="margin-top:20px">
+
+        <p>
+          <strong>Pedido:</strong>
+          #${orderId.slice(0, 8)}
+        </p>
+
+        <p>
+          <strong>Cliente:</strong>
+          ${customerName}
+        </p>
+
+        <p>
+          <strong>Email:</strong>
+          ${customerEmail}
+        </p>
+
+        <p>
+          <strong>Teléfono pedido:</strong>
+          ${orderPhone || "-"}
+        </p>
+
+        <p>
+          <strong>Teléfono contacto:</strong>
+          ${contactPhone || "-"}
+        </p>
+
+      </div>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:16px;
+          border:1px solid #ddd;
+          border-radius:12px;
+        "
+      >
+        <strong>Mensaje:</strong>
+
+        <p style="white-space:pre-wrap">
+          ${message}
+        </p>
+      </div>
+
+    </div>
+  `;
+}

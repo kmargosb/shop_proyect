@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "@/common/utils/asyncHandler";
 import {
   createOrder,
+  searchOrders,
   getOrders,
   updateOrderStatus,
   cancelOrder,
@@ -9,9 +10,11 @@ import {
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
-import { searchOrders } from "./order.service";
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
-import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
+import {
+  sendOrderConfirmationEmail,
+  sendHelpRequestEmail,
+} from "@/modules/email/sendOrderEmail";
 import { getIO } from "@/lib/socket";
 
 /**
@@ -162,13 +165,18 @@ export const getPublicOrderController = asyncHandler(
 
     const order = await prisma.order.findUnique({
       where: { id },
+
       include: {
         items: {
           include: {
             product: {
-              select: { name: true },
+              include: {
+                images: true,
+                variants: true,
+              },
             },
 
+            variant: true,
             refundItems: true,
           },
         },
@@ -190,14 +198,12 @@ export const getPublicOrderController = asyncHandler(
       });
     }
 
-    // 🔒 Bloquear si está cancelada
     if (order.status === "CANCELLED") {
       return res.status(403).json({
         error: "Pedido cancelado",
       });
     }
 
-    // Si no está pagada ni en procesamiento, requiere email válido
     if (order.status !== "PAID" && order.status !== "PAYMENT_PROCESSING") {
       if (!email || email !== order.email) {
         return res.status(403).json({
@@ -359,9 +365,11 @@ export const getMyOrderByIdController = asyncHandler(
             product: {
               include: {
                 images: true,
+                variants: true,
               },
             },
 
+            variant: true,
             refundItems: true,
           },
         },
@@ -390,9 +398,7 @@ export const getMyOrderByIdController = asyncHandler(
 export const getAdminOrderByIdController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const orderId =
-      typeof req.params.id === "string"
-        ? req.params.id
-        : req.params.id[0];
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
     const order = await prisma.order.findUnique({
       where: {
@@ -405,8 +411,11 @@ export const getAdminOrderByIdController = asyncHandler(
             product: {
               include: {
                 images: true,
+                variants: true,
               },
             },
+
+            variant: true,
 
             refundItems: true,
           },
@@ -438,5 +447,35 @@ export const getAdminOrderByIdController = asyncHandler(
     }
 
     res.json(order);
+  },
+);
+
+export const submitHelpRequestController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id =
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+    const { message, phone } = req.body;
+
+    if (!message?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required",
+      });
+    }
+
+    await sendHelpRequestEmail(id, message.trim(), phone?.trim());
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: id,
+        type: "ORDER_UPDATED",
+        message: "Customer contacted support",
+      },
+    });
+
+    res.json({
+      success: true,
+    });
   },
 );

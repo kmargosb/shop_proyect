@@ -15,11 +15,13 @@ import {
   shipmentStatusLabels,
 } from "@/shared/constants/orderLabels";
 import ShipmentModal from "@/features/orders/components/ShipmentModal";
+import EditOrderModal from "@/features/orders/components/EditOrderModal";
 
 export default function DashboardOrderPage() {
   const params = useParams();
   const id = params?.id as string;
   const [order, setOrder] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export default function DashboardOrderPage() {
       console.error(error);
     }
   };
-  
+
   const processRefund = async (refundId: string) => {
     try {
       await apiFetch(`/refunds/${refundId}/process`, {
@@ -515,8 +517,14 @@ export default function DashboardOrderPage() {
 
             <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
               <h2 className="text-lg font-semibold text-white">
-                Acciones administrativas
+                Gestión del pedido
               </h2>
+              <button
+                onClick={() => setEditOpen(true)}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white"
+              >
+                Editar pedido
+              </button>
 
               <div className="mt-4 flex flex-col gap-3">
                 {!order.shipment && order.status === "PAID" && (
@@ -549,6 +557,13 @@ export default function DashboardOrderPage() {
             setShipmentOpen(false);
             await loadOrder();
           }}
+        />
+      )}
+      {editOpen && order && (
+        <EditOrderModal
+          order={order}
+          onClose={() => setEditOpen(false)}
+          onSaved={loadOrder}
         />
       )}
     </>

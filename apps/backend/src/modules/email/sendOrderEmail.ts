@@ -3,6 +3,7 @@ import { sendEmail } from "./email.service"
 import {
   orderConfirmationTemplate,
   shipmentConfirmationTemplate,
+  helpRequestTemplate,
 } from "./email.templates"
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator"
 
@@ -109,4 +110,39 @@ export async function sendShipmentEmail(
   console.log(
     "✅ Shipment email sent",
   )
+}
+
+export async function sendHelpRequestEmail(
+  orderId: string,
+  message: string,
+  contactPhone?: string,
+) {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  const html = helpRequestTemplate(
+    order.id,
+    order.fullName,
+    order.email,
+    order.phone,
+    contactPhone || null,
+    message,
+  );
+
+  await sendEmail({
+    to: process.env.SUPPORT_EMAIL as string,
+    subject: `Support request #${order.id.slice(0, 8)}`,
+    html,
+  });
+
+  console.log(
+    "✅ Help request email sent",
+  );
 }

@@ -19,6 +19,7 @@ import {
   searchOrdersController,
   cancelOrderController,
   getAdminOrderByIdController,
+  submitHelpRequestController,
 } from "./order.controller";
 
 import { getActivityFeedController } from "./order.activity.controller";
@@ -63,11 +64,14 @@ router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
 // Reenviar email
 router.post("/:id/resend-email", protect, adminOnly, resendOrderEmailController);
 
+// Help email
+router.post("/:id/help-request", submitHelpRequestController);
+
 // Cambiar estado
 router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
 // Cancelar orden
-router.post("/:id/cancel", protect, adminOnly, cancelOrderController,);
+router.post("/:id/cancel", protect, adminOnly, cancelOrderController);
 
 // Descargar invoice admin
 router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
@@ -81,6 +85,7 @@ router.get("/me", protect, getMyOrdersController);
 
 // Get my order by id
 router.get("/:id/me", protect, getMyOrderByIdController);
+
 
 /* ===============================
    🔥 UNIVERSAL ORDER ROUTE (SIEMPRE AL FINAL)

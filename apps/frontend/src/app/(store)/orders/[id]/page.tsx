@@ -481,10 +481,8 @@ export default function Page() {
                 Entrega en
               </p>
 
-              <p className="text-sm text-neutral-400">
-                {order.addressLine1}
-              </p>
-                            
+              <p className="text-sm text-neutral-400">{order.addressLine1}</p>
+
               <p className="text-sm text-neutral-400">
                 {order.postalCode} {order.city}, {order.country}
               </p>
@@ -773,15 +771,12 @@ export default function Page() {
             </Button>
           )}
 
-          {canCancel && (
-            <Button
-              className="h-12 w-full rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-              onClick={() => setShowCancelModal(true)}
-              disabled={cancelling}
-            >
-              {cancelling ? "Cancelando..." : "Cancelar pedido"}
-            </Button>
-          )}
+          <Button
+            className="h-12 w-full rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-300"
+            onClick={() => router.push(`/orders/${order.id}/help`)}
+          >
+            ¿Necesitas ayuda con tu pedido?
+          </Button>
           {canRefund && (
             <Button
               className="h-12 w-full rounded-2xl border border-orange-500/20 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20"
@@ -992,7 +987,9 @@ export default function Page() {
                   <option value="WRONG_COLOR">Me equivoqué de color</option>
                   <option value="CHANGED_MIND">Ya no lo quiero</option>
                   <option value="ACCIDENTAL_ORDER">Compra por error</option>
-                  <option value="Wrong shipping address">Direccion incorrecta</option>
+                  <option value="Wrong shipping address">
+                    Direccion incorrecta
+                  </option>
                   <option value="OTHER">Otro</option>
                 </select>
               </div>

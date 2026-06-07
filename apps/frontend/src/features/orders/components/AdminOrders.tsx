@@ -22,7 +22,6 @@ import type { Order, OrderStatus } from "@/types/order";
 import StatusBadge from "./StatusBadge";
 import RefundModal from "./RefundModal";
 import ShipmentModal from "./ShipmentModal";
-import QuickViewModal from "./QuickViewModal";
 import {
   formatMoney,
   CustomerPreview,
@@ -53,7 +52,6 @@ export default function AdminOrders() {
   const [filter, setFilter] = useState<FilterStatus>("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [shipmentOrder, setShipmentOrder] = useState<Order | null>(null);
   const [refundOrder, setRefundOrder] = useState<Order | null>(null);
 
@@ -127,8 +125,6 @@ export default function AdminOrders() {
       toast.success("Pedido cancelado");
 
       await loadOrders();
-
-      setSelectedOrder(null);
     } catch {
       toast.error("No se pudo cancelar");
     }
@@ -227,7 +223,6 @@ export default function AdminOrders() {
           <OrderMobileCard
             key={order.id}
             order={order}
-            onOpen={setSelectedOrder}
             onMarkPaid={() => updateStatus(order.id, "PAID")}
             onDelivered={async () => {
               try {
@@ -306,14 +301,6 @@ export default function AdminOrders() {
                   </td>
                   <td className="p-4">
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="rounded-xl border border-white/10 p-2 text-neutral-300 transition hover:bg-white/10 hover:text-white"
-                        title="Vista rápida"
-                      >
-                        <Eye size={15} />
-                      </button>
-
                       <Link
                         href={`/dashboard/orders/${order.id}`}
                         className="rounded-xl border border-white/10 p-2 text-neutral-300 transition hover:bg-white/10 hover:text-white"
@@ -348,23 +335,12 @@ export default function AdminOrders() {
           onPage={setPage}
         />
       )}
-      {selectedOrder && (
-        <QuickViewModal
-          order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          onCreateShipment={() => setShipmentOrder(selectedOrder)}
-          onCancel={() => cancelOrder(selectedOrder.id)}
-          onOpenRefund={() => setRefundOrder(selectedOrder)}
-        />
-      )}
       {shipmentOrder && (
         <ShipmentModal
           order={shipmentOrder}
           onClose={() => setShipmentOrder(null)}
           onSuccess={async () => {
             await loadOrders();
-
-            setSelectedOrder(null);
           }}
         />
       )}
@@ -462,18 +438,19 @@ function OrderStat({
 }
 function OrderMobileCard({
   order,
-  onOpen,
   onMarkPaid,
   onDelivered,
 }: {
   order: Order;
-  onOpen: (order: Order) => void;
   onMarkPaid: () => void;
   onDelivered: () => void;
 }) {
   return (
     <article className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20">
-      <button onClick={() => onOpen(order)} className="w-full text-left">
+      <Link
+        href={`/dashboard/orders/${order.id}`}
+        className="block w-full text-left"
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-semibold text-white">#{order.id.slice(0, 8)}</p>
@@ -486,7 +463,7 @@ function OrderMobileCard({
           <Metric label="Items" value={order.items?.length ?? 0} />
           <Metric label="Fecha" value={formatDate(order.createdAt)} />
         </div>
-      </button>
+      </Link>
       {order.status === "PENDING" && (
         <button
           onClick={onMarkPaid}

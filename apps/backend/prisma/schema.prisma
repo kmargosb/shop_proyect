@@ -242,7 +242,7 @@ model Order {
   invoice      Invoice?
   refunds      Refund[]
   transactions OrderTransaction[]
-  events       OrderEvent[]
+  events       OrderEvent[] 
   reservations InventoryReservation[]
 
   shipment Shipment?
@@ -699,6 +699,11 @@ enum OrderEventType {
   ORDER_SHIPPED
   ORDER_DELIVERED
   ORDER_UPDATED
+
+  CUSTOMER_REQUESTED_SIZE_CHANGE
+  CUSTOMER_REQUESTED_COLOR_CHANGE
+  CUSTOMER_REQUESTED_PRODUCT_CHANGE
+  CUSTOMER_REQUESTED_ADDRESS_CHANGE
 }
 
 enum PaymentSessionStatus {
