@@ -569,3 +569,62 @@ export async function searchOrders(params: {
   };
 }
 
+
+export async function updateOrderAdmin(
+  orderId: string,
+  data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  },
+) {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+
+    data: {
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+
+      addressLine1: data.addressLine1,
+      addressLine2: data.addressLine2,
+
+      city: data.city,
+      postalCode: data.postalCode,
+      country: data.country,
+    },
+  });
+
+  await prisma.orderEvent.create({
+    data: {
+      orderId,
+
+      type: "ORDER_UPDATED",
+
+      message: "Order edited by admin",
+    },
+  });
+
+  getIO().emit("orderUpdated", {
+    orderId,
+  });
+
+  return updatedOrder;
+}

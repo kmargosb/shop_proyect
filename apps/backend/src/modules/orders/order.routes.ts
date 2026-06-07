@@ -20,6 +20,7 @@ import {
   cancelOrderController,
   getAdminOrderByIdController,
   submitHelpRequestController,
+  updateOrderAdminController,
 } from "./order.controller";
 
 import { getActivityFeedController } from "./order.activity.controller";
@@ -63,6 +64,8 @@ router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
 
 // Reenviar email
 router.post("/:id/resend-email", protect, adminOnly, resendOrderEmailController);
+
+router.patch("/:id/admin-edit", protect, adminOnly, updateOrderAdminController);
 
 // Help email
 router.post("/:id/help-request", submitHelpRequestController);

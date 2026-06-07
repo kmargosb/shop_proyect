@@ -6,6 +6,7 @@ import {
   getOrders,
   updateOrderStatus,
   cancelOrder,
+  updateOrderAdmin,
 } from "./order.service";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
@@ -447,6 +448,27 @@ export const getAdminOrderByIdController = asyncHandler(
     }
 
     res.json(order);
+  },
+);
+
+export const updateOrderAdminController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const orderId =
+      typeof req.params.id === "string"
+        ? req.params.id
+        : req.params.id[0];
+
+    const updated = await updateOrderAdmin(
+      orderId,
+      req.body,
+    );
+
+    getIO().emit("dashboard:update", {
+      type: "ORDER_UPDATED",
+      orderId,
+    });
+
+    res.json(updated);
   },
 );
 
