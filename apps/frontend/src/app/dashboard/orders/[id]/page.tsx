@@ -30,6 +30,7 @@ export default function DashboardOrderPage() {
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [includeCancelLink, setIncludeCancelLink] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -123,6 +124,7 @@ export default function DashboardOrderPage() {
 
         body: JSON.stringify({
           message: replyMessage,
+          includeCancelLink,
         }),
       });
 
@@ -132,6 +134,7 @@ export default function DashboardOrderPage() {
 
       setReplyOpen(false);
       setReplyMessage("");
+      setIncludeCancelLink(false);
 
       await loadOrder();
     } catch (error) {
@@ -681,9 +684,27 @@ export default function DashboardOrderPage() {
               placeholder="Escribe tu respuesta..."
             />
 
+            <div className="mt-5 flex items-center gap-3">
+              <input
+                id="cancel-link"
+                type="checkbox"
+                checked={includeCancelLink}
+                onChange={(e) => setIncludeCancelLink(e.target.checked)}
+                className="h-4 w-4"
+              />
+
+              <label htmlFor="cancel-link" className="text-sm text-neutral-300">
+                Incluir enlace de cancelación
+              </label>
+            </div>
+
             <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={() => setReplyOpen(false)}
+                onClick={() => {
+                  setReplyOpen(false);
+                  setReplyMessage("");
+                  setIncludeCancelLink(false);
+                }}
                 className="rounded-xl border border-white/10 px-4 py-3 text-white"
               >
                 Cancelar

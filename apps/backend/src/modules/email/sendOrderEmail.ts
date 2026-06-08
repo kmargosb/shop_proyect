@@ -1,57 +1,52 @@
-import { prisma } from "@/lib/prisma"
-import { sendEmail } from "./email.service"
+import { prisma } from "@/lib/prisma";
+import { sendEmail } from "./email.service";
 import {
   orderConfirmationTemplate,
   shipmentConfirmationTemplate,
   helpRequestTemplate,
   customerReplyTemplate,
-} from "./email.templates"
-import { generateInvoicePDF } from "@/modules/invoices/invoice.generator"
+} from "./email.templates";
+import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
 
 export async function sendOrderConfirmationEmail(orderId: string) {
-
-  console.log("📧 Order confirmation email triggered")
+  console.log("📧 Order confirmation email triggered");
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      invoice: true
-    }
-  })
+      invoice: true,
+    },
+  });
 
   if (!order) {
-    console.warn("⚠ Order not found:", orderId)
-    return
+    console.warn("⚠ Order not found:", orderId);
+    return;
   }
 
   if (!order.invoice) {
-    console.warn("⚠ Invoice missing for order:", orderId)
-    return
+    console.warn("⚠ Invoice missing for order:", orderId);
+    return;
   }
 
-  console.log("📧 Sending email to:", order.email)
+  console.log("📧 Sending email to:", order.email);
 
   /* =========================
      GENERATE INVOICE PDF
   ========================= */
 
-  const pdfBuffer = await generateInvoicePDF(order.invoice.id)
+  const pdfBuffer = await generateInvoicePDF(order.invoice.id);
 
   /* =========================
      PUBLIC ORDER LINK
   ========================= */
 
-  const publicUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`
+  const publicUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
 
   /* =========================
      EMAIL HTML
   ========================= */
 
-  const html = orderConfirmationTemplate(
-    order.fullName,
-    order.id,
-    publicUrl
-  )
+  const html = orderConfirmationTemplate(order.fullName, order.id, publicUrl);
 
   /* =========================
      SEND EMAIL
@@ -64,41 +59,36 @@ export async function sendOrderConfirmationEmail(orderId: string) {
     attachments: [
       {
         filename: `invoice-${order.invoice.invoiceNumber}.pdf`,
-        content: pdfBuffer
-      }
-    ]
-  })
+        content: pdfBuffer,
+      },
+    ],
+  });
 
-  console.log("✅ Order confirmation email sent")
-
+  console.log("✅ Order confirmation email sent");
 }
 
-export async function sendShipmentEmail(
-  orderId: string,
-) {
+export async function sendShipmentEmail(orderId: string) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
 
     include: {
       shipment: true,
     },
-  })
+  });
 
   if (!order || !order.shipment) {
-    return
+    return;
   }
 
-  const publicUrl =
-    `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`
+  const publicUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
 
-  const html =
-    shipmentConfirmationTemplate(
-      order.fullName,
-      order.id,
-      order.shipment.carrier,
-      order.shipment.trackingNumber,
-      publicUrl,
-    )
+  const html = shipmentConfirmationTemplate(
+    order.fullName,
+    order.id,
+    order.shipment.carrier,
+    order.shipment.trackingNumber,
+    publicUrl,
+  );
 
   await sendEmail({
     to: order.email,
@@ -106,11 +96,9 @@ export async function sendShipmentEmail(
     subject: "Tu pedido fue enviado",
 
     html,
-  })
+  });
 
-  console.log(
-    "✅ Shipment email sent",
-  )
+  console.log("✅ Shipment email sent");
 }
 
 export async function sendHelpRequestEmail(
@@ -143,14 +131,13 @@ export async function sendHelpRequestEmail(
     html,
   });
 
-  console.log(
-    "✅ Help request email sent",
-  );
+  console.log("✅ Help request email sent");
 }
 
 export async function sendCustomerReplyEmail(
   orderId: string,
   message: string,
+  includeCancelLink?: boolean,
 ) {
   const order = await prisma.order.findUnique({
     where: {
@@ -162,17 +149,17 @@ export async function sendCustomerReplyEmail(
     throw new Error("Order not found");
   }
 
-  const html =
-    customerReplyTemplate(
-      order.fullName,
-      message,
-    );
+  const cancelUrl =
+  includeCancelLink
+    ? `${process.env.FRONTEND_URL}/orders/${order.id}/cancel?email=${order.email}`
+    : undefined;
+
+  const html = customerReplyTemplate(order.fullName, message, cancelUrl);
 
   await sendEmail({
     to: order.email,
 
-    subject:
-      `Respuesta sobre tu pedido #${order.id.slice(0, 8)}`,
+    subject: `Respuesta sobre tu pedido #${order.id.slice(0, 8)}`,
 
     html,
   });

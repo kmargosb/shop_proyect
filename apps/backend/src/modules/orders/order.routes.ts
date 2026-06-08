@@ -22,6 +22,7 @@ import {
   submitHelpRequestController,
   updateOrderAdminController,
   replyToCustomerController,
+  cancelPublicOrderController,
 } from "./order.controller";
 
 import { getActivityFeedController } from "./order.activity.controller";
@@ -41,6 +42,8 @@ router.get("/public/:id", getPublicOrderController);
 
 // Guest checkout
 router.post("/", createOrderController);
+
+router.post("/public/:id/cancel", cancelPublicOrderController);
 
 /* ===============================
    ADMIN ROUTES (🔥 ANTES DE :id)

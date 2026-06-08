@@ -122,6 +122,44 @@ export const cancelOrderController = asyncHandler(
   },
 );
 
+export const cancelPublicOrderController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id =
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+    const { email } = req.body;
+
+    const order = await prisma.order.findUnique({
+      where: {
+        id,
+      },
+
+      select: {
+        email: true,
+        status: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Order not found",
+      });
+    }
+
+    if (!email || email !== order.email) {
+      return res.status(403).json({
+        error: "Unauthorized",
+      });
+    }
+
+    await cancelOrder(id, "Cancelled by customer");
+
+    res.json({
+      success: true,
+    });
+  },
+);
+
 /**
  * Descargar factura desde Order
  * GET /orders/:id/invoice
@@ -499,41 +537,32 @@ export const submitHelpRequestController = asyncHandler(
 );
 
 export const replyToCustomerController = asyncHandler(
-    async (
-      req: Request,
-      res: Response,
-    ) => {
-      const id =
-        typeof req.params.id === "string"
-          ? req.params.id
-          : req.params.id[0];
+  async (req: Request, res: Response) => {
+    const id =
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
-      const { message } = req.body;
+    const { message, includeCancelLink } = req.body;
 
-      if (!message?.trim()) {
-        return res.status(400).json({
-          success: false,
-        });
-      }
-
-      await sendCustomerReplyEmail(
-        id,
-        message.trim(),
-      );
-
-      await prisma.orderEvent.create({
-        data: {
-          orderId: id,
-
-          type: "ORDER_UPDATED",
-
-          message:
-            `ADMIN_REPLY:${message.trim()}`,
-        },
+    if (!message?.trim()) {
+      return res.status(400).json({
+        success: false,
       });
+    }
 
-      res.json({
-        success: true,
-      });
-    },
-  );
+    await sendCustomerReplyEmail(id, message.trim(), includeCancelLink);
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: id,
+
+        type: "ORDER_UPDATED",
+
+        message: `ADMIN_REPLY:${message.trim()}`,
+      },
+    });
+
+    res.json({
+      success: true,
+    });
+  },
+);
