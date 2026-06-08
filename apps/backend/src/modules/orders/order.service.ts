@@ -569,7 +569,6 @@ export async function searchOrders(params: {
   };
 }
 
-
 export async function updateOrderAdmin(
   orderId: string,
   data: {
@@ -581,50 +580,210 @@ export async function updateOrderAdmin(
     city: string;
     postalCode: string;
     country: string;
+
+    items?: {
+      orderItemId: string;
+      variantId: string;
+      quantity: number;
+    }[];
   },
 ) {
-  const order = await prisma.order.findUnique({
-    where: {
-      id: orderId,
-    },
-  });
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: {
+        id: orderId,
+      },
+    });
 
-  if (!order) {
-    throw new Error("Order not found");
-  }
+    if (!order) {
+      throw new Error("Order not found");
+    }
 
-  const updatedOrder = await prisma.order.update({
-    where: {
-      id: orderId,
-    },
+    /* =========================
+       BLOCK EDITING
+    ========================= */
 
-    data: {
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
+    if (
+      order.status === "SHIPPED" ||
+      order.status === "DELIVERED" ||
+      order.status === "REFUNDED" ||
+      order.status === "CANCELLED"
+    ) {
+      throw new Error(
+        "This order can no longer be edited",
+      );
+    }
 
-      addressLine1: data.addressLine1,
-      addressLine2: data.addressLine2,
+    /* =========================
+       UPDATE CUSTOMER DATA
+    ========================= */
 
-      city: data.city,
-      postalCode: data.postalCode,
-      country: data.country,
-    },
-  });
+    const updatedOrder = await tx.order.update({
+      where: {
+        id: orderId,
+      },
 
-  await prisma.orderEvent.create({
-    data: {
+      data: {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2,
+
+        city: data.city,
+        postalCode: data.postalCode,
+        country: data.country,
+      },
+    });
+
+    /* =========================
+       UPDATE VARIANTS
+    ========================= */
+
+    if (Array.isArray(data.items)) {
+      for (const item of data.items) {
+        const currentItem =
+          await tx.orderItem.findUnique({
+            where: {
+              id: item.orderItemId,
+            },
+          });
+
+        if (!currentItem) {
+          continue;
+        }
+
+        // Por ahora NO permitimos
+        // cambiar cantidad desde admin
+
+        if (
+          item.quantity !==
+          currentItem.quantity
+        ) {
+          throw new Error(
+            "Changing quantity is not supported yet",
+          );
+        }
+
+        // misma variante -> no hacer nada
+
+        if (
+          currentItem.variantId ===
+          item.variantId
+        ) {
+          continue;
+        }
+
+        const oldVariant =
+          await tx.productVariant.findUnique({
+            where: {
+              id:
+                currentItem.variantId ??
+                undefined,
+            },
+          });
+
+        const newVariant =
+          await tx.productVariant.findUnique({
+            where: {
+              id: item.variantId,
+            },
+          });
+
+        if (!newVariant) {
+          throw new Error(
+            "Variant not found",
+          );
+        }
+
+        const availableStock =
+          newVariant.stock -
+          newVariant.reservedStock;
+
+        if (
+          availableStock <
+          currentItem.quantity
+        ) {
+          throw new Error(
+            `Not enough stock for ${newVariant.size} ${newVariant.color}`,
+          );
+        }
+
+        /* =========================
+           RETURN STOCK TO OLD
+        ========================= */
+
+        if (oldVariant) {
+          await tx.productVariant.update({
+            where: {
+              id: oldVariant.id,
+            },
+
+            data: {
+              stock: {
+                increment:
+                  currentItem.quantity,
+              },
+            },
+          });
+        }
+
+        /* =========================
+           REMOVE STOCK FROM NEW
+        ========================= */
+
+        await tx.productVariant.update({
+          where: {
+            id: newVariant.id,
+          },
+
+          data: {
+            stock: {
+              decrement:
+                currentItem.quantity,
+            },
+          },
+        });
+
+        /* =========================
+           UPDATE ORDER ITEM
+        ========================= */
+
+        await tx.orderItem.update({
+          where: {
+            id: currentItem.id,
+          },
+
+          data: {
+            variantId: newVariant.id,
+
+            size: newVariant.size,
+
+            color: newVariant.color,
+          },
+        });
+      }
+    }
+
+    /* =========================
+       TIMELINE
+    ========================= */
+
+    await tx.orderEvent.create({
+      data: {
+        orderId,
+
+        type: "ORDER_UPDATED",
+
+        message: "Order edited by admin",
+      },
+    });
+
+    getIO().emit("orderUpdated", {
       orderId,
+    });
 
-      type: "ORDER_UPDATED",
-
-      message: "Order edited by admin",
-    },
+    return updatedOrder;
   });
-
-  getIO().emit("orderUpdated", {
-    orderId,
-  });
-
-  return updatedOrder;
 }

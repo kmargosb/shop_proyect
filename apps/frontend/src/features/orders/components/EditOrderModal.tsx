@@ -11,11 +11,7 @@ type Props = {
   onSaved: () => Promise<void>;
 };
 
-export default function EditOrderModal({
-  order,
-  onClose,
-  onSaved,
-}: Props) {
+export default function EditOrderModal({ order, onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -43,41 +39,36 @@ export default function EditOrderModal({
     try {
       setSaving(true);
 
-      const res = await apiFetch(
-        `/orders/${order.id}/admin-edit`,
-        {
-          method: "PATCH",
+      const res = await apiFetch(`/orders/${order.id}/admin-edit`, {
+        method: "PATCH",
 
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            ...form,
-            items,
-          }),
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+
+        body: JSON.stringify({
+          ...form,
+          items,
+        }),
+      });
 
       if (!res || !res.ok) {
         throw new Error();
       }
 
-      toast.success(
-        "Pedido actualizado correctamente",
-      );
+      toast.success("Pedido actualizado correctamente");
 
       await onSaved();
 
       onClose();
     } catch {
-      toast.error(
-        "No se pudo actualizar el pedido",
-      );
+      toast.error("No se pudo actualizar el pedido");
     } finally {
       setSaving(false);
     }
   };
+
+  console.log(order.items?.[0]?.product);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
@@ -104,9 +95,7 @@ export default function EditOrderModal({
         {/* CLIENTE */}
 
         <div className="mt-8 rounded-3xl border border-white/10 p-5">
-          <h3 className="font-semibold text-white">
-            Cliente
-          </h3>
+          <h3 className="font-semibold text-white">Cliente</h3>
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <input
@@ -150,9 +139,7 @@ export default function EditOrderModal({
         {/* DIRECCIÓN */}
 
         <div className="mt-6 rounded-3xl border border-white/10 p-5">
-          <h3 className="font-semibold text-white">
-            Dirección
-          </h3>
+          <h3 className="font-semibold text-white">Dirección</h3>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <input
@@ -208,46 +195,55 @@ export default function EditOrderModal({
         {/* PRODUCTOS */}
 
         <div className="mt-6 rounded-3xl border border-white/10 p-5">
-          <h3 className="font-semibold text-white">
-            Productos
-          </h3>
+          <h3 className="font-semibold text-white">Productos</h3>
 
           <div className="mt-4 space-y-4">
-            {order.items.map(
-              (item: any, index: number) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-white/10 p-4"
+            {order.items.map((item: any, index: number) => (
+              <div
+                key={item.id}
+                className="rounded-2xl border border-white/10 p-4"
+              >
+                <p className="font-medium text-white">{item.productName}</p>
+
+                <select
+                  value={items[index].variantId}
+                  onChange={(e) => {
+                    const copy = [...items];
+
+                    copy[index].variantId = e.target.value;
+
+                    setItems(copy);
+                  }}
+                  className="mt-3 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
                 >
-                  <p className="font-medium text-white">
-                    {item.productName}
-                  </p>
+                  {item.product.variants.map((variant: any) => (
+                    <option
+                      key={variant.id}
+                      value={variant.id}
+                      disabled={variant.stock <= 0}
+                    >
+                      {variant.size}
+                      {" · "}
+                      {variant.color} ({variant.stock})
+                    </option>
+                  ))}
+                </select>
 
-                  <p className="mt-2 text-sm text-neutral-400">
-                    Actual:
-                    {" "}
-                    {item.size}
-                    {" · "}
-                    {item.color}
-                  </p>
+                <input
+                  type="number"
+                  min={1}
+                  value={items[index].quantity}
+                  onChange={(e) => {
+                    const copy = [...items];
 
-                  <input
-                    type="number"
-                    min={1}
-                    value={items[index].quantity}
-                    onChange={(e) => {
-                      const copy = [...items];
+                    copy[index].quantity = Number(e.target.value);
 
-                      copy[index].quantity =
-                        Number(e.target.value);
-
-                      setItems(copy);
-                    }}
-                    className="mt-3 w-32 rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
-                  />
-                </div>
-              ),
-            )}
+                    setItems(copy);
+                  }}
+                  className="mt-3 w-32 rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
+                />
+              </div>
+            ))}
           </div>
         </div>
         <button
@@ -256,9 +252,7 @@ export default function EditOrderModal({
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-black"
         >
           <Save size={18} />
-          {saving
-            ? "Guardando..."
-            : "Guardar cambios"}
+          {saving ? "Guardando..." : "Guardar cambios"}
         </button>
       </div>
     </div>
