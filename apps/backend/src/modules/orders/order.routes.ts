@@ -21,6 +21,7 @@ import {
   getAdminOrderByIdController,
   submitHelpRequestController,
   updateOrderAdminController,
+  replyToCustomerController,
 } from "./order.controller";
 
 import { getActivityFeedController } from "./order.activity.controller";
@@ -70,6 +71,8 @@ router.patch("/:id/admin-edit", protect, adminOnly, updateOrderAdminController);
 // Help email
 router.post("/:id/help-request", submitHelpRequestController);
 
+router.post("/:id/reply", protect, adminOnly, replyToCustomerController);
+
 // Cambiar estado
 router.patch("/:id", protect, adminOnly, updateOrderStatusController);
 
@@ -88,7 +91,6 @@ router.get("/me", protect, getMyOrdersController);
 
 // Get my order by id
 router.get("/:id/me", protect, getMyOrderByIdController);
-
 
 /* ===============================
    🔥 UNIVERSAL ORDER ROUTE (SIEMPRE AL FINAL)

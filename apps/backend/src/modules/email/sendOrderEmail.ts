@@ -4,6 +4,7 @@ import {
   orderConfirmationTemplate,
   shipmentConfirmationTemplate,
   helpRequestTemplate,
+  customerReplyTemplate,
 } from "./email.templates"
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator"
 
@@ -145,4 +146,34 @@ export async function sendHelpRequestEmail(
   console.log(
     "✅ Help request email sent",
   );
+}
+
+export async function sendCustomerReplyEmail(
+  orderId: string,
+  message: string,
+) {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  const html =
+    customerReplyTemplate(
+      order.fullName,
+      message,
+    );
+
+  await sendEmail({
+    to: order.email,
+
+    subject:
+      `Respuesta sobre tu pedido #${order.id.slice(0, 8)}`,
+
+    html,
+  });
 }

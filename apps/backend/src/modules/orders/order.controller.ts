@@ -15,6 +15,7 @@ import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
 import {
   sendOrderConfirmationEmail,
   sendHelpRequestEmail,
+  sendCustomerReplyEmail,
 } from "@/modules/email/sendOrderEmail";
 import { getIO } from "@/lib/socket";
 
@@ -454,14 +455,9 @@ export const getAdminOrderByIdController = asyncHandler(
 export const updateOrderAdminController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const orderId =
-      typeof req.params.id === "string"
-        ? req.params.id
-        : req.params.id[0];
+      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
-    const updated = await updateOrderAdmin(
-      orderId,
-      req.body,
-    );
+    const updated = await updateOrderAdmin(orderId, req.body);
 
     getIO().emit("dashboard:update", {
       type: "ORDER_UPDATED",
@@ -492,7 +488,7 @@ export const submitHelpRequestController = asyncHandler(
       data: {
         orderId: id,
         type: "ORDER_UPDATED",
-        message: "Customer contacted support",
+        message: `CUSTOMER_MESSAGE:${message.trim()}`,
       },
     });
 
@@ -501,3 +497,43 @@ export const submitHelpRequestController = asyncHandler(
     });
   },
 );
+
+export const replyToCustomerController = asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const id =
+        typeof req.params.id === "string"
+          ? req.params.id
+          : req.params.id[0];
+
+      const { message } = req.body;
+
+      if (!message?.trim()) {
+        return res.status(400).json({
+          success: false,
+        });
+      }
+
+      await sendCustomerReplyEmail(
+        id,
+        message.trim(),
+      );
+
+      await prisma.orderEvent.create({
+        data: {
+          orderId: id,
+
+          type: "ORDER_UPDATED",
+
+          message:
+            `ADMIN_REPLY:${message.trim()}`,
+        },
+      });
+
+      res.json({
+        success: true,
+      });
+    },
+  );

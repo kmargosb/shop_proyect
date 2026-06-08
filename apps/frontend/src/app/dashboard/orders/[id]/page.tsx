@@ -17,12 +17,19 @@ import {
 import ShipmentModal from "@/features/orders/components/ShipmentModal";
 import EditOrderModal from "@/features/orders/components/EditOrderModal";
 
+const CUSTOMER_MESSAGE_PREFIX = "CUSTOMER_MESSAGE:";
+const ADMIN_REPLY_PREFIX = "ADMIN_REPLY:";
+const INTERNAL_NOTE_PREFIX = "INTERNAL_NOTE:";
+
 export default function DashboardOrderPage() {
   const params = useParams();
   const id = params?.id as string;
   const [order, setOrder] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -98,6 +105,40 @@ export default function DashboardOrderPage() {
       await loadOrder();
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const sendReply = async () => {
+    if (!replyMessage.trim()) return;
+
+    try {
+      setSendingReply(true);
+
+      const res = await apiFetch(`/orders/${order.id}/reply`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          message: replyMessage,
+        }),
+      });
+
+      if (!res || !res.ok) {
+        throw new Error();
+      }
+
+      setReplyOpen(false);
+      setReplyMessage("");
+
+      await loadOrder();
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo enviar la respuesta");
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -243,25 +284,79 @@ export default function DashboardOrderPage() {
               <h2 className="text-lg font-semibold text-white">Timeline</h2>
 
               <div className="mt-6 space-y-5">
-                {order.events.map((event: any, index: number) => (
-                  <div key={event.id} className="relative pl-6">
-                    {index !== order.events.length - 1 && (
-                      <div className="absolute left-[7px] top-6 h-full w-px bg-white/10" />
-                    )}
+                {order.events.map((event: any, index: number) => {
+                  const isCustomerMessage =
+                    typeof event.message === "string" &&
+                    event.message.startsWith("CUSTOMER_MESSAGE");
+                  const isAdminReply =
+                    typeof event.message === "string" &&
+                    event.message.startsWith("ADMIN_REPLY:");
 
-                    <div className="absolute left-0 top-1 h-4 w-4 rounded-full border border-white/20 bg-emerald-400" />
+                  return (
+                    <div key={event.id} className="relative pl-6">
+                      {index !== order.events.length - 1 && (
+                        <div className="absolute left-[7px] top-6 h-full w-px bg-white/10" />
+                      )}
 
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {timelineLabels[event.type] ?? event.message}
-                      </p>
+                      <div
+                        className={`absolute left-0 top-1 h-4 w-4 rounded-full border ${
+                          isCustomerMessage
+                            ? "border-sky-400 bg-sky-400"
+                            : "border-white/20 bg-emerald-400"
+                        }`}
+                      />
+                      {isCustomerMessage ? (
+                        <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4">
+                          <p className="font-semibold text-sky-300">
+                            💬 Mensaje del cliente
+                          </p>
 
-                      <p className="mt-1 text-xs text-neutral-500">
-                        {new Date(event.createdAt).toLocaleString("es-ES")}
-                      </p>
+                          <button
+                            onClick={() => setReplyOpen(true)}
+                            className="mt-4 rounded-xl border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-300"
+                          >
+                            Responder
+                          </button>
+
+                          <p className="mt-3 text-sm text-neutral-200">
+                            {event.message
+                              .replace("CUSTOMER_MESSAGE:", "")
+                              .replace("CUSTOMER_MESSAGE", "")
+                              .trim()}
+                          </p>
+
+                          <p className="mt-3 text-xs text-neutral-500">
+                            {new Date(event.createdAt).toLocaleString("es-ES")}
+                          </p>
+                        </div>
+                      ) : isAdminReply ? (
+                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                          <p className="font-semibold text-emerald-300">
+                            ✉️ Respuesta enviada
+                          </p>
+
+                          <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-200">
+                            {event.message.replace("ADMIN_REPLY:", "").trim()}
+                          </p>
+
+                          <p className="mt-3 text-xs text-neutral-500">
+                            {new Date(event.createdAt).toLocaleString("es-ES")}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            {timelineLabels[event.type] ?? event.message}
+                          </p>
+
+                          <p className="mt-1 text-xs text-neutral-500">
+                            {new Date(event.createdAt).toLocaleString("es-ES")}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -565,6 +660,45 @@ export default function DashboardOrderPage() {
           onClose={() => setEditOpen(false)}
           onSaved={loadOrder}
         />
+      )}
+      {replyOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-neutral-950 p-6">
+            <h3 className="text-xl font-semibold text-white">
+              Responder al cliente
+            </h3>
+
+            <p className="mt-2 text-sm text-neutral-400">
+              Esta respuesta se enviará por correo electrónico y quedará
+              registrada en el historial del pedido.
+            </p>
+
+            <textarea
+              value={replyMessage}
+              onChange={(e) => setReplyMessage(e.target.value)}
+              rows={8}
+              className="mt-6 w-full rounded-2xl border border-white/10 bg-black p-4 text-white"
+              placeholder="Escribe tu respuesta..."
+            />
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setReplyOpen(false)}
+                className="rounded-xl border border-white/10 px-4 py-3 text-white"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={sendReply}
+                disabled={sendingReply}
+                className="rounded-xl bg-white px-5 py-3 font-medium text-black"
+              >
+                {sendingReply ? "Enviando..." : "Enviar respuesta"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

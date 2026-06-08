@@ -138,3 +138,40 @@ export function helpRequestTemplate(
     </div>
   `;
 }
+
+export function customerReplyTemplate(
+  customerName: string,
+  message: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:24px;color:#111">
+      <h2>Hola ${customerName}</h2>
+
+      <p>
+        Hemos revisado tu consulta y queremos darte una respuesta:
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:16px;
+          border-radius:12px;
+          background:#f5f5f5;
+          white-space:pre-wrap;
+        "
+      >
+        ${message}
+      </div>
+
+      <p style="margin-top:24px">
+        Si necesitas cualquier otra cosa,
+        simplemente responde a este correo o
+        vuelve a contactar con nosotros desde tu pedido.
+      </p>
+
+      <p style="margin-top:24px">
+        Gracias por confiar en nosotros ❤️
+      </p>
+    </div>
+  `;
+}
