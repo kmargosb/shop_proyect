@@ -28,9 +28,7 @@ export default function OrderHelpPage() {
         const email =
           searchParams.get("email") || localStorage.getItem("orderEmail");
 
-        /* =========================
-   GUEST
-========================= */
+        /* GUEST */
 
         if (email) {
           const response = await publicFetch(
@@ -42,9 +40,7 @@ export default function OrderHelpPage() {
           return;
         }
 
-        /* =========================
-   AUTH USER
-========================= */
+        /* AUTH USER */
 
         const response = await apiFetch(`/orders/${id}`);
 
