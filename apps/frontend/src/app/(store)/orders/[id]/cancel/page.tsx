@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
-import { apiFetch } from "@/shared/lib/api";
+import { publicFetch } from "@/shared/lib/api";
 
 export default function CancelOrderPage() {
   const params = useParams();
@@ -21,20 +21,17 @@ export default function CancelOrderPage() {
 
       const email = searchParams.get("email");
 
-      const response = await apiFetch(
-        `/orders/public/${id}/cancel`,
-        {
-          method: "POST",
+      const response = await publicFetch(`/orders/public/${id}/cancel`, {
+        method: "POST",
 
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            email,
-          }),
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+
+        body: JSON.stringify({
+          email,
+        }),
+      });
 
       if (!response?.ok) {
         throw new Error();
@@ -44,9 +41,7 @@ export default function CancelOrderPage() {
     } catch (error) {
       console.error(error);
 
-      alert(
-        "No hemos podido cancelar el pedido. Inténtalo de nuevo.",
-      );
+      alert("No hemos podido cancelar el pedido. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -57,10 +52,7 @@ export default function CancelOrderPage() {
       <div className="container mx-auto max-w-4xl px-4 py-12 md:py-20">
         <div className="rounded-[32px] border border-emerald-500/20 bg-emerald-500/10 p-8 md:p-12">
           <div className="flex justify-center">
-            <ShieldCheck
-              size={64}
-              className="text-emerald-400"
-            />
+            <ShieldCheck size={64} className="text-emerald-400" />
           </div>
 
           <h1 className="mt-6 text-center text-3xl font-semibold text-black md:text-4xl">
@@ -72,8 +64,8 @@ export default function CancelOrderPage() {
           </p>
 
           <p className="mt-3 text-center leading-relaxed text-neutral-500">
-            Si el pago ya fue procesado, iniciaremos el reembolso
-            lo antes posible.
+            Si el pago ya fue procesado, iniciaremos el reembolso lo antes
+            posible.
           </p>
 
           <div className="mt-8 flex justify-center">
@@ -104,8 +96,8 @@ export default function CancelOrderPage() {
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-neutral-400">
-              Antes de continuar queremos asegurarnos de que esta
-              es realmente la mejor opción para ti.
+              Antes de continuar queremos asegurarnos de que esta es realmente
+              la mejor opción para ti.
             </p>
 
             <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
@@ -114,22 +106,16 @@ export default function CancelOrderPage() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li>
-                  • Tu pedido dejará de procesarse inmediatamente.
-                </li>
+                <li>• Tu pedido dejará de procesarse inmediatamente.</li>
+
+                <li>• No podremos enviarlo.</li>
 
                 <li>
-                  • No podremos enviarlo.
+                  • Si el pago ya fue confirmado, iniciaremos el proceso de
+                  reembolso.
                 </li>
 
-                <li>
-                  • Si el pago ya fue confirmado, iniciaremos el
-                  proceso de reembolso.
-                </li>
-
-                <li>
-                  • Esta acción no podrá deshacerse posteriormente.
-                </li>
+                <li>• Esta acción no podrá deshacerse posteriormente.</li>
               </ul>
             </div>
 
@@ -147,9 +133,7 @@ export default function CancelOrderPage() {
                 disabled={loading}
                 className="rounded-2xl bg-red-600 px-6 py-4 font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading
-                  ? "Cancelando..."
-                  : "Cancelar pedido"}
+                {loading ? "Cancelando..." : "Cancelar pedido"}
               </button>
             </div>
           </div>

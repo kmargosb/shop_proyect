@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { LifeBuoy, Send, Phone } from "lucide-react";
-import { apiFetch } from "@/shared/lib/api";
+import { apiFetch, publicFetch } from "@/shared/lib/api";
 
 export default function OrderHelpPage() {
   const params = useParams();
@@ -25,23 +25,28 @@ export default function OrderHelpPage() {
 
     const loadOrder = async () => {
       try {
-        let response = await apiFetch(`/orders/${id}`);
-
-        if (response?.ok) {
-          setOrder(await response.json());
-          return;
-        }
-
         const email =
           searchParams.get("email") || localStorage.getItem("orderEmail");
 
-        if (!email) {
+        /* =========================
+   GUEST
+========================= */
+
+        if (email) {
+          const response = await publicFetch(
+            `/orders/public/${id}?email=${encodeURIComponent(email)}`,
+          );
+
+          setOrder(await response.json());
+
           return;
         }
 
-        response = await apiFetch(
-          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
-        );
+        /* =========================
+   AUTH USER
+========================= */
+
+        const response = await apiFetch(`/orders/${id}`);
 
         if (response?.ok) {
           setOrder(await response.json());

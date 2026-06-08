@@ -15,7 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { apiFetch } from "@/shared/lib/api";
+import { apiFetch, publicFetch } from "@/shared/lib/api";
 import { Button } from "@/shared/ui/button";
 
 type OrderEvent = {
@@ -58,13 +58,19 @@ export default function Page() {
 
     const loadOrder = async () => {
       try {
-        /* =========================
-         AUTH USER
-      ========================= */
 
-        let res = await apiFetch(`/orders/${id}`);
+        /* AUTH USER */
 
-        if (res && res.ok) {
+        const email =
+          searchParams.get("email") || localStorage.getItem("orderEmail");
+
+        /* GUEST ORDER */
+
+        if (email) {
+          const res = await publicFetch(
+            `/orders/public/${id}?email=${encodeURIComponent(email)}`,
+          );
+
           const data = await res.json();
 
           setOrder(data);
@@ -72,18 +78,11 @@ export default function Page() {
           return;
         }
 
-        /* =========================
-         GUEST FALLBACK
-      ========================= */
+        /* AUTH USER ORDER */
 
-        const email =
-          searchParams.get("email") || localStorage.getItem("orderEmail");
+        const res = await apiFetch(`/orders/${id}`);
 
-        if (!email) return;
-
-        res = await apiFetch(`/orders/public/${id}?email=${email}`);
-
-        if (res && res.ok) {
+        if (res?.ok) {
           const data = await res.json();
 
           setOrder(data);
