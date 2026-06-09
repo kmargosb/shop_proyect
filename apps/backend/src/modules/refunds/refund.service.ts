@@ -158,7 +158,6 @@ export const RefundService = {
       status: dbRefund.status,
     };
   },
-
   async approveRefund(refundId: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },
@@ -193,7 +192,39 @@ export const RefundService = {
 
     return updatedRefund;
   },
+  async rejectRefund(refundId: string, rejectionReason?: string) {
+    const refund = await prisma.refund.findUnique({
+      where: { id: refundId },
+    });
 
+    if (!refund) {
+      throw new Error("Refund not found");
+    }
+
+    if (refund.status !== "PENDING_REVIEW") {
+      throw new Error("Refund already processed");
+    }
+
+    const updatedRefund = await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
+
+      data: {
+        status: "REJECTED",
+
+        rejectionReason,
+
+        reviewedAt: new Date(),
+      },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: refund.orderId,
+    });
+
+    return updatedRefund;
+  },
   async markCustomerSent(refundId: string) {
     const refund = await prisma.refund.update({
       where: {
@@ -211,7 +242,6 @@ export const RefundService = {
 
     return refund;
   },
-
   async markRefundReceived(refundId: string) {
     const refund = await prisma.refund.update({
       where: {
@@ -229,7 +259,6 @@ export const RefundService = {
 
     return refund;
   },
-
   async processRefund(refundId: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },
@@ -294,40 +323,6 @@ export const RefundService = {
         orderId: refund.orderId,
         type: "REFUND_COMPLETED",
         message: "Refund completed",
-      },
-    });
-
-    getIO().emit("orderUpdated", {
-      orderId: refund.orderId,
-    });
-
-    return updatedRefund;
-  },
-
-  async rejectRefund(refundId: string, rejectionReason?: string) {
-    const refund = await prisma.refund.findUnique({
-      where: { id: refundId },
-    });
-
-    if (!refund) {
-      throw new Error("Refund not found");
-    }
-
-    if (refund.status !== "PENDING_REVIEW") {
-      throw new Error("Refund already processed");
-    }
-
-    const updatedRefund = await prisma.refund.update({
-      where: {
-        id: refundId,
-      },
-
-      data: {
-        status: "REJECTED",
-
-        rejectionReason,
-
-        reviewedAt: new Date(),
       },
     });
 

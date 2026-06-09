@@ -151,8 +151,7 @@ export default function Page() {
 
   const isPaid = order.status === "PAID";
 
-  const canContinuePayment =
-    order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
+  const canContinuePayment = order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
 
   const canCancel =
     order.status === "PENDING" ||
@@ -169,9 +168,7 @@ export default function Page() {
     return refunded < item.quantity;
   });
 
-  const canRefund =
-    (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") &&
-    hasRefundableItems;
+  const canRefund = (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") && hasRefundableItems;
 
   const handleDownloadInvoice = () => {
     const email =
@@ -240,7 +237,8 @@ export default function Page() {
 
         return;
       }
-
+console.log("EMAIL PARAM", searchParams.get("email"));
+console.log("LOCAL EMAIL", localStorage.getItem("orderEmail"));
       const res = await apiFetch("/refunds", {
         method: "POST",
         body: JSON.stringify({
@@ -259,13 +257,13 @@ export default function Page() {
         return;
       }
 
-      const refreshed = await apiFetch(`/orders/${order.id}`);
+      // const refreshed = await apiFetch(`/orders/${order.id}`);
 
-      if (refreshed && refreshed.ok) {
-        const updatedOrder = await refreshed.json();
+      // if (refreshed && refreshed.ok) {
+      //   const updatedOrder = await refreshed.json();
 
-        setOrder(updatedOrder);
-      }
+      //   setOrder(updatedOrder);
+      // }
 
       setRefundSuccess(true);
 

@@ -37,7 +37,6 @@ export default function DashboardOrderPage() {
   const [replyMessage, setReplyMessage] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [includeCancelLink, setIncludeCancelLink] = useState(false);
-  
 
   const loadOrder = useCallback(async () => {
     const res = await apiFetch(`/orders/admin/${id}`);
@@ -75,10 +74,10 @@ export default function DashboardOrderPage() {
   }, [id, loadOrder]);
 
   useEffect(() => {
-  timelineBottomRef.current?.scrollIntoView({
-    behavior: "smooth",
-  });
-}, [order?.events]);
+    timelineBottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [order?.events]);
 
   const markDelivered = async () => {
     try {
@@ -110,6 +109,31 @@ export default function DashboardOrderPage() {
     try {
       await apiFetch(`/refunds/${refundId}/approve`, {
         method: "POST",
+      });
+
+      await loadOrder();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const rejectRefund = async (refundId: string) => {
+    try {
+      const reason = prompt(
+        "Motivo del rechazo",
+        "Producto usado o fuera de plazo",
+      );
+
+      await apiFetch(`/refunds/${refundId}/reject`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          rejectionReason: reason,
+        }),
       });
 
       await loadOrder();
@@ -508,7 +532,10 @@ export default function DashboardOrderPage() {
                                 Aprobar devolución
                               </button>
 
-                              <button className="rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white">
+                              <button
+                                onClick={() => rejectRefund(refund.id)}
+                                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white"
+                              >
                                 Rechazar devolución
                               </button>
                             </>
