@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/shared/lib/api";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { socket } from "@/shared/lib/socket";
 
 import AccountSidebar from "./components/AccountSidebar";
 import OrdersTab from "./components/OrdersTab";
@@ -48,39 +49,53 @@ export default function AccountPage() {
     searchParams.get("tab") || "orders",
   );
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const authRes = await apiFetch("/auth/me");
+  const loadData = useCallback(async () => {
+    try {
+      const authRes = await apiFetch("/auth/me");
 
-        if (!authRes) {
-          window.location.href = "/login";
-          return;
-        }
-
-        const authData = await authRes.json();
-
-        if (!authData?.user) {
-          window.location.href = "/login";
-          return;
-        }
-
-        const res = await apiFetch("/orders/me");
-
-        if (!res) return;
-
-        const data = await res.json();
-
-        setOrders(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      if (!authRes) {
+        window.location.href = "/login";
+        return;
       }
-    }
 
-    loadData();
+      const authData = await authRes.json();
+
+      if (!authData?.user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const res = await apiFetch("/orders/me");
+
+      if (!res) return;
+
+      const data = await res.json();
+
+      setOrders(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const refreshOrders = () => {
+      void loadData();
+    };
+
+    socket.on("dashboard:update", refreshOrders);
+    socket.on("orderUpdated", refreshOrders);
+
+    return () => {
+      socket.off("dashboard:update", refreshOrders);
+      socket.off("orderUpdated", refreshOrders);
+    };
+  }, [loadData]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");

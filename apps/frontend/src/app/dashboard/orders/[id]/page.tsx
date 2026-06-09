@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/shared/lib/api";
 import {
@@ -16,6 +16,11 @@ import {
 } from "@/shared/constants/orderLabels";
 import ShipmentModal from "@/features/orders/components/ShipmentModal";
 import EditOrderModal from "@/features/orders/components/EditOrderModal";
+import { socket } from "@/shared/lib/socket";
+import type {
+  DashboardUpdatePayload,
+  OrderUpdatedPayload,
+} from "@/shared/lib/socket";
 
 const CUSTOMER_MESSAGE_PREFIX = "CUSTOMER_MESSAGE:";
 const ADMIN_REPLY_PREFIX = "ADMIN_REPLY:";
@@ -32,20 +37,40 @@ export default function DashboardOrderPage() {
   const [sendingReply, setSendingReply] = useState(false);
   const [includeCancelLink, setIncludeCancelLink] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadOrder();
-    }
-  }, [id]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     const res = await apiFetch(`/orders/admin/${id}`);
 
     if (!res) return;
     const data = await res.json();
 
     setOrder(data);
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      void loadOrder();
+    }
+  }, [id, loadOrder]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const refreshOrder = (
+      payload?: DashboardUpdatePayload | OrderUpdatedPayload,
+    ) => {
+      if (!payload?.orderId || payload.orderId === id) {
+        void loadOrder();
+      }
+    };
+
+    socket.on("dashboard:update", refreshOrder);
+    socket.on("orderUpdated", refreshOrder);
+
+    return () => {
+      socket.off("dashboard:update", refreshOrder);
+      socket.off("orderUpdated", refreshOrder);
+    };
+  }, [id, loadOrder]);
 
   const markDelivered = async () => {
     try {

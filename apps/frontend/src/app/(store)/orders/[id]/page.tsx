@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import ShipmentStatusCard from "@/features/orders/components/ShipmentStatusCard";
 import { socket } from "@/shared/lib/socket";
+import type {
+  DashboardUpdatePayload,
+  OrderUpdatedPayload,
+} from "@/shared/lib/socket";
 
 import {
   CheckCircle2,
@@ -58,7 +62,6 @@ export default function Page() {
 
     const loadOrder = async () => {
       try {
-
         /* AUTH USER */
 
         const email =
@@ -98,20 +101,26 @@ export default function Page() {
      INITIAL LOAD
   ========================= */
 
-    loadOrder();
+    void loadOrder();
 
     /* =========================
      REALTIME UPDATES
   ========================= */
 
-    socket.on("orderUpdated", ({ orderId }) => {
-      if (orderId === id) {
-        loadOrder();
+    const refreshOrder = (
+      payload?: DashboardUpdatePayload | OrderUpdatedPayload,
+    ) => {
+      if (!payload?.orderId || payload.orderId === id) {
+        void loadOrder();
       }
-    });
+    };
+
+    socket.on("dashboard:update", refreshOrder);
+    socket.on("orderUpdated", refreshOrder);
 
     return () => {
-      socket.off("orderUpdated");
+      socket.off("dashboard:update", refreshOrder);
+      socket.off("orderUpdated", refreshOrder);
     };
   }, [id, searchParams]);
 

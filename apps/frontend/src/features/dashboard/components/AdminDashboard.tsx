@@ -13,7 +13,7 @@ import {
   Bar,
   YAxis,
 } from "recharts";
-import { io } from "socket.io-client";
+import { socket } from "@/shared/lib/socket";
 import { COUNTRIES } from "@/shared/constants/countries";
 import {
   AlertTriangle,
@@ -118,19 +118,16 @@ export default function AdminDashboard() {
 
   /* ================= SOCKET REALTIME ================= */
   useEffect(() => {
-    const socketUrl =
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+    const refreshDashboard = () => {
+      void loadAll();
+    };
 
-    const socket = io(socketUrl, {
-      withCredentials: true,
-    });
-
-    socket.on("dashboard:update", () => {
-      loadAll();
-    });
+    socket.on("dashboard:update", refreshDashboard);
+    socket.on("orderUpdated", refreshDashboard);
 
     return () => {
-      socket.disconnect();
+      socket.off("dashboard:update", refreshDashboard);
+      socket.off("orderUpdated", refreshDashboard);
     };
   }, [loadAll]);
 
