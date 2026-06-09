@@ -224,6 +224,8 @@ export default function CreateOrderForm() {
 
       const data: CheckoutResponse = await res.json();
 
+      localStorage.setItem("orderEmail", form.email);
+
       window.location.href = `/orders/${data.orderId}/pay?clientSecret=${data.payment.clientSecret}`;
     } catch (error: any) {
       toast.error(error?.message || "Error al procesar checkout");
@@ -553,15 +555,15 @@ export default function CreateOrderForm() {
         </div>
 
         <Button
-  type="submit"
-  form="checkout-form"
-  disabled={!isValid || loading}
-  className="h-12 w-full rounded-xl !bg-white !text-black font-semibold border border-white/20 shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
->
-  {loading
-    ? "Procesando..."
-    : `Pagar €${(totalPrice / 100).toFixed(2)}`}
-</Button>
+          type="submit"
+          form="checkout-form"
+          disabled={!isValid || loading}
+          className="h-12 w-full rounded-xl !bg-white !text-black font-semibold border border-white/20 shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
+        >
+          {loading
+            ? "Procesando..."
+            : `Pagar €${(totalPrice / 100).toFixed(2)}`}
+        </Button>
 
         {/* TRUST / UX BOOST */}
         <div className="mt-20 text-xs text-neutral-500 space-y-1">

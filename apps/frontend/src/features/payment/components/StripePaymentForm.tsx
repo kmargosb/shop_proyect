@@ -32,6 +32,17 @@ export default function StripePaymentForm({ orderId }: Props) {
     setErrorMessage(null);
 
     try {
+      const checkoutData = localStorage.getItem("checkoutData");
+
+      if (checkoutData) {
+        try {
+          const parsed = JSON.parse(checkoutData);
+
+          if (parsed?.email) {
+            localStorage.setItem("orderEmail", parsed.email);
+          }
+        } catch {}
+      }
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {

@@ -157,7 +157,7 @@ export const ShippingService = {
 
   async getShipment(orderId: string) {
     return prisma.shipment.findUnique({
-      where: { orderId },
+      where: { orderId }, 
     });
   },
 };
