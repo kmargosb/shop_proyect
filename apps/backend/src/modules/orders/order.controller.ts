@@ -530,6 +530,10 @@ export const submitHelpRequestController = asyncHandler(
       },
     });
 
+    getIO().emit("orderUpdated", {
+      orderId: id,
+    });
+
     res.json({
       success: true,
     });
@@ -559,6 +563,10 @@ export const replyToCustomerController = asyncHandler(
 
         message: `ADMIN_REPLY:${message.trim()}`,
       },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: id,
     });
 
     res.json({

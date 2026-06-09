@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import ShipmentStatusCard from "@/features/orders/components/ShipmentStatusCard";
 import { socket } from "@/shared/lib/socket";
@@ -44,6 +44,7 @@ export default function Page() {
   const router = useRouter();
   const id = params?.id as string;
   const [order, setOrder] = useState<any>(null);
+  const timelineBottomRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
@@ -62,26 +63,24 @@ export default function Page() {
 
     const loadOrder = async () => {
       try {
-        /* AUTH USER */
-
         const email =
           searchParams.get("email") || localStorage.getItem("orderEmail");
 
-        /* GUEST ORDER */
+        /* GUEST */
 
         if (email) {
-          const res = await publicFetch(
+          const publicRes = await publicFetch(
             `/orders/public/${id}?email=${encodeURIComponent(email)}`,
           );
 
-          const data = await res.json();
+          const data = await publicRes.json();
 
           setOrder(data);
 
           return;
         }
 
-        /* AUTH USER ORDER */
+        /* AUTH USER */
 
         const res = await apiFetch(`/orders/${id}`);
 
@@ -115,14 +114,20 @@ export default function Page() {
       }
     };
 
-    socket.on("dashboard:update", refreshOrder);
+    // socket.on("dashboard:update", refreshOrder);
     socket.on("orderUpdated", refreshOrder);
 
     return () => {
-      socket.off("dashboard:update", refreshOrder);
+      // socket.off("dashboard:update", refreshOrder);
       socket.off("orderUpdated", refreshOrder);
     };
   }, [id, searchParams]);
+
+  useEffect(() => {
+    timelineBottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [order?.events]);
 
   /* =========================
      LOADING
@@ -733,6 +738,7 @@ export default function Page() {
                 );
               })}
               <div className="pointer-events-none absolute bottom-0 left-0  w-full bg-gradient-to-t from-neutral-950 " />
+              <div ref={timelineBottomRef} />
             </div>
           </div>
         )}

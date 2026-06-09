@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/shared/lib/api";
 import {
@@ -30,12 +30,14 @@ export default function DashboardOrderPage() {
   const params = useParams();
   const id = params?.id as string;
   const [order, setOrder] = useState<any>(null);
+  const timelineBottomRef = useRef<HTMLDivElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [includeCancelLink, setIncludeCancelLink] = useState(false);
+  
 
   const loadOrder = useCallback(async () => {
     const res = await apiFetch(`/orders/admin/${id}`);
@@ -71,6 +73,12 @@ export default function DashboardOrderPage() {
       socket.off("orderUpdated", refreshOrder);
     };
   }, [id, loadOrder]);
+
+  useEffect(() => {
+  timelineBottomRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [order?.events]);
 
   const markDelivered = async () => {
     try {
@@ -311,7 +319,7 @@ export default function DashboardOrderPage() {
             <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
               <h2 className="text-lg font-semibold text-white">Timeline</h2>
 
-              <div className="mt-6 space-y-5">
+              <div className="mt-6 max-h-[400px] space-y-5 overflow-y-auto premium-scrollbar pr-2">
                 {order.events.map((event: any, index: number) => {
                   const isCustomerMessage =
                     typeof event.message === "string" &&
@@ -385,6 +393,7 @@ export default function DashboardOrderPage() {
                     </div>
                   );
                 })}
+                <div ref={timelineBottomRef} />
               </div>
             </div>
 
