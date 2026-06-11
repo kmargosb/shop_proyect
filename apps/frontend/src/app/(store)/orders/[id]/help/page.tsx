@@ -25,8 +25,13 @@ export default function OrderHelpPage() {
 
     const loadOrder = async () => {
       try {
-        const email =
-          searchParams.get("email") || localStorage.getItem("orderEmail");
+        const queryEmail = searchParams.get("email");
+
+        const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+        const storedEmail = localStorage.getItem("orderEmail");
+
+        const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
         /* GUEST */
 
@@ -175,6 +180,22 @@ export default function OrderHelpPage() {
               </div>
 
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                {order.status === "DELIVERED" && (
+                  <div className="mt-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-5">
+                    <h3 className="text-lg font-semibold text-orange-300">
+                      Solicitar devolución
+                    </h3>
+
+                    <p className="mt-2 text-sm text-neutral-300">
+                      ¿No estás satisfecho con tu compra? Puedes solicitar una
+                      devolución desde aquí.
+                    </p>
+
+                    <button className="mt-4 w-full rounded-2xl bg-orange-500 px-5 py-3 font-medium text-white">
+                      Iniciar devolución
+                    </button>
+                  </div>
+                )}
                 <p className="text-xs uppercase tracking-wider text-neutral-500">
                   Te responderemos en
                 </p>

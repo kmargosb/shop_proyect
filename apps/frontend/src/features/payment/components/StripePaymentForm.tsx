@@ -40,6 +40,7 @@ export default function StripePaymentForm({ orderId }: Props) {
 
           if (parsed?.email) {
             localStorage.setItem("orderEmail", parsed.email);
+            localStorage.setItem("orderEmailOrderId", orderId);
           }
         } catch {}
       }

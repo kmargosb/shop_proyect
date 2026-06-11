@@ -238,12 +238,6 @@ export const getPublicOrderController = asyncHandler(
       });
     }
 
-    if (order.status === "CANCELLED") {
-      return res.status(403).json({
-        error: "Pedido cancelado",
-      });
-    }
-
     if (order.status !== "PAID" && order.status !== "PAYMENT_PROCESSING") {
       if (!email || email !== order.email) {
         return res.status(403).json({

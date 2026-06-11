@@ -63,8 +63,13 @@ export default function Page() {
 
     const loadOrder = async () => {
       try {
-        const email =
-          searchParams.get("email") || localStorage.getItem("orderEmail");
+        const queryEmail = searchParams.get("email");
+
+        const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+        const storedEmail = localStorage.getItem("orderEmail");
+
+        const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
         /* GUEST */
 
@@ -151,7 +156,8 @@ export default function Page() {
 
   const isPaid = order.status === "PAID";
 
-  const canContinuePayment = order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
+  const canContinuePayment =
+    order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
 
   const canCancel =
     order.status === "PENDING" ||
@@ -168,11 +174,19 @@ export default function Page() {
     return refunded < item.quantity;
   });
 
-  const canRefund = (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") && hasRefundableItems;
+  const canRefund =
+    (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") &&
+    hasRefundableItems;
 
   const handleDownloadInvoice = () => {
-    const email =
-      searchParams.get("email") || localStorage.getItem("orderEmail");
+    
+    const queryEmail = searchParams.get("email");
+
+    const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+    const storedEmail = localStorage.getItem("orderEmail");
+
+    const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
     if (!email) {
       alert("No se encontró el email del pedido");
@@ -237,8 +251,8 @@ export default function Page() {
 
         return;
       }
-console.log("EMAIL PARAM", searchParams.get("email"));
-console.log("LOCAL EMAIL", localStorage.getItem("orderEmail"));
+      console.log("EMAIL PARAM", searchParams.get("email"));
+      console.log("LOCAL EMAIL", localStorage.getItem("orderEmail"));
       const res = await apiFetch("/refunds", {
         method: "POST",
         body: JSON.stringify({
@@ -789,20 +803,6 @@ console.log("LOCAL EMAIL", localStorage.getItem("orderEmail"));
           >
             ¿Necesitas ayuda con tu pedido?
           </Button>
-          {canRefund && (
-            <Button
-              className="h-12 w-full rounded-2xl border border-orange-500/20 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20"
-              onClick={() => {
-                setRefundError(null);
-
-                setRefundSuccess(false);
-
-                setShowRefundModal(true);
-              }}
-            >
-              Solicitar devolución
-            </Button>
-          )}
 
           <Button
             className="h-12 w-full rounded-2xl bg-white text-black hover:bg-neutral-200"
@@ -811,168 +811,6 @@ console.log("LOCAL EMAIL", localStorage.getItem("orderEmail"));
             Seguir comprando
           </Button>
         </div>
-
-        {showRefundModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-neutral-950 p-6">
-              <h2 className="text-2xl font-semibold">Solicitar devolución</h2>
-
-              <div className="mt-6 space-y-4">
-                {order.items
-                  .filter((item: any) => {
-                    const refunded =
-                      item.refundItems?.reduce(
-                        (sum: number, ri: any) => sum + ri.quantity,
-                        0,
-                      ) || 0;
-
-                    return refunded < item.quantity;
-                  })
-                  .map((item: any) => {
-                    const refunded =
-                      item.refundItems?.reduce(
-                        (sum: number, ri: any) => sum + ri.quantity,
-                        0,
-                      ) || 0;
-
-                    const remaining = item.quantity - refunded;
-
-                    const selected = refundItems[item.id] || 0;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="rounded-2xl border border-white/10 p-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">
-                              {item.product?.name ?? item.productName}
-                            </p>
-
-                            {(item.color || item.size) && (
-                              <p className="mt-1 text-sm text-neutral-400">
-                                {item.color}
-                                {item.color && item.size ? " · " : ""}
-                                {item.size}
-                              </p>
-                            )}
-
-                            <p className="mt-1 text-sm text-neutral-500">
-                              Comprados: {item.quantity}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() =>
-                                setRefundItems((prev) => ({
-                                  ...prev,
-                                  [item.id]: Math.max(0, selected - 1),
-                                }))
-                              }
-                              className="h-8 w-8 rounded-full border border-white/10"
-                            >
-                              -
-                            </button>
-
-                            <span className="w-6 text-center">{selected}</span>
-
-                            <button
-                              onClick={() =>
-                                setRefundItems((prev) => ({
-                                  ...prev,
-                                  [item.id]: Math.min(remaining, selected + 1),
-                                }))
-                              }
-                              className="h-8 w-8 rounded-full border border-white/10"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              <div className="mt-6">
-                <label className="mb-2 block text-sm text-neutral-400">
-                  Motivo de la devolución
-                </label>
-
-                <select
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
-                >
-                  <option value="CUSTOMER_RETURN">Ya no lo quiero</option>
-
-                  <option value="WRONG_ITEM">Producto incorrecto</option>
-
-                  <option value="DAMAGED">Producto dañado</option>
-
-                  <option value="OTHER">Otro</option>
-                </select>
-                <div className="mt-4">
-                  <label className="mb-2 block text-sm text-neutral-400">
-                    Comentario
-                  </label>
-
-                  <textarea
-                    rows={4}
-                    value={refundComment}
-                    onChange={(e) => setRefundComment(e.target.value)}
-                    placeholder="Cuéntanos qué ha ocurrido..."
-                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
-                  />
-                  <div className="mt-4">
-                    <label className="mb-2 block text-sm text-neutral-400">
-                      Fotos (opcional)
-                    </label>
-
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) =>
-                        setRefundImages(Array.from(e.target.files || []))
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {refundError && (
-                <p className="mt-4 text-sm text-red-400">{refundError}</p>
-              )}
-
-              {refundSuccess && (
-                <p className="mt-4 text-sm text-green-400">
-                  Reembolso procesado
-                </p>
-              )}
-
-              <div className="mt-6 flex gap-3">
-                <Button
-                  className="w-full bg-white text-black hover:bg-neutral-200"
-                  onClick={() => setShowRefundModal(false)}
-                >
-                  Cancelar
-                </Button>
-
-                <Button
-                  className="w-full"
-                  onClick={handleRefund}
-                  disabled={processingRefund}
-                >
-                  {processingRefund ? "Procesando..." : "Confirmar"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
         {showCancelModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">

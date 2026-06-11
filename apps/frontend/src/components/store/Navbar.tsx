@@ -12,22 +12,15 @@ export default function Navbar() {
   const { items, setOpen } = useCart();
   const { user, isAuthenticated, loading } = useAuth();
 
-  const totalItems = items.reduce(
-    (acc, item) => acc + item.quantity,
-    0,
-  );
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const [visible, setVisible] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
-  const [openDropdown, setOpenDropdown] =
-    useState(false);
+  const [openDropdown, setOpenDropdown] = useState(false);
 
-  const dropdownRef =
-    useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const setNavbarVisible = useNavbar(
-    (s) => s.setVisible,
-  );
+  const setNavbarVisible = useNavbar((s) => s.setVisible);
 
   /* ================= SCROLL ================= */
 
@@ -35,10 +28,7 @@ export default function Navbar() {
     const handleScroll = () => {
       const currentScroll = window.scrollY;
 
-      if (
-        currentScroll > lastScroll &&
-        currentScroll > 80
-      ) {
+      if (currentScroll > lastScroll && currentScroll > 80) {
         setVisible(false);
         setNavbarVisible(false);
       } else {
@@ -49,67 +39,40 @@ export default function Navbar() {
       setLastScroll(currentScroll);
     };
 
-    window.addEventListener(
-      "scroll",
-      handleScroll,
-    );
+    window.addEventListener("scroll", handleScroll);
 
-    return () =>
-      window.removeEventListener(
-        "scroll",
-        handleScroll,
-      );
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScroll, setNavbarVisible]);
 
   /* ================= CLICK OUTSIDE ================= */
 
   useEffect(() => {
-    const handleClickOutside = (
-      e: MouseEvent,
-    ) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(
-          e.target as Node,
-        )
+        !dropdownRef.current.contains(e.target as Node)
       ) {
         setOpenDropdown(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside,
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
-    return () =>
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside,
-      );
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   /* ================= ESC CLOSE ================= */
 
   useEffect(() => {
-    const handleEsc = (
-      e: KeyboardEvent,
-    ) => {
+    const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpenDropdown(false);
       }
     };
 
-    document.addEventListener(
-      "keydown",
-      handleEsc,
-    );
+    document.addEventListener("keydown", handleEsc);
 
-    return () =>
-      document.removeEventListener(
-        "keydown",
-        handleEsc,
-      );
+    return () => document.removeEventListener("keydown", handleEsc);
   }, []);
 
   if (loading) return null;
@@ -117,11 +80,7 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 z-50 w-full transition-transform duration-300
-      ${
-        visible
-          ? "translate-y-0"
-          : "-translate-y-full"
-      }
+      ${visible ? "translate-y-0" : "-translate-y-full"}
       border-neutral-800 bg-white`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
@@ -137,33 +96,21 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm text-black md:flex">
-          <Link href="/shop">
-            Shop
-          </Link>
+          <Link href="/shop">Shop</Link>
 
-          <Link href="/brands">
-            Brands
-          </Link>
+          <Link href="/brands">Brands</Link>
         </nav>
 
         <div className="flex items-center gap-6">
           {/* USER */}
 
           {isAuthenticated ? (
-            <div
-              className="relative"
-              ref={dropdownRef}
-            >
+            <div className="relative" ref={dropdownRef}>
               <button
-                onClick={() =>
-                  setOpenDropdown(
-                    (prev) => !prev,
-                  )
-                }
+                onClick={() => setOpenDropdown((prev) => !prev)}
                 className="text-sm text-black transition hover:opacity-70"
               >
-                Hola,{" "}
-                {user?.email?.split("@")[0]}
+                Hola, {user?.email?.split("@")[0]}
               </button>
 
               {/* DROPDOWN */}
@@ -187,9 +134,7 @@ export default function Navbar() {
                     {user?.email?.split("@")[0]}
                   </p>
 
-                  <p className="mt-1 text-sm text-neutral-500">
-                    {user?.email}
-                  </p>
+                  <p className="mt-1 text-sm text-neutral-500">{user?.email}</p>
                 </div>
 
                 {/* LINKS */}
@@ -197,115 +142,72 @@ export default function Navbar() {
                 <div className="p-2">
                   <Link
                     href="/account?tab=profile"
-                    onClick={() =>
-                      setOpenDropdown(false)
-                    }
+                    onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>
-                      Mi cuenta
-                    </span>
+                    <span>Mi cuenta</span>
 
-                    <span className="text-neutral-400">
-                      →
-                    </span>
+                    <span className="text-neutral-400">→</span>
                   </Link>
 
                   <Link
                     href="/account?tab=orders"
-                    onClick={() =>
-                      setOpenDropdown(false)
-                    }
+                    onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>
-                      Pedidos
-                    </span>
+                    <span>Pedidos</span>
 
-                    <span className="text-neutral-400">
-                      →
-                    </span>
+                    <span className="text-neutral-400">→</span>
                   </Link>
 
                   <Link
                     href="/account?tab=addresses"
-                    onClick={() =>
-                      setOpenDropdown(false)
-                    }
+                    onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>
-                      Direcciones
-                    </span>
+                    <span>Direcciones</span>
 
-                    <span className="text-neutral-400">
-                      →
-                    </span>
+                    <span className="text-neutral-400">→</span>
                   </Link>
 
                   <Link
                     href="/account?tab=wishlist"
-                    onClick={() =>
-                      setOpenDropdown(false)
-                    }
+                    onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>
-                      Wishlist
-                    </span>
+                    <span>Wishlist</span>
 
-                    <span className="text-neutral-400">
-                      →
-                    </span>
+                    <span className="text-neutral-400">→</span>
                   </Link>
 
                   <Link
                     href="/account?tab=security"
-                    onClick={() =>
-                      setOpenDropdown(false)
-                    }
+                    onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>
-                      Seguridad
-                    </span>
+                    <span>Seguridad</span>
 
-                    <span className="text-neutral-400">
-                      →
-                    </span>
+                    <span className="text-neutral-400">→</span>
                   </Link>
 
                   <Link
                     href="/account?tab=settings"
-                    onClick={() =>
-                      setOpenDropdown(false)
-                    }
+                    onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>
-                      Configuración
-                    </span>
+                    <span>Configuración</span>
 
-                    <span className="text-neutral-400">
-                      →
-                    </span>
+                    <span className="text-neutral-400">→</span>
                   </Link>
 
-                  {user?.role ===
-                    "ADMIN" && (
+                  {user?.role === "ADMIN" && (
                     <div className="px-2 pt-3">
                       <Link
                         href="/dashboard"
-                        onClick={() =>
-                          setOpenDropdown(
-                            false,
-                          )
-                        }
+                        onClick={() => setOpenDropdown(false)}
                         className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/20"
                       >
-                        <span>
-                          Admin panel
-                        </span>
+                        <span>Admin panel</span>
 
                         <span className="rounded-full bg-emerald-300 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-black">
                           Admin
@@ -322,15 +224,15 @@ export default function Navbar() {
                     onClick={async () => {
                       setOpenDropdown(false);
 
-                      await apiFetch(
-                        "/auth/logout",
-                        {
-                          method: "POST",
-                        },
-                      );
+                      await apiFetch("/auth/logout", {
+                        method: "POST",
+                      });
 
-                      window.location.href =
-                        "/";
+                      localStorage.removeItem("orderEmail");
+                      localStorage.removeItem("orderEmailOrderId");
+                      localStorage.removeItem("checkoutData");
+
+                      window.location.href = "/";
                     }}
                     className="w-full rounded-2xl px-4 py-3 text-left text-sm text-red-500 transition hover:bg-red-50"
                   >
@@ -340,20 +242,14 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            <Link
-              href="/login"
-              className="text-sm"
-            >
+            <Link href="/login" className="text-sm">
               Login
             </Link>
           )}
 
           {/* CART */}
 
-          <button
-            onClick={() => setOpen(true)}
-            className="relative"
-          >
+          <button onClick={() => setOpen(true)} className="relative">
             <ShoppingCart size={24} />
 
             {totalItems > 0 && (
