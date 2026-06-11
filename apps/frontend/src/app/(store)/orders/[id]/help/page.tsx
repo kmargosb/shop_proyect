@@ -19,6 +19,15 @@ export default function OrderHelpPage() {
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+
+  const [processingRefund, setProcessingRefund] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundSuccess, setRefundSuccess] = useState(false);
+  const [refundItems, setRefundItems] = useState<Record<string, number>>({});
+  const [refundReason, setRefundReason] = useState("CUSTOMER_RETURN");
+  const [refundComment, setRefundComment] = useState("");
+  const [refundImages, setRefundImages] = useState<File[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -62,6 +71,18 @@ export default function OrderHelpPage() {
     loadOrder();
   }, [id, searchParams]);
 
+  useEffect(() => {
+    if (showRefundModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showRefundModal]);
+
   const handleSubmit = async () => {
     if (!message.trim()) {
       alert("Por favor escribe un mensaje.");
@@ -94,6 +115,62 @@ export default function OrderHelpPage() {
       alert("No hemos podido enviar tu mensaje. Inténtalo de nuevo.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleRefund = async () => {
+    try {
+      setProcessingRefund(true);
+
+      setRefundError(null);
+
+      const items = order.items
+        .filter((item: any) => (refundItems[item.id] || 0) > 0)
+        .map((item: any) => ({
+          orderItemId: item.id,
+          quantity: refundItems[item.id],
+        }));
+
+      if (items.length === 0) {
+        setRefundError("Selecciona al menos un producto");
+        return;
+      }
+
+      if (refundComment.trim().length < 20) {
+        setRefundError("Describe el motivo con al menos 20 caracteres");
+
+        return;
+      }
+      const res = await apiFetch("/refunds", {
+        method: "POST",
+        body: JSON.stringify({
+          orderId: order.id,
+          items,
+          reason: refundReason,
+          note: refundComment,
+        }),
+      });
+
+      const data = await res?.json();
+
+      if (!res || !res.ok) {
+        setRefundError(data?.message || "No se pudo procesar");
+        return;
+      }
+
+      setRefundSuccess(true);
+
+      setTimeout(() => {
+        setShowRefundModal(false);
+        setRefundSuccess(false);
+        setRefundItems({});
+      }, 1200);
+    } catch (error) {
+      console.error(error);
+
+      setRefundError("Error inesperado");
+    } finally {
+      setProcessingRefund(false);
     }
   };
 
@@ -150,7 +227,7 @@ export default function OrderHelpPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         {/* FORM */}
 
-        <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6 md:p-8">
+        <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-neutral-950 p-6 md:p-8">
           {!sent ? (
             <>
               <h2 className="text-2xl font-semibold text-white">
@@ -180,22 +257,6 @@ export default function OrderHelpPage() {
               </div>
 
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                {order.status === "DELIVERED" && (
-                  <div className="mt-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-5">
-                    <h3 className="text-lg font-semibold text-orange-300">
-                      Solicitar devolución
-                    </h3>
-
-                    <p className="mt-2 text-sm text-neutral-300">
-                      ¿No estás satisfecho con tu compra? Puedes solicitar una
-                      devolución desde aquí.
-                    </p>
-
-                    <button className="mt-4 w-full rounded-2xl bg-orange-500 px-5 py-3 font-medium text-white">
-                      Iniciar devolución
-                    </button>
-                  </div>
-                )}
                 <p className="text-xs uppercase tracking-wider text-neutral-500">
                   Te responderemos en
                 </p>
@@ -223,6 +284,27 @@ export default function OrderHelpPage() {
                 Gracias por escribirnos. Revisaremos tu caso personalmente y te
                 responderemos por correo electrónico lo antes posible.
               </p>
+            </div>
+          )}
+          {order.status === "DELIVERED" && (
+            <div className="mt-auto border-t border-white/10 pt-6">
+              <p className="text-xs text-neutral-500">
+                ¿No estás satisfecho con tu compra?
+              </p>
+
+              <button
+                onClick={() => setShowRefundModal(true)}
+                className="
+                      mt-1
+                      text-sm
+                      text-neutral-300
+                      underline
+                      underline-offset-4
+                      hover:text-white
+                    "
+              >
+                Solicitar una devolución
+              </button>
             </div>
           )}
         </div>
@@ -315,6 +397,162 @@ export default function OrderHelpPage() {
           </div>
         </div>
       </div>
+      {showRefundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-neutral-950 p-6 md:p-8">
+            <h2 className="text-3xl font-semibold text-white">
+              Solicitar devolución
+            </h2>
+
+            <p className="mt-2 text-sm text-neutral-500">
+              Selecciona los productos que deseas devolver.
+            </p>
+
+            <div className="mt-6 space-y-4">
+              {order.items.map((item: any) => {
+                const selected = refundItems[item.id] || 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-white">
+                          {item.product?.name ?? item.productName}
+                        </p>
+
+                        <p className="mt-1 text-sm text-neutral-400">
+                          {item.color} {item.size && `· ${item.size}`}
+                        </p>
+
+                        <p className="mt-1 text-sm text-neutral-500">
+                          Cantidad comprada: {item.quantity}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() =>
+                            setRefundItems((prev) => ({
+                              ...prev,
+                              [item.id]: Math.max(0, selected - 1),
+                            }))
+                          }
+                          className="h-9 w-9 rounded-full border border-white/10"
+                        >
+                          -
+                        </button>
+
+                        <span className="w-6 text-center text-white">
+                          {selected}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            setRefundItems((prev) => ({
+                              ...prev,
+                              [item.id]: Math.min(item.quantity, selected + 1),
+                            }))
+                          }
+                          className="h-9 w-9 rounded-full border border-white/10"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6">
+              <label className="mb-2 block text-sm text-neutral-400">
+                Motivo
+              </label>
+
+              <select
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-neutral-900 px-4 py-3 text-white"
+              >
+                <option
+                  value="CUSTOMER_RETURN"
+                  className="bg-neutral-900 text-white"
+                >
+                  Ya no lo quiero
+                </option>
+
+                <option
+                  value="WRONG_ITEM"
+                  className="bg-neutral-900 text-white"
+                >
+                  Producto incorrecto
+                </option>
+
+                <option value="DAMAGED" className="bg-neutral-900 text-white">
+                  Producto dañado
+                </option>
+
+                <option value="OTHER" className="bg-neutral-900 text-white">
+                  Otro motivo
+                </option>
+              </select>
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-2 block text-sm text-neutral-400">
+                Comentario
+              </label>
+
+              <textarea
+                rows={4}
+                value={refundComment}
+                maxLength={300}
+                onChange={(e) => setRefundComment(e.target.value)}
+                placeholder="Explícanos qué ha ocurrido..."
+                className="w-full rounded-2xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none"
+              />
+              <p className="mt-2 text-right text-xs text-neutral-500">
+                {refundComment.length}/300
+              </p>
+            </div>
+
+            {refundError && (
+              <p className="mt-4 text-sm text-red-400">{refundError}</p>
+            )}
+
+            {refundSuccess && (
+              <p className="mt-4 text-sm text-emerald-400">
+                Solicitud enviada correctamente
+              </p>
+            )}
+
+            <p className="mt-6 text-xs text-neutral-500">
+              Las devoluciones pueden solicitarse dentro de los 21 días
+              posteriores a la entrega.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
+              <button
+                onClick={() => setShowRefundModal(false)}
+                className="w-full rounded-2xl border border-white/10 py-3 text-white"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={handleRefund}
+                disabled={processingRefund || refundComment.trim().length < 20}
+                className="w-full rounded-2xl bg-white py-3 text-black disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {processingRefund ? "Procesando..." : "Confirmar devolución"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

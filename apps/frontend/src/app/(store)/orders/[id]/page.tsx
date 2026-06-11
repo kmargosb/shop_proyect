@@ -47,14 +47,6 @@ export default function Page() {
   const timelineBottomRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const [showRefundModal, setShowRefundModal] = useState(false);
-  const [processingRefund, setProcessingRefund] = useState(false);
-  const [refundError, setRefundError] = useState<string | null>(null);
-  const [refundSuccess, setRefundSuccess] = useState(false);
-  const [refundItems, setRefundItems] = useState<Record<string, number>>({});
-  const [refundReason, setRefundReason] = useState("CUSTOMER_RETURN");
-  const [refundComment, setRefundComment] = useState("");
-  const [refundImages, setRefundImages] = useState<File[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("CUSTOMER_REQUEST");
 
@@ -164,22 +156,7 @@ export default function Page() {
     order.status === "PAYMENT_PROCESSING" ||
     order.status === "PAID";
 
-  const hasRefundableItems = order.items?.some((item: any) => {
-    const refunded =
-      item.refundItems?.reduce(
-        (sum: number, ri: any) => sum + ri.quantity,
-        0,
-      ) || 0;
-
-    return refunded < item.quantity;
-  });
-
-  const canRefund =
-    (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") &&
-    hasRefundableItems;
-
   const handleDownloadInvoice = () => {
-    
     const queryEmail = searchParams.get("email");
 
     const storedOrderId = localStorage.getItem("orderEmailOrderId");
@@ -230,70 +207,6 @@ export default function Page() {
       alert("No se pudo cancelar el pedido");
     } finally {
       setCancelling(false);
-    }
-  };
-
-  const handleRefund = async () => {
-    try {
-      setProcessingRefund(true);
-
-      setRefundError(null);
-
-      const items = order.items
-        .filter((item: any) => (refundItems[item.id] || 0) > 0)
-        .map((item: any) => ({
-          orderItemId: item.id,
-          quantity: refundItems[item.id],
-        }));
-
-      if (items.length === 0) {
-        setRefundError("Selecciona al menos un producto");
-
-        return;
-      }
-      console.log("EMAIL PARAM", searchParams.get("email"));
-      console.log("LOCAL EMAIL", localStorage.getItem("orderEmail"));
-      const res = await apiFetch("/refunds", {
-        method: "POST",
-        body: JSON.stringify({
-          orderId: order.id,
-          items,
-          reason: refundReason,
-          note: refundComment,
-        }),
-      });
-
-      const data = await res?.json();
-
-      if (!res || !res.ok) {
-        setRefundError(data?.message || "No se pudo procesar");
-
-        return;
-      }
-
-      // const refreshed = await apiFetch(`/orders/${order.id}`);
-
-      // if (refreshed && refreshed.ok) {
-      //   const updatedOrder = await refreshed.json();
-
-      //   setOrder(updatedOrder);
-      // }
-
-      setRefundSuccess(true);
-
-      setTimeout(() => {
-        setShowRefundModal(false);
-
-        setRefundSuccess(false);
-
-        setRefundItems({});
-      }, 1200);
-    } catch (error) {
-      console.error(error);
-
-      setRefundError("Error inesperado");
-    } finally {
-      setProcessingRefund(false);
     }
   };
 
@@ -929,6 +842,13 @@ function getTimelineConfig(type: string) {
         label: "Reembolso completado",
         icon: RefreshCcw,
         className: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
+      };
+
+    case "ORDER_UPDATED":
+      return {
+        label: "Actualización de devolución",
+        icon: RefreshCcw,
+        className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
       };
 
     case "ORDER_CANCELLED":

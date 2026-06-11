@@ -158,6 +158,7 @@ export const RefundService = {
       status: dbRefund.status,
     };
   },
+
   async approveRefund(refundId: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },
@@ -186,12 +187,21 @@ export const RefundService = {
       },
     });
 
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: "Tu solicitud de devolución ha sido aprobada",
+      },
+    });
+
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
 
     return updatedRefund;
   },
+
   async rejectRefund(refundId: string, rejectionReason?: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },
@@ -219,12 +229,25 @@ export const RefundService = {
       },
     });
 
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+
+        type: "ORDER_UPDATED",
+
+        message: rejectionReason
+          ? `Solicitud rechazada: ${rejectionReason}`
+          : "Solicitud de devolución rechazada",
+      },
+    });
+
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
 
     return updatedRefund;
   },
+
   async markCustomerSent(refundId: string) {
     const refund = await prisma.refund.update({
       where: {
@@ -236,12 +259,21 @@ export const RefundService = {
       },
     });
 
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: "Customer sent refund package",
+      },
+    });
+
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
 
     return refund;
   },
+
   async markRefundReceived(refundId: string) {
     const refund = await prisma.refund.update({
       where: {
@@ -253,12 +285,21 @@ export const RefundService = {
       },
     });
 
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: "Refund package received",
+      },
+    });
+
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
 
     return refund;
   },
+
   async processRefund(refundId: string) {
     const refund = await prisma.refund.findUnique({
       where: { id: refundId },

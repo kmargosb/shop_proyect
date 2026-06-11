@@ -406,7 +406,7 @@ export default function DashboardOrderPage() {
                       ) : (
                         <div>
                           <p className="text-sm font-medium text-white">
-                            {timelineLabels[event.type] ?? event.message}
+                            {event.message ?? timelineLabels[event.type] ?? event.type}
                           </p>
 
                           <p className="mt-1 text-xs text-neutral-500">
