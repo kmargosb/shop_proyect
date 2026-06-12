@@ -35,6 +35,9 @@ export default function DashboardOrderPage() {
   const [shipmentOpen, setShipmentOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectRefundId, setRejectRefundId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [includeCancelLink, setIncludeCancelLink] = useState(false);
 
@@ -117,29 +120,13 @@ export default function DashboardOrderPage() {
     }
   };
 
-  const rejectRefund = async (refundId: string) => {
-    try {
-      const reason = prompt(
-        "Motivo del rechazo",
-        "Producto usado o fuera de plazo",
-      );
+  const rejectRefund = (refundId: string) => {
 
-      await apiFetch(`/refunds/${refundId}/reject`, {
-        method: "POST",
+    setRejectRefundId(refundId);
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+    setRejectReason("");
 
-        body: JSON.stringify({
-          rejectionReason: reason,
-        }),
-      });
-
-      await loadOrder();
-    } catch (error) {
-      console.error(error);
-    }
+    setRejectOpen(true);
   };
 
   const receivedRefund = async (refundId: string) => {
@@ -201,6 +188,35 @@ export default function DashboardOrderPage() {
       setSendingReply(false);
     }
   };
+
+  const confirmRejectRefund = async () => {
+  if (rejectReason.trim().length < 10) {
+    alert("Describe el motivo con al menos 10 caracteres");
+    return;
+  }
+
+  try {
+    await apiFetch(`/refunds/${rejectRefundId}/reject`, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        rejectionReason: rejectReason,
+      }),
+    });
+
+    setRejectOpen(false);
+    setRejectRefundId(null);
+    setRejectReason("");
+
+    await loadOrder();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   if (!order) {
     return <div className="p-6 text-white">Cargando pedido...</div>;
@@ -471,22 +487,10 @@ export default function DashboardOrderPage() {
                         </p>
                       </div>
 
-                      {refund.note && (
-                        <div className="mt-4">
-                          <p className="text-sm text-neutral-500">
-                            Comentario cliente
-                          </p>
-
-                          <p className="mt-1 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-neutral-300">
-                            {refund.note}
-                          </p>
-                        </div>
-                      )}
                       <div className="mt-4">
                         <p className="text-sm text-neutral-500">
                           Productos solicitados
                         </p>
-
                         <div className="mt-3 space-y-2">
                           {refund.items?.map((refundItem: any) => {
                             const orderItem = order.items.find(
@@ -526,6 +530,63 @@ export default function DashboardOrderPage() {
                           })}
                         </div>
                       </div>
+
+                      {refund.note && (
+                        <div className="mt-4">
+                          <p className="text-sm text-neutral-500">
+                            Comentario cliente
+                          </p>
+
+                          <p className="mt-1 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-neutral-300">
+                            {refund.note}
+                          </p>
+                        </div>
+                      )}
+                      {refund.evidence?.length > 0 && (
+                        <div className="mt-5">
+                          <p className="mb-3 text-xs uppercase tracking-wide text-neutral-500">
+                            Evidencias adjuntas
+                          </p>
+
+                          <p className="mb-3 text-xs text-neutral-500">
+                            {refund.evidence.length} fotografía(s) adjunta(s)
+                          </p>
+
+                          <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
+                            {refund.evidence.map((image: any) => (
+                              <a
+                                key={image.id}
+                                href={image.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="
+            group
+            overflow-hidden
+            rounded-2xl
+            border border-white/10
+            bg-white/5
+            transition
+            hover:border-white/20
+            hover:bg-white/10
+          "
+                              >
+                                <img
+                                  src={image.url}
+                                  alt="Refund evidence"
+                                  className="
+              aspect-square
+              w-full
+              object-cover
+              transition-transform
+              duration-300
+              group-hover:scale-105
+            "
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="mt-4 text-xs text-neutral-500">
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -788,6 +849,51 @@ export default function DashboardOrderPage() {
           </div>
         </div>
       )}
+      {rejectOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-6">
+      <h3 className="text-xl font-semibold text-white">
+        Rechazar devolución
+      </h3>
+
+      <p className="mt-2 text-sm text-neutral-400">
+        Explica claramente al cliente por qué se rechaza la solicitud.
+      </p>
+
+      <textarea
+        value={rejectReason}
+        onChange={(e) => setRejectReason(e.target.value)}
+        rows={6}
+        className="mt-5 w-full resize-none rounded-2xl border border-white/10 bg-black p-4 text-white"
+        placeholder="Ej: El producto presenta signos de uso y no cumple las condiciones de devolución..."
+      />
+
+      <p className="mt-2 text-right text-xs text-neutral-500">
+        {rejectReason.length} caracteres
+      </p>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setRejectOpen(false);
+            setRejectReason("");
+            setRejectRefundId(null);
+          }}
+          className="rounded-xl border border-white/10 px-4 py-3 text-white"
+        >
+          Cancelar
+        </button>
+
+        <button
+          onClick={confirmRejectRefund}
+          className="rounded-xl bg-red-500 px-5 py-3 font-medium text-white hover:bg-red-600"
+        >
+          Rechazar devolución
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

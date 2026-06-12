@@ -644,7 +644,7 @@ export default function OrderHelpPage() {
                                   justify-center
                                   rounded-full
                                   border
-                                  border-white/350
+                                  border-white/100
                                   shadow-lg
                                   bg-black/70
                                   backdrop-blur

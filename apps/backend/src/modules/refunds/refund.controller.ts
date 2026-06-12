@@ -33,6 +33,13 @@ export const RefundController = {
 
       const files = req.files as Express.Multer.File[];
 
+      if (files?.length > 5) {
+        return res.status(400).json({
+          success: false,
+          message: "Máximo 5 imágenes por devolución",
+        });
+      }
+
       /* =========================
          VALIDACIÓN
       ========================= */
@@ -79,7 +86,22 @@ export const RefundController = {
       if (files?.length) {
         const cloudinary = (await import("@/common/utils/cloudinary")).default;
 
+        const allowed = ["image/jpeg", "image/png", "image/webp"];
+        
         for (const file of files) {
+          if (!allowed.includes(file.mimetype)) {
+            return res.status(400).json({
+              success: false,
+              message: "Formato de imagen no permitido",
+            });
+          }
+
+          if (file.size > 10 * 1024 * 1024) {
+            return res.status(400).json({
+              success: false,
+              message: "Cada imagen debe ser menor de 10MB",
+            });
+          }
           const uploaded: any = await new Promise((resolve, reject) => {
             cloudinary.uploader
               .upload_stream(

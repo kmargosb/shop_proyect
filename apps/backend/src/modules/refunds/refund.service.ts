@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { RefundRepository } from "./refund.repository";
 import { RefundReason } from "@prisma/client";
 import { getIO } from "@/lib/socket";
+import {
+  sendRefundApprovedEmail,
+  sendRefundRejectedEmail,
+  sendRefundCompletedEmail,
+} from "@/modules/email/refund.email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
@@ -201,6 +206,8 @@ export const RefundService = {
       },
     });
 
+    await sendRefundApprovedEmail(refund.orderId);
+
     await prisma.orderEvent.create({
       data: {
         orderId: refund.orderId,
@@ -242,6 +249,11 @@ export const RefundService = {
         reviewedAt: new Date(),
       },
     });
+
+    await sendRefundRejectedEmail(
+      refund.orderId,
+      rejectionReason || "La solicitud no cumple los requisitos de devolución",
+    );
 
     await prisma.orderEvent.create({
       data: {
@@ -347,6 +359,11 @@ export const RefundService = {
         stripeRefundId: stripeRefund.id,
       },
     });
+
+    await sendRefundCompletedEmail(
+      refund.orderId,
+      `${(refund.amount / 100).toFixed(2)} €`,
+    );
 
     const totalRefunded = await prisma.refund.aggregate({
       where: {
