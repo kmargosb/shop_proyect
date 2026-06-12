@@ -28,6 +28,7 @@ export default function OrderHelpPage() {
   const [refundReason, setRefundReason] = useState("CUSTOMER_RETURN");
   const [refundComment, setRefundComment] = useState("");
   const [refundImages, setRefundImages] = useState<File[]>([]);
+  const [refundPreviews, setRefundPreviews] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -141,14 +142,20 @@ export default function OrderHelpPage() {
 
         return;
       }
+      const formData = new FormData();
+
+      formData.append("orderId", order.id);
+      formData.append("items", JSON.stringify(items));
+      formData.append("reason", refundReason);
+      formData.append("note", refundComment);
+
+      for (const image of refundImages) {
+        formData.append("images", image);
+      }
+
       const res = await apiFetch("/refunds", {
         method: "POST",
-        body: JSON.stringify({
-          orderId: order.id,
-          items,
-          reason: refundReason,
-          note: refundComment,
-        }),
+        body: formData,
       });
 
       const data = await res?.json();
@@ -514,9 +521,156 @@ export default function OrderHelpPage() {
                 placeholder="Explícanos qué ha ocurrido..."
                 className="w-full rounded-2xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none"
               />
+
               <p className="mt-2 text-right text-xs text-neutral-500">
                 {refundComment.length}/300
               </p>
+            </div>
+
+            {/* FOTOS */}
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm text-neutral-400">
+                Evidencias fotográficas (opcional)
+              </label>
+
+              <label
+                htmlFor="refund-images"
+                className="
+      flex cursor-pointer items-center justify-center
+      rounded-2xl border border-dashed border-white/15
+      bg-white/[0.02]
+      px-6 py-8
+      text-center
+      transition
+      hover:border-white/30
+      hover:bg-white/[0.04]
+    "
+              >
+                <div>
+                  <p className="text-sm text-white">
+                    Arrastra imágenes o haz clic para subirlas
+                  </p>
+
+                  <p className="mt-1 text-xs text-neutral-500">
+                    JPG, PNG, WEBP · Máximo 5 imágenes
+                  </p>
+                </div>
+              </label>
+
+              <input
+                id="refund-images"
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const newFiles = Array.from(e.target.files || []);
+
+                  const mergedFiles = [...refundImages, ...newFiles].slice(
+                    0,
+                    5,
+                  );
+
+                  setRefundImages(mergedFiles);
+
+                  setRefundPreviews(
+                    mergedFiles.map((file) => URL.createObjectURL(file)),
+                  );
+
+                  e.target.value = "";
+                }}
+              />
+
+              {refundPreviews.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-3 text-xs text-neutral-500">
+                    {refundImages.length}/5 imágenes seleccionadas
+                  </p>
+
+                  <div className="mt-4">
+                    <p className="mb-3 text-xs text-neutral-500">
+                      {refundImages.length}/5 imágenes
+                    </p>
+
+                    <div className="grid grid-cols-5 gap-2">
+                      {Array.from({ length: 5 }).map((_, slotIndex) => {
+                        const preview = refundPreviews[slotIndex];
+
+                        return (
+                          <div
+                            key={slotIndex}
+                            className="
+            group
+    relative
+    aspect-square
+    overflow-hidden
+    rounded-xl
+    border border-white/10
+    bg-white/[0.03]
+    transition-all
+    hover:border-white/30
+    hover:shadow-lg
+  "
+                          >
+                            {preview ? (
+                              <>
+                                <img
+                                  src={preview}
+                                  alt=""
+                                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105 group-hover:brightness-75"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRefundImages((prev) =>
+                                      prev.filter((_, i) => i !== slotIndex),
+                                    );
+
+                                    setRefundPreviews((prev) =>
+                                      prev.filter((_, i) => i !== slotIndex),
+                                    );
+                                  }}
+                                  className="
+                                  absolute
+                                  right-1.5
+                                  top-1.5
+                                  z-10
+                                  flex
+                                  h-6
+                                  w-6
+                                  items-center
+                                  justify-center
+                                  rounded-full
+                                  border
+                                  border-white/350
+                                  shadow-lg
+                                  bg-black/70
+                                  backdrop-blur
+                                  text-xs
+                                  font-bold
+                                  text-white
+                                  opacity-100
+                                  transition-all
+                                  hover:scale-110
+                                  hover:bg-red-500"
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-neutral-600">
+                                +
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {refundError && (

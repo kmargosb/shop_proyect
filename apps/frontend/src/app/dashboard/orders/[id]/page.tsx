@@ -22,9 +22,9 @@ import type {
   OrderUpdatedPayload,
 } from "@/shared/lib/socket";
 
-const CUSTOMER_MESSAGE_PREFIX = "CUSTOMER_MESSAGE:";
-const ADMIN_REPLY_PREFIX = "ADMIN_REPLY:";
-const INTERNAL_NOTE_PREFIX = "INTERNAL_NOTE:";
+const CUSTOMER_MESSAGE_PREFIX = "Cliente · ";
+const ADMIN_REPLY_PREFIX = "Soporte · ";
+const INTERNAL_NOTE_PREFIX = "Interno · ";
 
 export default function DashboardOrderPage() {
   const params = useParams();
@@ -347,10 +347,13 @@ export default function DashboardOrderPage() {
                 {order.events.map((event: any, index: number) => {
                   const isCustomerMessage =
                     typeof event.message === "string" &&
-                    event.message.startsWith("CUSTOMER_MESSAGE");
+                    (event.message.startsWith("CUSTOMER_MESSAGE") ||
+                      event.message.startsWith(CUSTOMER_MESSAGE_PREFIX));
+
                   const isAdminReply =
                     typeof event.message === "string" &&
-                    event.message.startsWith("ADMIN_REPLY:");
+                    (event.message.startsWith("ADMIN_REPLY:") ||
+                      event.message.startsWith(ADMIN_REPLY_PREFIX));
 
                   return (
                     <div key={event.id} className="relative pl-6">
@@ -367,9 +370,7 @@ export default function DashboardOrderPage() {
                       />
                       {isCustomerMessage ? (
                         <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4">
-                          <p className="font-semibold text-sky-300">
-                            💬 Mensaje del cliente
-                          </p>
+                          <p className="font-semibold text-sky-300">Cliente</p>
 
                           <button
                             onClick={() => setReplyOpen(true)}
@@ -381,7 +382,7 @@ export default function DashboardOrderPage() {
                           <p className="mt-3 text-sm text-neutral-200">
                             {event.message
                               .replace("CUSTOMER_MESSAGE:", "")
-                              .replace("CUSTOMER_MESSAGE", "")
+                              .replace(CUSTOMER_MESSAGE_PREFIX, "")
                               .trim()}
                           </p>
 
@@ -392,11 +393,14 @@ export default function DashboardOrderPage() {
                       ) : isAdminReply ? (
                         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
                           <p className="font-semibold text-emerald-300">
-                            ✉️ Respuesta enviada
+                            Soporte
                           </p>
 
                           <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-200">
-                            {event.message.replace("ADMIN_REPLY:", "").trim()}
+                            {event.message
+                              .replace("ADMIN_REPLY:", "")
+                              .replace(ADMIN_REPLY_PREFIX, "")
+                              .trim()}
                           </p>
 
                           <p className="mt-3 text-xs text-neutral-500">
@@ -406,7 +410,9 @@ export default function DashboardOrderPage() {
                       ) : (
                         <div>
                           <p className="text-sm font-medium text-white">
-                            {event.message ?? timelineLabels[event.type] ?? event.type}
+                            {event.message ??
+                              timelineLabels[event.type] ??
+                              event.type}
                           </p>
 
                           <p className="mt-1 text-xs text-neutral-500">

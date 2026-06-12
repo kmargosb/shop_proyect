@@ -14,6 +14,10 @@ export const RefundService = {
     items: { orderItemId: string; quantity: number }[],
     reason?: RefundReason,
     note?: string,
+    evidence?: {
+      url: string;
+      publicId?: string;
+    }[],
   ) {
     /* =========================
        PROTECCIÓN 1
@@ -118,6 +122,16 @@ export const RefundService = {
       reason,
       note,
     });
+
+    if (evidence?.length) {
+      await prisma.refundEvidence.createMany({
+        data: evidence.map((img) => ({
+          refundId: dbRefund.id,
+          url: img.url,
+          publicId: img.publicId,
+        })),
+      });
+    }
 
     await prisma.orderEvent.create({
       data: {

@@ -24,7 +24,14 @@ const allowedReasons: RefundReason[] = [
 export const RefundController = {
   async create(req: Request, res: Response) {
     try {
-      const { orderId, items, reason: incomingReason, note } = req.body;
+      const { orderId, reason: incomingReason, note } = req.body;
+
+      const items =
+        typeof req.body.items === "string"
+          ? JSON.parse(req.body.items)
+          : req.body.items;
+
+      const files = req.files as Express.Multer.File[];
 
       /* =========================
          VALIDACIÓN
@@ -64,11 +71,42 @@ export const RefundController = {
          SERVICE
       ========================= */
 
+      const evidence: {
+        url: string;
+        publicId?: string;
+      }[] = [];
+
+      if (files?.length) {
+        const cloudinary = (await import("@/common/utils/cloudinary")).default;
+
+        for (const file of files) {
+          const uploaded: any = await new Promise((resolve, reject) => {
+            cloudinary.uploader
+              .upload_stream(
+                {
+                  folder: "refunds",
+                },
+                (err, result) => {
+                  if (err) reject(err);
+                  else resolve(result);
+                },
+              )
+              .end(file.buffer);
+          });
+
+          evidence.push({
+            url: uploaded.secure_url,
+            publicId: uploaded.public_id,
+          });
+        }
+      }
+
       const result = await RefundService.createRefund(
         orderId,
         items,
         reason,
         note,
+        evidence,
       );
 
       /* =========================

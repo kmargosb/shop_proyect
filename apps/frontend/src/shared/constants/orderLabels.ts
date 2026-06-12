@@ -27,6 +27,7 @@ export const colorLabels: Record<string, string> = {
 };
 
 export const countryLabels: Record<string, string> = {
+  
   // España y Europa
 
   ES: "España",
@@ -86,6 +87,45 @@ export const countryLabels: Record<string, string> = {
   PR: "Puerto Rico",
   UY: "Uruguay",
   VE: "Venezuela",
+
+  // Asia
+
+  JP: "Japón",
+  CN: "China",
+  KR: "Corea del Sur",
+  IN: "India",
+  SG: "Singapur",
+  TH: "Tailandia",
+  MY: "Malasia",
+  ID: "Indonesia",
+  PH: "Filipinas",
+  VN: "Vietnam",
+  HK: "Hong Kong",
+  TW: "Taiwán",
+
+  // Oceanía
+
+  AU: "Australia",
+  NZ: "Nueva Zelanda",
+
+  // Oriente Medio
+
+  AE: "Emiratos Árabes Unidos",
+  SA: "Arabia Saudí",
+  QA: "Catar",
+  KW: "Kuwait",
+  IL: "Israel",
+  TR: "Turquía",
+
+  // África
+
+  ZA: "Sudáfrica",
+  MA: "Marruecos",
+  EG: "Egipto",
+  NG: "Nigeria",
+  KE: "Kenia",
+  TN: "Túnez",
+  DZ: "Argelia",
 };
 
 export const timelineLabels: Record<string, string> = {
@@ -116,47 +156,33 @@ export const refundStatusLabels: Record<string, string> = {
 };
 
 export const statusStyles: Record<string, string> = {
-  PENDING:
-    "border-amber-500/20 bg-amber-500/10 text-amber-300",
+  PENDING: "border-amber-500/20 bg-amber-500/10 text-amber-300",
 
-  PAYMENT_PROCESSING:
-    "border-sky-500/20 bg-sky-500/10 text-sky-300",
+  PAYMENT_PROCESSING: "border-sky-500/20 bg-sky-500/10 text-sky-300",
 
-  PAID:
-    "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+  PAID: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
 
-  SHIPPED:
-    "border-violet-500/20 bg-violet-500/10 text-violet-300",
+  SHIPPED: "border-violet-500/20 bg-violet-500/10 text-violet-300",
 
-  DELIVERED:
-    "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+  DELIVERED: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
 
-  CANCELLED:
-    "border-red-500/20 bg-red-500/10 text-red-300",
+  CANCELLED: "border-red-500/20 bg-red-500/10 text-red-300",
 
-  FAILED:
-    "border-red-500/20 bg-red-500/10 text-red-300",
+  FAILED: "border-red-500/20 bg-red-500/10 text-red-300",
 
-  PARTIALLY_REFUNDED:
-    "border-orange-500/20 bg-orange-500/10 text-orange-300",
+  PARTIALLY_REFUNDED: "border-orange-500/20 bg-orange-500/10 text-orange-300",
 
-  REFUNDED:
-    "border-neutral-500/20 bg-neutral-500/10 text-neutral-300",
+  REFUNDED: "border-neutral-500/20 bg-neutral-500/10 text-neutral-300",
 };
 
 export const refundStatusStyles: Record<string, string> = {
-  PENDING_REVIEW:
-    "border-amber-500/20 bg-amber-500/10 text-amber-300",
+  PENDING_REVIEW: "border-amber-500/20 bg-amber-500/10 text-amber-300",
 
-  APPROVED:
-    "border-sky-500/20 bg-sky-500/10 text-sky-300",
+  APPROVED: "border-sky-500/20 bg-sky-500/10 text-sky-300",
 
-  REJECTED:
-    "border-red-500/20 bg-red-500/10 text-red-300",
+  REJECTED: "border-red-500/20 bg-red-500/10 text-red-300",
 
-  SUCCEEDED:
-    "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+  SUCCEEDED: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
 
-  FAILED:
-    "border-red-500/20 bg-red-500/10 text-red-300",
+  FAILED: "border-red-500/20 bg-red-500/10 text-red-300",
 };
