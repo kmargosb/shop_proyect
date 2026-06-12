@@ -40,6 +40,7 @@ export default function DashboardOrderPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [includeCancelLink, setIncludeCancelLink] = useState(false);
+  const [selectedEvidence, setSelectedEvidence] = useState<string | null>(null);
 
   const loadOrder = useCallback(async () => {
     const res = await apiFetch(`/orders/admin/${id}`);
@@ -121,7 +122,6 @@ export default function DashboardOrderPage() {
   };
 
   const rejectRefund = (refundId: string) => {
-
     setRejectRefundId(refundId);
 
     setRejectReason("");
@@ -190,33 +190,33 @@ export default function DashboardOrderPage() {
   };
 
   const confirmRejectRefund = async () => {
-  if (rejectReason.trim().length < 10) {
-    alert("Describe el motivo con al menos 10 caracteres");
-    return;
-  }
+    if (rejectReason.trim().length < 10) {
+      alert("Describe el motivo con al menos 10 caracteres");
+      return;
+    }
 
-  try {
-    await apiFetch(`/refunds/${rejectRefundId}/reject`, {
-      method: "POST",
+    try {
+      await apiFetch(`/refunds/${rejectRefundId}/reject`, {
+        method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-      },
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-      body: JSON.stringify({
-        rejectionReason: rejectReason,
-      }),
-    });
+        body: JSON.stringify({
+          rejectionReason: rejectReason,
+        }),
+      });
 
-    setRejectOpen(false);
-    setRejectRefundId(null);
-    setRejectReason("");
+      setRejectOpen(false);
+      setRejectRefundId(null);
+      setRejectReason("");
 
-    await loadOrder();
-  } catch (error) {
-    console.error(error);
-  }
-};
+      await loadOrder();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   if (!order) {
     return <div className="p-6 text-white">Cargando pedido...</div>;
@@ -554,35 +554,47 @@ export default function DashboardOrderPage() {
 
                           <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
                             {refund.evidence.map((image: any) => (
-                              <a
+                              <button
                                 key={image.id}
-                                href={image.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                type="button"
+                                onClick={() => setSelectedEvidence(image.url)}
                                 className="
-            group
-            overflow-hidden
-            rounded-2xl
-            border border-white/10
-            bg-white/5
-            transition
-            hover:border-white/20
-            hover:bg-white/10
-          "
+    group
+    relative
+    overflow-hidden
+    rounded-2xl
+    border border-white/10
+    bg-white/5
+    transition-all
+    duration-300
+    hover:scale-[1.03]
+    hover:border-white/30
+    hover:shadow-xl
+    hover:shadow-black/40
+  "
                               >
                                 <img
                                   src={image.url}
                                   alt="Refund evidence"
                                   className="
-              aspect-square
-              w-full
-              object-cover
-              transition-transform
-              duration-300
-              group-hover:scale-105
-            "
+      aspect-square
+      w-full
+      object-cover
+      transition-transform
+      duration-300
+      group-hover:scale-105
+    "
                                 />
-                              </a>
+
+                                <div
+                                  className="
+      absolute inset-0
+      bg-black/0
+      transition
+      group-hover:bg-black/20
+    "
+                                />
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -850,48 +862,81 @@ export default function DashboardOrderPage() {
         </div>
       )}
       {rejectOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-    <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-6">
-      <h3 className="text-xl font-semibold text-white">
-        Rechazar devolución
-      </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-6">
+            <h3 className="text-xl font-semibold text-white">
+              Rechazar devolución
+            </h3>
 
-      <p className="mt-2 text-sm text-neutral-400">
-        Explica claramente al cliente por qué se rechaza la solicitud.
-      </p>
+            <p className="mt-2 text-sm text-neutral-400">
+              Explica claramente al cliente por qué se rechaza la solicitud.
+            </p>
 
-      <textarea
-        value={rejectReason}
-        onChange={(e) => setRejectReason(e.target.value)}
-        rows={6}
-        className="mt-5 w-full resize-none rounded-2xl border border-white/10 bg-black p-4 text-white"
-        placeholder="Ej: El producto presenta signos de uso y no cumple las condiciones de devolución..."
-      />
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={6}
+              className="mt-5 w-full resize-none rounded-2xl border border-white/10 bg-black p-4 text-white"
+              placeholder="Ej: El producto presenta signos de uso y no cumple las condiciones de devolución..."
+            />
 
-      <p className="mt-2 text-right text-xs text-neutral-500">
-        {rejectReason.length} caracteres
-      </p>
+            <p className="mt-2 text-right text-xs text-neutral-500">
+              {rejectReason.length} caracteres
+            </p>
 
-      <div className="mt-6 flex justify-end gap-3">
-        <button
-          onClick={() => {
-            setRejectOpen(false);
-            setRejectReason("");
-            setRejectRefundId(null);
-          }}
-          className="rounded-xl border border-white/10 px-4 py-3 text-white"
-        >
-          Cancelar
-        </button>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setRejectOpen(false);
+                  setRejectReason("");
+                  setRejectRefundId(null);
+                }}
+                className="rounded-xl border border-white/10 px-4 py-3 text-white"
+              >
+                Cancelar
+              </button>
 
-        <button
-          onClick={confirmRejectRefund}
-          className="rounded-xl bg-red-500 px-5 py-3 font-medium text-white hover:bg-red-600"
-        >
-          Rechazar devolución
-        </button>
-      </div>
-    </div>
+              <button
+                onClick={confirmRejectRefund}
+                className="rounded-xl bg-red-500 px-5 py-3 font-medium text-white hover:bg-red-600"
+              >
+                Rechazar devolución
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {selectedEvidence && (
+  <div
+    className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4"
+    onClick={() => setSelectedEvidence(null)}
+  >
+    <button
+      onClick={() => setSelectedEvidence(null)}
+      className="
+        absolute right-6 top-6
+        h-12 w-12
+        rounded-full
+        bg-white/10
+        text-2xl
+        text-white
+        transition
+        hover:bg-white/20
+      "
+    >
+      ×
+    </button>
+
+    <img
+      src={selectedEvidence}
+      alt="Evidence"
+      className="
+        max-h-[90vh]
+        max-w-[90vw]
+        rounded-3xl
+        object-contain
+      "
+    />
   </div>
 )}
     </>
