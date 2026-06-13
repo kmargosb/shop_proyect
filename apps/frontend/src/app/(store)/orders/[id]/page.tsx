@@ -601,6 +601,10 @@ export default function Page() {
             <div className="relative max-h-[420px] space-y-3 overflow-y-auto premium-scrollbar pr-1">
               {order.events.map((event: OrderEvent, index: number) => {
                 const config = getTimelineConfig(event.type);
+                const isCustomerMessage =
+                  event.message?.startsWith("CUSTOMER_MESSAGE:");
+
+                const isAdminReply = event.message?.startsWith("ADMIN_REPLY:");
 
                 return (
                   <div
@@ -625,7 +629,13 @@ export default function Page() {
 
                     <div className="flex-1">
                       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                        <p className="text-xs font-semibold">{config.label}</p>
+                        <p className="text-xs font-semibold">
+                          {isCustomerMessage
+                            ? "Mensaje enviado"
+                            : isAdminReply
+                              ? "Respuesta de soporte"
+                              : config.label}
+                        </p>
 
                         <p className="text-[10px] text-neutral-600">
                           {new Date(event.createdAt).toLocaleString()}
@@ -635,6 +645,8 @@ export default function Page() {
                       {event.message && (
                         <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
                           {event.message
+                            .replace("CUSTOMER_MESSAGE:", "")
+                            .replace("ADMIN_REPLY:", "")
                             .replace(
                               "WRONG_PRODUCT",
                               cancellationReasons.WRONG_PRODUCT,
@@ -846,7 +858,7 @@ function getTimelineConfig(type: string) {
 
     case "ORDER_UPDATED":
       return {
-        label: "Actualización de devolución",
+        label: "Actualización",
         icon: RefreshCcw,
         className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
       };
