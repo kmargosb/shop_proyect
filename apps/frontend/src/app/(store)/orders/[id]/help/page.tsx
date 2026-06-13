@@ -27,22 +27,23 @@ export default function OrderHelpPage() {
   const [refundComment, setRefundComment] = useState("");
   const [refundImages, setRefundImages] = useState<File[]>([]);
   const [refundPreviews, setRefundPreviews] = useState<string[]>([]);
+  const [submittingRefund, setSubmittingRefund] = useState(false);
 
   useEffect(() => {
-  if (!id) return;
+    if (!id) return;
 
-  const handleOrderUpdate = (data: any) => {
-    if (data.orderId === id) {
-      loadOrder();
-    }
-  };
+    const handleOrderUpdate = (data: any) => {
+      if (data.orderId === id) {
+        loadOrder();
+      }
+    };
 
-  socket.on("orderUpdated", handleOrderUpdate);
+    socket.on("orderUpdated", handleOrderUpdate);
 
-  return () => {
-    socket.off("orderUpdated", handleOrderUpdate);
-  };
-}, [id]);
+    return () => {
+      socket.off("orderUpdated", handleOrderUpdate);
+    };
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -134,6 +135,10 @@ export default function OrderHelpPage() {
   };
 
   const handleRefund = async () => {
+    if (submittingRefund) return;
+
+    setSubmittingRefund(true);
+
     try {
       setProcessingRefund(true);
 
@@ -197,6 +202,7 @@ export default function OrderHelpPage() {
       setRefundError("Error inesperado");
     } finally {
       setProcessingRefund(false);
+      setSubmittingRefund(false);
     }
   };
 
@@ -216,14 +222,15 @@ export default function OrderHelpPage() {
     );
   }
 
-  const canRequestRefund =
-  ["DELIVERED", "PARTIALLY_REFUNDED"].includes(order.status);
+  const canRequestRefund = ["DELIVERED", "PARTIALLY_REFUNDED"].includes(
+    order.status,
+  );
 
   const hasRefundableItems =
     order.items?.some((item: any) => {
       const refundedQuantity =
-  order.refunds
-    ?.flatMap((refund: any) => refund.items || [])
+        order.refunds
+          ?.flatMap((refund: any) => refund.items || [])
           .filter((ri: any) => ri.orderItemId === item.id)
           .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
 
@@ -452,8 +459,8 @@ export default function OrderHelpPage() {
               {order.items
                 .filter((item: any) => {
                   const refundedQuantity =
-  order.refunds
-    ?.flatMap((refund: any) => refund.items || [])
+                    order.refunds
+                      ?.flatMap((refund: any) => refund.items || [])
                       .filter((ri: any) => ri.orderItemId === item.id)
                       .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
                     0;
@@ -462,8 +469,8 @@ export default function OrderHelpPage() {
                 })
                 .map((item: any) => {
                   const refundedQuantity =
-  order.refunds
-    ?.flatMap((refund: any) => refund.items || [])
+                    order.refunds
+                      ?.flatMap((refund: any) => refund.items || [])
                       .filter((ri: any) => ri.orderItemId === item.id)
                       .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
                     0;
@@ -761,10 +768,18 @@ export default function OrderHelpPage() {
 
               <button
                 onClick={handleRefund}
-                disabled={processingRefund || refundComment.trim().length < 20}
+                disabled={
+                  processingRefund ||
+                  submittingRefund ||
+                  refundComment.trim().length < 20
+                }
                 className="w-full rounded-2xl bg-white py-3 text-black disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {processingRefund ? "Procesando..." : "Confirmar devolución"}
+                {submittingRefund
+                  ? "Enviando solicitud..."
+                  : processingRefund
+                    ? "Procesando..."
+                    : "Confirmar devolución"}
               </button>
             </div>
           </div>

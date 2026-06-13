@@ -14,7 +14,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export const RefundService = {
-  
   async createRefund(
     orderId: string,
     items: { orderItemId: string; quantity: number }[],
@@ -49,6 +48,7 @@ export const RefundService = {
     if (!order) {
       throw new Error("Order not found");
     }
+    
 
     if (!order.stripePaymentIntentId) {
       throw new Error("Order has no payment intent");
@@ -68,7 +68,6 @@ export const RefundService = {
       }
 
       const refundedQuantity = order.refunds
-        .filter((r) => r.status === "SUCCEEDED")
         .flatMap((r) => r.items)
         .filter((ri) => ri.orderItemId === item.orderItemId)
         .reduce((sum, ri) => sum + ri.quantity, 0);
