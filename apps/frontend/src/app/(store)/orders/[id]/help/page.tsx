@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { LifeBuoy, Send, Phone } from "lucide-react";
 import { apiFetch, publicFetch } from "@/shared/lib/api";
+import { socket } from "@/shared/lib/socket";
 
 export default function OrderHelpPage() {
   const params = useParams();
@@ -13,14 +14,11 @@ export default function OrderHelpPage() {
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   const [message, setMessage] = useState("");
   const [phone, setPhone] = useState("");
-
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
-
   const [processingRefund, setProcessingRefund] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
   const [refundSuccess, setRefundSuccess] = useState(false);
@@ -31,46 +29,62 @@ export default function OrderHelpPage() {
   const [refundPreviews, setRefundPreviews] = useState<string[]>([]);
 
   useEffect(() => {
+  if (!id) return;
+
+  const handleOrderUpdate = (data: any) => {
+    if (data.orderId === id) {
+      loadOrder();
+    }
+  };
+
+  socket.on("orderUpdated", handleOrderUpdate);
+
+  return () => {
+    socket.off("orderUpdated", handleOrderUpdate);
+  };
+}, [id]);
+
+  useEffect(() => {
     if (!id) return;
-
-    const loadOrder = async () => {
-      try {
-        const queryEmail = searchParams.get("email");
-
-        const storedOrderId = localStorage.getItem("orderEmailOrderId");
-
-        const storedEmail = localStorage.getItem("orderEmail");
-
-        const email = queryEmail || (storedOrderId === id ? storedEmail : null);
-
-        /* GUEST */
-
-        if (email) {
-          const response = await publicFetch(
-            `/orders/public/${id}?email=${encodeURIComponent(email)}`,
-          );
-
-          setOrder(await response.json());
-
-          return;
-        }
-
-        /* AUTH USER */
-
-        const response = await apiFetch(`/orders/${id}`);
-
-        if (response?.ok) {
-          setOrder(await response.json());
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     loadOrder();
   }, [id, searchParams]);
+
+  const loadOrder = async () => {
+    try {
+      const queryEmail = searchParams.get("email");
+
+      const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+      const storedEmail = localStorage.getItem("orderEmail");
+
+      const email = queryEmail || (storedOrderId === id ? storedEmail : null);
+
+      /* GUEST */
+
+      if (email) {
+        const response = await publicFetch(
+          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
+        );
+
+        setOrder(await response.json());
+
+        return;
+      }
+
+      /* AUTH USER */
+
+      const response = await apiFetch(`/orders/${id}`);
+
+      if (response?.ok) {
+        setOrder(await response.json());
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (showRefundModal) {
@@ -167,10 +181,15 @@ export default function OrderHelpPage() {
 
       setRefundSuccess(true);
 
-      setTimeout(() => {
+      setTimeout(async () => {
+        await loadOrder();
+
         setShowRefundModal(false);
         setRefundSuccess(false);
         setRefundItems({});
+        setRefundComment("");
+        setRefundImages([]);
+        setRefundPreviews([]);
       }, 1200);
     } catch (error) {
       console.error(error);
@@ -196,6 +215,20 @@ export default function OrderHelpPage() {
       </div>
     );
   }
+
+  const canRequestRefund =
+  ["DELIVERED", "PARTIALLY_REFUNDED"].includes(order.status);
+
+  const hasRefundableItems =
+    order.items?.some((item: any) => {
+      const refundedQuantity =
+  order.refunds
+    ?.flatMap((refund: any) => refund.items || [])
+          .filter((ri: any) => ri.orderItemId === item.id)
+          .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
+
+      return refundedQuantity < item.quantity;
+    }) ?? false;
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-6">
@@ -293,7 +326,7 @@ export default function OrderHelpPage() {
               </p>
             </div>
           )}
-          {order.status === "DELIVERED" && (
+          {canRequestRefund && hasRefundableItems && (
             <div className="mt-auto border-t border-white/10 pt-6">
               <p className="text-xs text-neutral-500">
                 ¿No estás satisfecho con tu compra?
@@ -416,62 +449,92 @@ export default function OrderHelpPage() {
             </p>
 
             <div className="mt-6 space-y-4">
-              {order.items.map((item: any) => {
-                const selected = refundItems[item.id] || 0;
+              {order.items
+                .filter((item: any) => {
+                  const refundedQuantity =
+  order.refunds
+    ?.flatMap((refund: any) => refund.items || [])
+                      .filter((ri: any) => ri.orderItemId === item.id)
+                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
+                    0;
 
-                return (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-white">
-                          {item.product?.name ?? item.productName}
-                        </p>
+                  return refundedQuantity < item.quantity;
+                })
+                .map((item: any) => {
+                  const refundedQuantity =
+  order.refunds
+    ?.flatMap((refund: any) => refund.items || [])
+                      .filter((ri: any) => ri.orderItemId === item.id)
+                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
+                    0;
 
-                        <p className="mt-1 text-sm text-neutral-400">
-                          {item.color} {item.size && `· ${item.size}`}
-                        </p>
+                  const remainingQuantity = item.quantity - refundedQuantity;
+                  console.log({
+                    producto: item.product?.name,
+                    quantity: item.quantity,
+                    refundedQuantity,
+                    remainingQuantity,
+                  });
 
-                        <p className="mt-1 text-sm text-neutral-500">
-                          Cantidad comprada: {item.quantity}
-                        </p>
-                      </div>
+                  const selected = refundItems[item.id] || 0;
 
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() =>
-                            setRefundItems((prev) => ({
-                              ...prev,
-                              [item.id]: Math.max(0, selected - 1),
-                            }))
-                          }
-                          className="h-9 w-9 rounded-full border border-white/10"
-                        >
-                          -
-                        </button>
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-white">
+                            {item.product?.name ?? item.productName}
+                          </p>
 
-                        <span className="w-6 text-center text-white">
-                          {selected}
-                        </span>
+                          <p className="mt-1 text-sm text-neutral-400">
+                            {item.color} {item.size && `· ${item.size}`}
+                          </p>
 
-                        <button
-                          onClick={() =>
-                            setRefundItems((prev) => ({
-                              ...prev,
-                              [item.id]: Math.min(item.quantity, selected + 1),
-                            }))
-                          }
-                          className="h-9 w-9 rounded-full border border-white/10"
-                        >
-                          +
-                        </button>
+                          <p className="mt-1 text-sm text-neutral-500">
+                            Cantidad disponible para devolución:{" "}
+                            {remainingQuantity}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() =>
+                              setRefundItems((prev) => ({
+                                ...prev,
+                                [item.id]: Math.max(0, selected - 1),
+                              }))
+                            }
+                            className="h-9 w-9 rounded-full border border-white/10"
+                          >
+                            -
+                          </button>
+
+                          <span className="w-6 text-center text-white">
+                            {selected}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              setRefundItems((prev) => ({
+                                ...prev,
+                                [item.id]: Math.min(
+                                  remainingQuantity,
+                                  selected + 1,
+                                ),
+                              }))
+                            }
+                            className="h-9 w-9 rounded-full border border-white/10"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
 
             <div className="mt-6">
