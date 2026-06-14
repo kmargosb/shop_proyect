@@ -348,7 +348,7 @@ export function refundApprovedTemplate(
         <ol style="padding-left:20px;line-height:1.8">
           <li>Empaqueta correctamente el producto.</li>
           <li>Conserva el justificante de envío.</li>
-          <li>Cuando lo hayas enviado, marca el pedido como enviado desde tu área de pedido.</li>
+          <li>Cuando lo hayas enviado, marca el pedido como enviado desde tu área de pedido, introduciendo la empresa y el nro de rastreo.</li>
         </ol>
       </div>
 

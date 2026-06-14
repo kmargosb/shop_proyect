@@ -152,8 +152,6 @@ export default function Page() {
     );
   }
 
-  console.log("REFUNDS PAGE", order.refunds);
-
   const canDownloadInvoice =
     order.invoice &&
     ["PAID", "SHIPPED", "DELIVERED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
@@ -199,11 +197,30 @@ export default function Page() {
       setTrackingNumber("");
       setSelectedRefund(null);
 
-      const refreshed = await apiFetch(`/orders/${order.id}`);
+      const queryEmail = searchParams.get("email");
 
-      if (refreshed?.ok) {
-        const updatedOrder = await refreshed.json();
+      const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+      const storedEmail = localStorage.getItem("orderEmail");
+
+      const email = queryEmail || (storedOrderId === id ? storedEmail : null);
+
+      if (email) {
+        const publicRes = await publicFetch(
+          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
+        );
+
+        const updatedOrder = await publicRes.json();
+
         setOrder(updatedOrder);
+      } else {
+        const refreshed = await apiFetch(`/orders/${order.id}`);
+
+        if (refreshed?.ok) {
+          const updatedOrder = await refreshed.json();
+
+          setOrder(updatedOrder);
+        }
       }
 
       toast.success("Información enviada");
@@ -328,6 +345,14 @@ export default function Page() {
           ];
 
           const currentStep = (() => {
+            if (order.shipment?.deliveredAt) {
+              return 3;
+            }
+
+            if (order.shipment?.shippedAt) {
+              return 2;
+            }
+
             switch (order.status) {
               case "PENDING":
               case "PAYMENT_PROCESSING":
@@ -337,12 +362,6 @@ export default function Page() {
               case "PARTIALLY_REFUNDED":
               case "REFUNDED":
                 return 1;
-
-              case "SHIPPED":
-                return 2;
-
-              case "DELIVERED":
-                return 3;
 
               default:
                 return 0;
@@ -756,8 +775,37 @@ export default function Page() {
               {order.refunds.map((refund: any) => (
                 <div
                   key={refund.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+                  className="
+                          group
+                          overflow-hidden
+                          rounded-3xl
+                          border border-white/10
+                          bg-gradient-to-b
+                          from-white/[0.04]
+                          to-white/[0.015]
+                          p-5
+                          transition-all
+                          duration-300
+
+                          hover:border-white/20
+                          hover:shadow-[0_0_40px_rgba(255,255,255,0.04)]
+                          "
                 >
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
+                        Devolución
+                      </p>
+
+                      <p className="font-semibold text-white">
+                        #{refund.id.slice(0, 8).toUpperCase()}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-neutral-300">
+                      {refund.status}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">
                       Solicitud #{refund.id.slice(0, 8)}
@@ -773,6 +821,37 @@ export default function Page() {
                       {refund.note}
                     </p>
                   )}
+                  {refund.status === "REJECTED" && refund.rejectionReason && (
+                    <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                      <p className="text-sm font-semibold text-red-300">
+                        Solicitud rechazada
+                      </p>
+
+                      <p className="mt-2 text-sm text-red-100">
+                        {refund.rejectionReason}
+                      </p>
+                    </div>
+                  )}
+
+                  {refund.status === "CUSTOMER_SENT" && (
+                    <div className="mt-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+                      <p className="text-sm text-blue-300">
+                        Transportista: {refund.carrier}
+                      </p>
+
+                      <p className="text-sm text-blue-300">
+                        Seguimiento: {refund.trackingNumber}
+                      </p>
+
+                      <p className="mt-2 text-xs text-neutral-500">
+                        Enviado el{" "}
+                        {new Date(refund.customerSentAt).toLocaleString(
+                          "es-ES",
+                        )}
+                      </p>
+                    </div>
+                  )}
+
                   {refund.status === "APPROVED" && (
                     <button
                       onClick={() => {
@@ -909,8 +988,13 @@ export default function Page() {
               <h2 className="text-xl font-semibold">He enviado el paquete</h2>
 
               <p className="mt-2 text-sm text-neutral-500">
-                Introduce la empresa de transporte y el número de seguimiento.
+                Introduce la empresa de transporte (Correos, MRW, SEUR, DHL,
+                etc.) y el número de seguimiento.
               </p>
+              <span className="text-xs">
+                Conserva el justificante de envío hasta que la devolución sea
+                procesada.
+              </span>
 
               <div className="mt-6 space-y-4">
                 <input

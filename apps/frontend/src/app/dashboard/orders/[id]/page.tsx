@@ -542,6 +542,22 @@ export default function DashboardOrderPage() {
                           </p>
                         </div>
                       )}
+                      {refund.status === "REJECTED" &&
+                        refund.rejectionReason && (
+                          <div className="mt-5 overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/5">
+                            <div className="border-b border-red-500/10 px-4 py-3">
+                              <h3 className="text-sm font-semibold text-red-300">
+                                Motivo del rechazo
+                              </h3>
+                            </div>
+
+                            <div className="p-4">
+                              <p className="text-sm leading-relaxed text-red-100">
+                                {refund.rejectionReason}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       {refund.evidence?.length > 0 && (
                         <div className="mt-5">
                           <p className="mb-3 text-xs uppercase tracking-wide text-neutral-500">
