@@ -600,6 +600,57 @@ export default function DashboardOrderPage() {
                         </div>
                       )}
 
+                      {refund.status === "CUSTOMER_SENT" && (
+                        <div className="mt-5 overflow-hidden rounded-2xl border border-sky-500/20 bg-sky-500/5">
+                          <div className="border-b border-sky-500/10 px-4 py-3">
+                            <h3 className="text-sm font-semibold text-sky-300">
+                              📦 Paquete enviado por el cliente
+                            </h3>
+
+                            <p className="mt-1 text-xs text-neutral-400">
+                              El cliente ha confirmado que ya ha entregado el
+                              paquete al transportista.
+                            </p>
+                          </div>
+
+                          <div className="grid gap-4 p-4 md:grid-cols-3">
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                Transportista
+                              </p>
+
+                              <p className="mt-1 font-medium text-white">
+                                {refund.carrier || "No indicado"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                Seguimiento
+                              </p>
+
+                              <p className="mt-1 break-all font-medium text-white">
+                                {refund.trackingNumber || "No indicado"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                Fecha de envío
+                              </p>
+
+                              <p className="mt-1 font-medium text-white">
+                                {refund.customerSentAt
+                                  ? new Date(
+                                      refund.customerSentAt,
+                                    ).toLocaleString("es-ES")
+                                  : "-"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="mt-4 text-xs text-neutral-500">
                         <div className="mt-4 flex flex-wrap gap-2">
                           {refund.status === "PENDING_REVIEW" && (
@@ -620,7 +671,7 @@ export default function DashboardOrderPage() {
                             </>
                           )}
 
-                          {refund.status === "APPROVED" && (
+                          {refund.status === "CUSTOMER_SENT" && (
                             <button
                               onClick={() => receivedRefund(refund.id)}
                               className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white"
@@ -907,13 +958,13 @@ export default function DashboardOrderPage() {
         </div>
       )}
       {selectedEvidence && (
-  <div
-    className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4"
-    onClick={() => setSelectedEvidence(null)}
-  >
-    <button
-      onClick={() => setSelectedEvidence(null)}
-      className="
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setSelectedEvidence(null)}
+        >
+          <button
+            onClick={() => setSelectedEvidence(null)}
+            className="
         absolute right-6 top-6
         h-12 w-12
         rounded-full
@@ -923,22 +974,22 @@ export default function DashboardOrderPage() {
         transition
         hover:bg-white/20
       "
-    >
-      ×
-    </button>
+          >
+            ×
+          </button>
 
-    <img
-      src={selectedEvidence}
-      alt="Evidence"
-      className="
+          <img
+            src={selectedEvidence}
+            alt="Evidence"
+            className="
         max-h-[90vh]
         max-w-[90vw]
         rounded-3xl
         object-contain
       "
-    />
-  </div>
-)}
+          />
+        </div>
+      )}
     </>
   );
 }

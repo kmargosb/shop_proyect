@@ -285,23 +285,25 @@ export const RefundService = {
 
       data: {
         status: "CUSTOMER_SENT",
-
+        carrier,
+        trackingNumber,
+        customerSentAt: new Date(),
       },
     });
 
     await prisma.orderEvent.create({
-  data: {
-    orderId: refund.orderId,
-    type: "ORDER_UPDATED",
-    message: `El cliente ha enviado el paquete (${carrier} - ${trackingNumber})`,
-  },
-});
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: `El cliente ha enviado el paquete (${carrier} - ${trackingNumber})`,
+      },
+    });
 
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
 
-    console.log(refund)
+    console.log(refund);
 
     return refund;
   },

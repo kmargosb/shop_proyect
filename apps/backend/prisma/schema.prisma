@@ -219,21 +219,23 @@ model OrderEvent {
 model Refund {
   id              String           @id @default(uuid())
   orderId         String
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   stripeRefundId  String?          @unique
   amount          Int
   currency        String
-  status          RefundStatus     @default(PENDING_REVIEW)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  note            String?
   reason          RefundReason?
-  rejectionReason String?
-  
+  note            String?
   reviewedAt      DateTime?
   reviewedBy      String?
-  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  evidence        RefundEvidence[]
+  rejectionReason String?
+  carrier         String?
+  trackingNumber  String?
+  customerSentAt  DateTime?
+  status          RefundStatus     @default(PENDING_REVIEW)
   items           RefundItem[]
+  evidence        RefundEvidence[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model RefundEvidence {
