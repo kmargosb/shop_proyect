@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/shared/lib/api";
 import {
@@ -16,36 +16,72 @@ import {
 } from "@/shared/constants/orderLabels";
 import ShipmentModal from "@/features/orders/components/ShipmentModal";
 import EditOrderModal from "@/features/orders/components/EditOrderModal";
+import { socket } from "@/shared/lib/socket";
+import type {
+  DashboardUpdatePayload,
+  OrderUpdatedPayload,
+} from "@/shared/lib/socket";
 
-const CUSTOMER_MESSAGE_PREFIX = "CUSTOMER_MESSAGE:";
-const ADMIN_REPLY_PREFIX = "ADMIN_REPLY:";
-const INTERNAL_NOTE_PREFIX = "INTERNAL_NOTE:";
+const CUSTOMER_MESSAGE_PREFIX = "Cliente · ";
+const ADMIN_REPLY_PREFIX = "Soporte · ";
+const INTERNAL_NOTE_PREFIX = "Interno · ";
 
 export default function DashboardOrderPage() {
   const params = useParams();
   const id = params?.id as string;
   const [order, setOrder] = useState<any>(null);
+  const timelineBottomRef = useRef<HTMLDivElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectRefundId, setRejectRefundId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [includeCancelLink, setIncludeCancelLink] = useState(false);
+  const [selectedEvidence, setSelectedEvidence] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      loadOrder();
-    }
-  }, [id]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     const res = await apiFetch(`/orders/admin/${id}`);
 
     if (!res) return;
     const data = await res.json();
 
     setOrder(data);
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      void loadOrder();
+    }
+  }, [id, loadOrder]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const refreshOrder = (
+      payload?: DashboardUpdatePayload | OrderUpdatedPayload,
+    ) => {
+      if (!payload?.orderId || payload.orderId === id) {
+        void loadOrder();
+      }
+    };
+
+    socket.on("dashboard:update", refreshOrder);
+    socket.on("orderUpdated", refreshOrder);
+
+    return () => {
+      socket.off("dashboard:update", refreshOrder);
+      socket.off("orderUpdated", refreshOrder);
+    };
+  }, [id, loadOrder]);
+
+  useEffect(() => {
+    timelineBottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [order?.events]);
 
   const markDelivered = async () => {
     try {
@@ -83,6 +119,14 @@ export default function DashboardOrderPage() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const rejectRefund = (refundId: string) => {
+    setRejectRefundId(refundId);
+
+    setRejectReason("");
+
+    setRejectOpen(true);
   };
 
   const receivedRefund = async (refundId: string) => {
@@ -142,6 +186,35 @@ export default function DashboardOrderPage() {
       alert("No se pudo enviar la respuesta");
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  const confirmRejectRefund = async () => {
+    if (rejectReason.trim().length < 10) {
+      alert("Describe el motivo con al menos 10 caracteres");
+      return;
+    }
+
+    try {
+      await apiFetch(`/refunds/${rejectRefundId}/reject`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          rejectionReason: rejectReason,
+        }),
+      });
+
+      setRejectOpen(false);
+      setRejectRefundId(null);
+      setRejectReason("");
+
+      await loadOrder();
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -286,14 +359,17 @@ export default function DashboardOrderPage() {
             <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
               <h2 className="text-lg font-semibold text-white">Timeline</h2>
 
-              <div className="mt-6 space-y-5">
+              <div className="mt-6 max-h-[400px] space-y-5 overflow-y-auto premium-scrollbar pr-2">
                 {order.events.map((event: any, index: number) => {
                   const isCustomerMessage =
                     typeof event.message === "string" &&
-                    event.message.startsWith("CUSTOMER_MESSAGE");
+                    (event.message.startsWith("CUSTOMER_MESSAGE") ||
+                      event.message.startsWith(CUSTOMER_MESSAGE_PREFIX));
+
                   const isAdminReply =
                     typeof event.message === "string" &&
-                    event.message.startsWith("ADMIN_REPLY:");
+                    (event.message.startsWith("ADMIN_REPLY:") ||
+                      event.message.startsWith(ADMIN_REPLY_PREFIX));
 
                   return (
                     <div key={event.id} className="relative pl-6">
@@ -310,9 +386,7 @@ export default function DashboardOrderPage() {
                       />
                       {isCustomerMessage ? (
                         <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4">
-                          <p className="font-semibold text-sky-300">
-                            💬 Mensaje del cliente
-                          </p>
+                          <p className="font-semibold text-sky-300">Cliente</p>
 
                           <button
                             onClick={() => setReplyOpen(true)}
@@ -324,7 +398,7 @@ export default function DashboardOrderPage() {
                           <p className="mt-3 text-sm text-neutral-200">
                             {event.message
                               .replace("CUSTOMER_MESSAGE:", "")
-                              .replace("CUSTOMER_MESSAGE", "")
+                              .replace(CUSTOMER_MESSAGE_PREFIX, "")
                               .trim()}
                           </p>
 
@@ -335,11 +409,14 @@ export default function DashboardOrderPage() {
                       ) : isAdminReply ? (
                         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
                           <p className="font-semibold text-emerald-300">
-                            ✉️ Respuesta enviada
+                            Soporte
                           </p>
 
                           <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-200">
-                            {event.message.replace("ADMIN_REPLY:", "").trim()}
+                            {event.message
+                              .replace("ADMIN_REPLY:", "")
+                              .replace(ADMIN_REPLY_PREFIX, "")
+                              .trim()}
                           </p>
 
                           <p className="mt-3 text-xs text-neutral-500">
@@ -349,7 +426,9 @@ export default function DashboardOrderPage() {
                       ) : (
                         <div>
                           <p className="text-sm font-medium text-white">
-                            {timelineLabels[event.type] ?? event.message}
+                            {event.message ??
+                              timelineLabels[event.type] ??
+                              event.type}
                           </p>
 
                           <p className="mt-1 text-xs text-neutral-500">
@@ -360,6 +439,7 @@ export default function DashboardOrderPage() {
                     </div>
                   );
                 })}
+                <div ref={timelineBottomRef} />
               </div>
             </div>
 
@@ -407,22 +487,10 @@ export default function DashboardOrderPage() {
                         </p>
                       </div>
 
-                      {refund.note && (
-                        <div className="mt-4">
-                          <p className="text-sm text-neutral-500">
-                            Comentario cliente
-                          </p>
-
-                          <p className="mt-1 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-neutral-300">
-                            {refund.note}
-                          </p>
-                        </div>
-                      )}
                       <div className="mt-4">
                         <p className="text-sm text-neutral-500">
                           Productos solicitados
                         </p>
-
                         <div className="mt-3 space-y-2">
                           {refund.items?.map((refundItem: any) => {
                             const orderItem = order.items.find(
@@ -463,6 +531,142 @@ export default function DashboardOrderPage() {
                         </div>
                       </div>
 
+                      {refund.note && (
+                        <div className="mt-4">
+                          <p className="text-sm text-neutral-500">
+                            Comentario cliente
+                          </p>
+
+                          <p className="mt-1 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-neutral-300">
+                            {refund.note}
+                          </p>
+                        </div>
+                      )}
+                      {refund.status === "REJECTED" &&
+                        refund.rejectionReason && (
+                          <div className="mt-5 overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/5">
+                            <div className="border-b border-red-500/10 px-4 py-3">
+                              <h3 className="text-sm font-semibold text-red-300">
+                                Motivo del rechazo
+                              </h3>
+                            </div>
+
+                            <div className="p-4">
+                              <p className="text-sm leading-relaxed text-red-100">
+                                {refund.rejectionReason}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      {refund.evidence?.length > 0 && (
+                        <div className="mt-5">
+                          <p className="mb-3 text-xs uppercase tracking-wide text-neutral-500">
+                            Evidencias adjuntas
+                          </p>
+
+                          <p className="mb-3 text-xs text-neutral-500">
+                            {refund.evidence.length} fotografía(s) adjunta(s)
+                          </p>
+
+                          <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
+                            {refund.evidence.map((image: any) => (
+                              <button
+                                key={image.id}
+                                type="button"
+                                onClick={() => setSelectedEvidence(image.url)}
+                                className="
+    group
+    relative
+    overflow-hidden
+    rounded-2xl
+    border border-white/10
+    bg-white/5
+    transition-all
+    duration-300
+    hover:scale-[1.03]
+    hover:border-white/30
+    hover:shadow-xl
+    hover:shadow-black/40
+  "
+                              >
+                                <img
+                                  src={image.url}
+                                  alt="Refund evidence"
+                                  className="
+      aspect-square
+      w-full
+      object-cover
+      transition-transform
+      duration-300
+      group-hover:scale-105
+    "
+                                />
+
+                                <div
+                                  className="
+      absolute inset-0
+      bg-black/0
+      transition
+      group-hover:bg-black/20
+    "
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {refund.status === "CUSTOMER_SENT" && (
+                        <div className="mt-5 overflow-hidden rounded-2xl border border-sky-500/20 bg-sky-500/5">
+                          <div className="border-b border-sky-500/10 px-4 py-3">
+                            <h3 className="text-sm font-semibold text-sky-300">
+                              📦 Paquete enviado por el cliente
+                            </h3>
+
+                            <p className="mt-1 text-xs text-neutral-400">
+                              El cliente ha confirmado que ya ha entregado el
+                              paquete al transportista.
+                            </p>
+                          </div>
+
+                          <div className="grid gap-4 p-4 md:grid-cols-3">
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                Transportista
+                              </p>
+
+                              <p className="mt-1 font-medium text-white">
+                                {refund.carrier || "No indicado"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                Seguimiento
+                              </p>
+
+                              <p className="mt-1 break-all font-medium text-white">
+                                {refund.trackingNumber || "No indicado"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                Fecha de envío
+                              </p>
+
+                              <p className="mt-1 font-medium text-white">
+                                {refund.customerSentAt
+                                  ? new Date(
+                                      refund.customerSentAt,
+                                    ).toLocaleString("es-ES")
+                                  : "-"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="mt-4 text-xs text-neutral-500">
                         <div className="mt-4 flex flex-wrap gap-2">
                           {refund.status === "PENDING_REVIEW" && (
@@ -474,13 +678,16 @@ export default function DashboardOrderPage() {
                                 Aprobar devolución
                               </button>
 
-                              <button className="rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white">
+                              <button
+                                onClick={() => rejectRefund(refund.id)}
+                                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white"
+                              >
                                 Rechazar devolución
                               </button>
                             </>
                           )}
 
-                          {refund.status === "APPROVED" && (
+                          {refund.status === "CUSTOMER_SENT" && (
                             <button
                               onClick={() => receivedRefund(refund.id)}
                               className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white"
@@ -719,6 +926,84 @@ export default function DashboardOrderPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {rejectOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-6">
+            <h3 className="text-xl font-semibold text-white">
+              Rechazar devolución
+            </h3>
+
+            <p className="mt-2 text-sm text-neutral-400">
+              Explica claramente al cliente por qué se rechaza la solicitud.
+            </p>
+
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={6}
+              className="mt-5 w-full resize-none rounded-2xl border border-white/10 bg-black p-4 text-white"
+              placeholder="Ej: El producto presenta signos de uso y no cumple las condiciones de devolución..."
+            />
+
+            <p className="mt-2 text-right text-xs text-neutral-500">
+              {rejectReason.length} caracteres
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setRejectOpen(false);
+                  setRejectReason("");
+                  setRejectRefundId(null);
+                }}
+                className="rounded-xl border border-white/10 px-4 py-3 text-white"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={confirmRejectRefund}
+                className="rounded-xl bg-red-500 px-5 py-3 font-medium text-white hover:bg-red-600"
+              >
+                Rechazar devolución
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {selectedEvidence && (
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setSelectedEvidence(null)}
+        >
+          <button
+            onClick={() => setSelectedEvidence(null)}
+            className="
+        absolute right-6 top-6
+        h-12 w-12
+        rounded-full
+        bg-white/10
+        text-2xl
+        text-white
+        transition
+        hover:bg-white/20
+      "
+          >
+            ×
+          </button>
+
+          <img
+            src={selectedEvidence}
+            alt="Evidence"
+            className="
+        max-h-[90vh]
+        max-w-[90vw]
+        rounded-3xl
+        object-contain
+      "
+          />
         </div>
       )}
     </>

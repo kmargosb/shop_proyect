@@ -312,3 +312,214 @@ export function customerReplyTemplate(
     </div>
   `;
 }
+
+export function refundApprovedTemplate(
+  customerName: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+
+      <h1>
+        Tu devolución ha sido aprobada ✅
+      </h1>
+
+      <p>
+        Hola ${customerName},
+      </p>
+
+      <p>
+        Hemos revisado tu solicitud de devolución y ha sido aprobada.
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
+        <h3>
+          Próximos pasos
+        </h3>
+
+        <ol style="padding-left:20px;line-height:1.8">
+          <li>Empaqueta correctamente el producto.</li>
+          <li>Conserva el justificante de envío.</li>
+          <li>Cuando lo hayas enviado, marca el pedido como enviado desde tu área de pedido, introduciendo la empresa y el nro de rastreo.</li>
+        </ol>
+      </div>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
+        <h3>
+          Dirección de devolución
+        </h3>
+
+        <p>
+          Camarguette Collective<br/>
+          DIRECCIÓN PENDIENTE DE CONFIGURAR
+        </p>
+
+        <p>
+          Incluye el número de pedido dentro del paquete.
+        </p>
+      </div>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border-radius:16px;
+          background:#fff7ed;
+          border:1px solid #fed7aa;
+        "
+      >
+        <strong>
+          Información importante
+        </strong>
+
+        <p>
+          Los gastos de devolución corren actualmente por cuenta del cliente.
+        </p>
+
+        <p>
+          Recomendamos utilizar un envío con seguimiento.
+        </p>
+      </div>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+        "
+      >
+        Ver mi pedido
+      </a>
+
+    </div>
+  `;
+}
+
+export function refundRejectedTemplate(
+  customerName: string,
+  reason: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+
+      <h1>Solicitud de devolución rechazada</h1>
+
+      <p>
+        Hola ${customerName},
+      </p>
+
+      <p>
+        Hemos revisado tu solicitud.
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border-radius:16px;
+          background:#fff5f5;
+          border:1px solid #fecaca;
+        "
+      >
+        <strong>Motivo:</strong>
+
+        <p>
+          ${reason}
+        </p>
+      </div>
+
+      <p style="margin-top:20px">
+        Si crees que se trata de un error puedes responder desde la página de tu pedido.
+      </p>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:20px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+        "
+      >
+        Ver pedido
+      </a>
+
+    </div>
+  `;
+}
+
+export function refundCompletedTemplate(
+  customerName: string,
+  amount: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+
+      <h1>Reembolso procesado 💸</h1>
+
+      <p>
+        Hola ${customerName},
+      </p>
+
+      <p>
+        Hemos procesado correctamente tu devolución.
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border-radius:16px;
+          background:#f0fdf4;
+          border:1px solid #bbf7d0;
+        "
+      >
+        <strong>Importe reembolsado:</strong>
+
+        <p>${amount}</p>
+      </div>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+        "
+      >
+        Ver pedido
+      </a>
+
+    </div>
+  `;
+}

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import ShipmentStatusCard from "@/features/orders/components/ShipmentStatusCard";
 import { socket } from "@/shared/lib/socket";
+import type {
+  DashboardUpdatePayload,
+  OrderUpdatedPayload,
+} from "@/shared/lib/socket";
+import { toast } from "sonner";
 
 import {
   CheckCircle2,
@@ -40,45 +45,45 @@ export default function Page() {
   const router = useRouter();
   const id = params?.id as string;
   const [order, setOrder] = useState<any>(null);
+  const timelineBottomRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const [showRefundModal, setShowRefundModal] = useState(false);
-  const [processingRefund, setProcessingRefund] = useState(false);
-  const [refundError, setRefundError] = useState<string | null>(null);
-  const [refundSuccess, setRefundSuccess] = useState(false);
-  const [refundItems, setRefundItems] = useState<Record<string, number>>({});
-  const [refundReason, setRefundReason] = useState("CUSTOMER_RETURN");
-  const [refundComment, setRefundComment] = useState("");
-  const [refundImages, setRefundImages] = useState<File[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("CUSTOMER_REQUEST");
+  const [showSentModal, setShowSentModal] = useState(false);
+  const [selectedRefund, setSelectedRefund] = useState<any>(null);
+  const [carrier, setCarrier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [sendingRefund, setSendingRefund] = useState(false);
 
   useEffect(() => {
     if (!id) return;
 
     const loadOrder = async () => {
       try {
+        const queryEmail = searchParams.get("email");
 
-        /* AUTH USER */
+        const storedOrderId = localStorage.getItem("orderEmailOrderId");
 
-        const email =
-          searchParams.get("email") || localStorage.getItem("orderEmail");
+        const storedEmail = localStorage.getItem("orderEmail");
 
-        /* GUEST ORDER */
+        const email = queryEmail || (storedOrderId === id ? storedEmail : null);
+
+        /* GUEST */
 
         if (email) {
-          const res = await publicFetch(
+          const publicRes = await publicFetch(
             `/orders/public/${id}?email=${encodeURIComponent(email)}`,
           );
 
-          const data = await res.json();
+          const data = await publicRes.json();
 
           setOrder(data);
 
           return;
         }
 
-        /* AUTH USER ORDER */
+        /* AUTH USER */
 
         const res = await apiFetch(`/orders/${id}`);
 
@@ -98,22 +103,34 @@ export default function Page() {
      INITIAL LOAD
   ========================= */
 
-    loadOrder();
+    void loadOrder();
 
     /* =========================
      REALTIME UPDATES
   ========================= */
 
-    socket.on("orderUpdated", ({ orderId }) => {
-      if (orderId === id) {
-        loadOrder();
+    const refreshOrder = (
+      payload?: DashboardUpdatePayload | OrderUpdatedPayload,
+    ) => {
+      if (!payload?.orderId || payload.orderId === id) {
+        void loadOrder();
       }
-    });
+    };
+
+    // socket.on("dashboard:update", refreshOrder);
+    socket.on("orderUpdated", refreshOrder);
 
     return () => {
-      socket.off("orderUpdated");
+      // socket.off("dashboard:update", refreshOrder);
+      socket.off("orderUpdated", refreshOrder);
     };
   }, [id, searchParams]);
+
+  useEffect(() => {
+    timelineBottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [order?.events]);
 
   /* =========================
      LOADING
@@ -135,33 +152,95 @@ export default function Page() {
     );
   }
 
-  const isPaid = order.status === "PAID";
+  const canDownloadInvoice =
+    order.invoice &&
+    ["PAID", "SHIPPED", "DELIVERED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
+      order.status,
+    );
+
+  const isPaid =
+    order.status !== "PENDING" && order.status !== "PAYMENT_PROCESSING";
 
   const canContinuePayment =
     order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
 
-  const canCancel =
-    order.status === "PENDING" ||
-    order.status === "PAYMENT_PROCESSING" ||
-    order.status === "PAID";
+  const markRefundSent = async () => {
+    if (!selectedRefund) return;
 
-  const hasRefundableItems = order.items?.some((item: any) => {
-    const refunded =
-      item.refundItems?.reduce(
-        (sum: number, ri: any) => sum + ri.quantity,
-        0,
-      ) || 0;
+    if (!carrier.trim()) {
+      toast.error("Introduce la empresa de transporte");
+      return;
+    }
 
-    return refunded < item.quantity;
-  });
+    if (!trackingNumber.trim()) {
+      toast.error("Introduce el código de seguimiento");
+      return;
+    }
 
-  const canRefund =
-    (order.status === "DELIVERED" || order.status === "PARTIALLY_REFUNDED") &&
-    hasRefundableItems;
+    try {
+      setSendingRefund(true);
+
+      await apiFetch(`/refunds/${selectedRefund.id}/sent`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          carrier,
+          trackingNumber,
+        }),
+      });
+
+      setShowSentModal(false);
+
+      setCarrier("");
+      setTrackingNumber("");
+      setSelectedRefund(null);
+
+      const queryEmail = searchParams.get("email");
+
+      const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+      const storedEmail = localStorage.getItem("orderEmail");
+
+      const email = queryEmail || (storedOrderId === id ? storedEmail : null);
+
+      if (email) {
+        const publicRes = await publicFetch(
+          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
+        );
+
+        const updatedOrder = await publicRes.json();
+
+        setOrder(updatedOrder);
+      } else {
+        const refreshed = await apiFetch(`/orders/${order.id}`);
+
+        if (refreshed?.ok) {
+          const updatedOrder = await refreshed.json();
+
+          setOrder(updatedOrder);
+        }
+      }
+
+      toast.success("Información enviada");
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Error al actualizar la devolución");
+    } finally {
+      setSendingRefund(false);
+    }
+  };
 
   const handleDownloadInvoice = () => {
-    const email =
-      searchParams.get("email") || localStorage.getItem("orderEmail");
+    const queryEmail = searchParams.get("email");
+
+    const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+    const storedEmail = localStorage.getItem("orderEmail");
+
+    const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
     if (!email) {
       alert("No se encontró el email del pedido");
@@ -205,69 +284,6 @@ export default function Page() {
       alert("No se pudo cancelar el pedido");
     } finally {
       setCancelling(false);
-    }
-  };
-
-  const handleRefund = async () => {
-    try {
-      setProcessingRefund(true);
-
-      setRefundError(null);
-
-      const items = order.items
-        .filter((item: any) => (refundItems[item.id] || 0) > 0)
-        .map((item: any) => ({
-          orderItemId: item.id,
-          quantity: refundItems[item.id],
-        }));
-
-      if (items.length === 0) {
-        setRefundError("Selecciona al menos un producto");
-
-        return;
-      }
-
-      const res = await apiFetch("/refunds", {
-        method: "POST",
-        body: JSON.stringify({
-          orderId: order.id,
-          items,
-          reason: refundReason,
-          note: refundComment,
-        }),
-      });
-
-      const data = await res?.json();
-
-      if (!res || !res.ok) {
-        setRefundError(data?.message || "No se pudo procesar");
-
-        return;
-      }
-
-      const refreshed = await apiFetch(`/orders/${order.id}`);
-
-      if (refreshed && refreshed.ok) {
-        const updatedOrder = await refreshed.json();
-
-        setOrder(updatedOrder);
-      }
-
-      setRefundSuccess(true);
-
-      setTimeout(() => {
-        setShowRefundModal(false);
-
-        setRefundSuccess(false);
-
-        setRefundItems({});
-      }, 1200);
-    } catch (error) {
-      console.error(error);
-
-      setRefundError("Error inesperado");
-    } finally {
-      setProcessingRefund(false);
     }
   };
 
@@ -329,6 +345,14 @@ export default function Page() {
           ];
 
           const currentStep = (() => {
+            if (order.shipment?.deliveredAt) {
+              return 3;
+            }
+
+            if (order.shipment?.shippedAt) {
+              return 2;
+            }
+
             switch (order.status) {
               case "PENDING":
               case "PAYMENT_PROCESSING":
@@ -338,12 +362,6 @@ export default function Page() {
               case "PARTIALLY_REFUNDED":
               case "REFUNDED":
                 return 1;
-
-              case "SHIPPED":
-                return 2;
-
-              case "DELIVERED":
-                return 3;
 
               default:
                 return 0;
@@ -662,6 +680,10 @@ export default function Page() {
             <div className="relative max-h-[420px] space-y-3 overflow-y-auto premium-scrollbar pr-1">
               {order.events.map((event: OrderEvent, index: number) => {
                 const config = getTimelineConfig(event.type);
+                const isCustomerMessage =
+                  event.message?.startsWith("CUSTOMER_MESSAGE:");
+
+                const isAdminReply = event.message?.startsWith("ADMIN_REPLY:");
 
                 return (
                   <div
@@ -686,7 +708,13 @@ export default function Page() {
 
                     <div className="flex-1">
                       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                        <p className="text-xs font-semibold">{config.label}</p>
+                        <p className="text-xs font-semibold">
+                          {isCustomerMessage
+                            ? "Mensaje enviado"
+                            : isAdminReply
+                              ? "Respuesta de soporte"
+                              : config.label}
+                        </p>
 
                         <p className="text-[10px] text-neutral-600">
                           {new Date(event.createdAt).toLocaleString()}
@@ -696,6 +724,8 @@ export default function Page() {
                       {event.message && (
                         <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
                           {event.message
+                            .replace("CUSTOMER_MESSAGE:", "")
+                            .replace("ADMIN_REPLY:", "")
                             .replace(
                               "WRONG_PRODUCT",
                               cancellationReasons.WRONG_PRODUCT,
@@ -724,6 +754,117 @@ export default function Page() {
                 );
               })}
               <div className="pointer-events-none absolute bottom-0 left-0  w-full bg-gradient-to-t from-neutral-950 " />
+              <div ref={timelineBottomRef} />
+            </div>
+          </div>
+        )}
+
+        {/* REFUNDS */}
+
+        {order.refunds?.length > 0 && (
+          <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold">Devoluciones</h2>
+
+              <p className="mt-2 text-sm text-neutral-500">
+                Estado de tus solicitudes de devolución
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {order.refunds.map((refund: any) => (
+                <div
+                  key={refund.id}
+                  className="
+                          group
+                          overflow-hidden
+                          rounded-3xl
+                          border border-white/10
+                          bg-gradient-to-b
+                          from-white/[0.04]
+                          to-white/[0.015]
+                          p-5
+                          transition-all
+                          duration-300
+
+                          hover:border-white/20
+                          hover:shadow-[0_0_40px_rgba(255,255,255,0.04)]
+                          "
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
+                        Devolución
+                      </p>
+
+                      <p className="font-semibold text-white">
+                        #{refund.id.slice(0, 8).toUpperCase()}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-neutral-300">
+                      {refund.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Solicitud #{refund.id.slice(0, 8)}
+                    </span>
+
+                    <span className="text-xs text-neutral-400">
+                      {getRefundStatusLabel(refund.status)}
+                    </span>
+                  </div>
+
+                  {refund.note && (
+                    <p className="mt-3 text-sm text-neutral-500">
+                      {refund.note}
+                    </p>
+                  )}
+                  {refund.status === "REJECTED" && refund.rejectionReason && (
+                    <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                      <p className="text-sm font-semibold text-red-300">
+                        Solicitud rechazada
+                      </p>
+
+                      <p className="mt-2 text-sm text-red-100">
+                        {refund.rejectionReason}
+                      </p>
+                    </div>
+                  )}
+
+                  {refund.status === "CUSTOMER_SENT" && (
+                    <div className="mt-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+                      <p className="text-sm text-blue-300">
+                        Transportista: {refund.carrier}
+                      </p>
+
+                      <p className="text-sm text-blue-300">
+                        Seguimiento: {refund.trackingNumber}
+                      </p>
+
+                      <p className="mt-2 text-xs text-neutral-500">
+                        Enviado el{" "}
+                        {new Date(refund.customerSentAt).toLocaleString(
+                          "es-ES",
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {refund.status === "APPROVED" && (
+                    <button
+                      onClick={() => {
+                        setSelectedRefund(refund);
+                        setShowSentModal(true);
+                      }}
+                      className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
+                    >
+                      He enviado el paquete
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -731,7 +872,7 @@ export default function Page() {
         {/* ACTIONS */}
 
         <div className="flex flex-col gap-4 md:flex-row">
-          {isPaid && (
+          {canDownloadInvoice && (
             <Button
               className="h-12 w-full rounded-2xl"
               onClick={handleDownloadInvoice}
@@ -776,20 +917,6 @@ export default function Page() {
           >
             ¿Necesitas ayuda con tu pedido?
           </Button>
-          {canRefund && (
-            <Button
-              className="h-12 w-full rounded-2xl border border-orange-500/20 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20"
-              onClick={() => {
-                setRefundError(null);
-
-                setRefundSuccess(false);
-
-                setShowRefundModal(true);
-              }}
-            >
-              Solicitar devolución
-            </Button>
-          )}
 
           <Button
             className="h-12 w-full rounded-2xl bg-white text-black hover:bg-neutral-200"
@@ -798,168 +925,6 @@ export default function Page() {
             Seguir comprando
           </Button>
         </div>
-
-        {showRefundModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-neutral-950 p-6">
-              <h2 className="text-2xl font-semibold">Solicitar devolución</h2>
-
-              <div className="mt-6 space-y-4">
-                {order.items
-                  .filter((item: any) => {
-                    const refunded =
-                      item.refundItems?.reduce(
-                        (sum: number, ri: any) => sum + ri.quantity,
-                        0,
-                      ) || 0;
-
-                    return refunded < item.quantity;
-                  })
-                  .map((item: any) => {
-                    const refunded =
-                      item.refundItems?.reduce(
-                        (sum: number, ri: any) => sum + ri.quantity,
-                        0,
-                      ) || 0;
-
-                    const remaining = item.quantity - refunded;
-
-                    const selected = refundItems[item.id] || 0;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="rounded-2xl border border-white/10 p-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">
-                              {item.product?.name ?? item.productName}
-                            </p>
-
-                            {(item.color || item.size) && (
-                              <p className="mt-1 text-sm text-neutral-400">
-                                {item.color}
-                                {item.color && item.size ? " · " : ""}
-                                {item.size}
-                              </p>
-                            )}
-
-                            <p className="mt-1 text-sm text-neutral-500">
-                              Comprados: {item.quantity}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() =>
-                                setRefundItems((prev) => ({
-                                  ...prev,
-                                  [item.id]: Math.max(0, selected - 1),
-                                }))
-                              }
-                              className="h-8 w-8 rounded-full border border-white/10"
-                            >
-                              -
-                            </button>
-
-                            <span className="w-6 text-center">{selected}</span>
-
-                            <button
-                              onClick={() =>
-                                setRefundItems((prev) => ({
-                                  ...prev,
-                                  [item.id]: Math.min(remaining, selected + 1),
-                                }))
-                              }
-                              className="h-8 w-8 rounded-full border border-white/10"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              <div className="mt-6">
-                <label className="mb-2 block text-sm text-neutral-400">
-                  Motivo de la devolución
-                </label>
-
-                <select
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
-                >
-                  <option value="CUSTOMER_RETURN">Ya no lo quiero</option>
-
-                  <option value="WRONG_ITEM">Producto incorrecto</option>
-
-                  <option value="DAMAGED">Producto dañado</option>
-
-                  <option value="OTHER">Otro</option>
-                </select>
-                <div className="mt-4">
-                  <label className="mb-2 block text-sm text-neutral-400">
-                    Comentario
-                  </label>
-
-                  <textarea
-                    rows={4}
-                    value={refundComment}
-                    onChange={(e) => setRefundComment(e.target.value)}
-                    placeholder="Cuéntanos qué ha ocurrido..."
-                    className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
-                  />
-                  <div className="mt-4">
-                    <label className="mb-2 block text-sm text-neutral-400">
-                      Fotos (opcional)
-                    </label>
-
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) =>
-                        setRefundImages(Array.from(e.target.files || []))
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {refundError && (
-                <p className="mt-4 text-sm text-red-400">{refundError}</p>
-              )}
-
-              {refundSuccess && (
-                <p className="mt-4 text-sm text-green-400">
-                  Reembolso procesado
-                </p>
-              )}
-
-              <div className="mt-6 flex gap-3">
-                <Button
-                  className="w-full bg-white text-black hover:bg-neutral-200"
-                  onClick={() => setShowRefundModal(false)}
-                >
-                  Cancelar
-                </Button>
-
-                <Button
-                  className="w-full"
-                  onClick={handleRefund}
-                  disabled={processingRefund}
-                >
-                  {processingRefund ? "Procesando..." : "Confirmar"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
         {showCancelModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">
@@ -1012,6 +977,58 @@ export default function Page() {
                   }}
                 >
                   {cancelling ? "Cancelando..." : "Confirmar cancelación"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showSentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-neutral-950 p-6">
+              <h2 className="text-xl font-semibold">He enviado el paquete</h2>
+
+              <p className="mt-2 text-sm text-neutral-500">
+                Introduce la empresa de transporte (Correos, MRW, SEUR, DHL,
+                etc.) y el número de seguimiento.
+              </p>
+              <span className="text-xs">
+                Conserva el justificante de envío hasta que la devolución sea
+                procesada.
+              </span>
+
+              <div className="mt-6 space-y-4">
+                <input
+                  value={carrier}
+                  onChange={(e) => setCarrier(e.target.value)}
+                  placeholder="Correos"
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                />
+
+                <input
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  placeholder="PQ123456789ES"
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                />
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <Button
+                  variant="outline"
+                  className="w-full text-black"
+                  onClick={() => {
+                    setShowSentModal(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  className="w-full"
+                  disabled={sendingRefund}
+                  onClick={markRefundSent}
+                >
+                  {sendingRefund ? "Enviando..." : "Confirmar"}
                 </Button>
               </div>
             </div>
@@ -1080,6 +1097,13 @@ function getTimelineConfig(type: string) {
         className: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
       };
 
+    case "ORDER_UPDATED":
+      return {
+        label: "Actualización",
+        icon: RefreshCcw,
+        className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
+      };
+
     case "ORDER_CANCELLED":
       return {
         label: "Pedido cancelado",
@@ -1093,5 +1117,30 @@ function getTimelineConfig(type: string) {
         icon: Clock3,
         className: "border-white/10 bg-white/5 text-white",
       };
+  }
+}
+
+function getRefundStatusLabel(status: string) {
+  switch (status) {
+    case "PENDING_REVIEW":
+      return "Pendiente de revisión";
+
+    case "APPROVED":
+      return "Aprobada";
+
+    case "CUSTOMER_SENT":
+      return "Paquete enviado";
+
+    case "RECEIVED":
+      return "Paquete recibido";
+
+    case "SUCCEEDED":
+      return "Reembolso completado";
+
+    case "REJECTED":
+      return "Solicitud rechazada";
+
+    default:
+      return status;
   }
 }

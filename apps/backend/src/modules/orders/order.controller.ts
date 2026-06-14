@@ -222,7 +222,15 @@ export const getPublicOrderController = asyncHandler(
         },
 
         invoice: true,
+
         shipment: true,
+
+        refunds: {
+          include: {
+            items: true,
+            evidence: true,
+          },
+        },
 
         events: {
           orderBy: {
@@ -235,12 +243,6 @@ export const getPublicOrderController = asyncHandler(
     if (!order) {
       return res.status(404).json({
         error: "Pedido no encontrado",
-      });
-    }
-
-    if (order.status === "CANCELLED") {
-      return res.status(403).json({
-        error: "Pedido cancelado",
       });
     }
 
@@ -415,7 +417,15 @@ export const getMyOrderByIdController = asyncHandler(
         },
 
         invoice: true,
+
         shipment: true,
+
+        refunds: {
+          include: {
+            items: true,
+            evidence: true,
+          },
+        },
 
         events: {
           orderBy: {
@@ -530,6 +540,10 @@ export const submitHelpRequestController = asyncHandler(
       },
     });
 
+    getIO().emit("orderUpdated", {
+      orderId: id,
+    });
+
     res.json({
       success: true,
     });
@@ -559,6 +573,10 @@ export const replyToCustomerController = asyncHandler(
 
         message: `ADMIN_REPLY:${message.trim()}`,
       },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: id,
     });
 
     res.json({

@@ -1,13 +1,37 @@
 "use client";
 
-import { io } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL!;
+export type DashboardUpdatePayload = {
+  type?: string;
+  orderId?: string;
+};
 
-export const socket = io(SOCKET_URL, {
-  withCredentials: true,
-  transports: ["websocket"],
-});
+export type OrderUpdatedPayload = {
+  orderId: string;
+};
+
+type ServerToClientEvents = {
+  "dashboard:update": (payload: DashboardUpdatePayload) => void;
+  orderUpdated: (payload: OrderUpdatedPayload) => void;
+  orderCancelled: (payload: OrderUpdatedPayload) => void;
+  orderPaid: (payload: OrderUpdatedPayload) => void;
+};
+
+type ClientToServerEvents = Record<string, never>;
+
+const SOCKET_URL =
+  process.env.NEXT_PUBLIC_SOCKET_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000";
+
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
+  SOCKET_URL,
+  {
+    withCredentials: true,
+    transports: ["websocket"],
+  },
+);
 
 socket.on("connect", () => {
   console.log("🟢 Socket connected:", socket.id);

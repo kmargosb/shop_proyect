@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { RefundService } from "./refund.service";
 import { RefundReason } from "@prisma/client";
 
-
 /* =========================
    CONFIG
 ========================= */
@@ -25,7 +24,21 @@ const allowedReasons: RefundReason[] = [
 export const RefundController = {
   async create(req: Request, res: Response) {
     try {
-      const { orderId, items, reason: incomingReason, note } = req.body;
+      const { orderId, reason: incomingReason, note } = req.body;
+
+      const items =
+        typeof req.body.items === "string"
+          ? JSON.parse(req.body.items)
+          : req.body.items;
+
+      const files = req.files as Express.Multer.File[];
+
+      if (files?.length > 5) {
+        return res.status(400).json({
+          success: false,
+          message: "Máximo 5 imágenes por devolución",
+        });
+      }
 
       /* =========================
          VALIDACIÓN
@@ -65,11 +78,57 @@ export const RefundController = {
          SERVICE
       ========================= */
 
+      const evidence: {
+        url: string;
+        publicId?: string;
+      }[] = [];
+
+      if (files?.length) {
+        const cloudinary = (await import("@/common/utils/cloudinary")).default;
+
+        const allowed = ["image/jpeg", "image/png", "image/webp"];
+
+        for (const file of files) {
+          if (!allowed.includes(file.mimetype)) {
+            return res.status(400).json({
+              success: false,
+              message: "Formato de imagen no permitido",
+            });
+          }
+
+          if (file.size > 10 * 1024 * 1024) {
+            return res.status(400).json({
+              success: false,
+              message: "Cada imagen debe ser menor de 10MB",
+            });
+          }
+          const uploaded: any = await new Promise((resolve, reject) => {
+            cloudinary.uploader
+              .upload_stream(
+                {
+                  folder: "refunds",
+                },
+                (err, result) => {
+                  if (err) reject(err);
+                  else resolve(result);
+                },
+              )
+              .end(file.buffer);
+          });
+
+          evidence.push({
+            url: uploaded.secure_url,
+            publicId: uploaded.public_id,
+          });
+        }
+      }
+
       const result = await RefundService.createRefund(
         orderId,
         items,
         reason,
         note,
+        evidence,
       );
 
       /* =========================
@@ -127,31 +186,32 @@ export const RefundController = {
       });
     }
   },
-
   async sent(req: Request, res: Response) {
-  try {
-    const refundId =
-      typeof req.params.refundId === "string"
-        ? req.params.refundId
-        : req.params.refundId[0];
+    try {
+      const refundId =
+        typeof req.params.refundId === "string"
+          ? req.params.refundId
+          : req.params.refundId[0];
 
-    const refund =
-      await RefundService.markCustomerSent(
+      const { carrier, trackingNumber } = req.body;
+
+      const refund = await RefundService.markCustomerSent(
         refundId,
+        carrier,
+        trackingNumber,
       );
 
-    return res.json({
-      success: true,
-      refund,
-    });
-  } catch (error: any) {
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-},
-
+      return res.json({
+        success: true,
+        refund,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
   async received(req: Request, res: Response) {
     try {
       const refundId =
@@ -172,7 +232,6 @@ export const RefundController = {
       });
     }
   },
-
   async process(req: Request, res: Response) {
     try {
       const refundId =
@@ -193,7 +252,6 @@ export const RefundController = {
       });
     }
   },
-
   async reject(req: Request, res: Response) {
     try {
       const refundId =

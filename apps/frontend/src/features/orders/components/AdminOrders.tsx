@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "@/shared/lib/api";
 import type { Order, OrderStatus } from "@/types/order";
@@ -55,7 +55,7 @@ export default function AdminOrders() {
   const [shipmentOrder, setShipmentOrder] = useState<Order | null>(null);
   const [refundOrder, setRefundOrder] = useState<Order | null>(null);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       setRefreshing(true);
       const res = await apiFetch("/orders?limit=100");
@@ -68,18 +68,22 @@ export default function AdminOrders() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
   useEffect(() => {
-    loadOrders();
+    void loadOrders();
 
-    socket.on("orderUpdated", () => {
-      loadOrders();
-    });
+    const refreshOrders = () => {
+      void loadOrders();
+    };
+
+    socket.on("dashboard:update", refreshOrders);
+    socket.on("orderUpdated", refreshOrders);
 
     return () => {
-      socket.off("orderUpdated");
+      socket.off("dashboard:update", refreshOrders);
+      socket.off("orderUpdated", refreshOrders);
     };
-  }, []);
+  }, [loadOrders]);
 
   useEffect(() => {
     setPage(1);

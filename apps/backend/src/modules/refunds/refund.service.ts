@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { RefundRepository } from "./refund.repository";
 import { RefundReason } from "@prisma/client";
 import { getIO } from "@/lib/socket";
+import {
+  sendRefundApprovedEmail,
+  sendRefundRejectedEmail,
+  sendRefundCompletedEmail,
+} from "@/modules/email/refund.email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
@@ -14,6 +19,10 @@ export const RefundService = {
     items: { orderItemId: string; quantity: number }[],
     reason?: RefundReason,
     note?: string,
+    evidence?: {
+      url: string;
+      publicId?: string;
+    }[],
   ) {
     /* =========================
        PROTECCIÓN 1
@@ -58,7 +67,6 @@ export const RefundService = {
       }
 
       const refundedQuantity = order.refunds
-        .filter((r) => r.status === "SUCCEEDED")
         .flatMap((r) => r.items)
         .filter((ri) => ri.orderItemId === item.orderItemId)
         .reduce((sum, ri) => sum + ri.quantity, 0);
@@ -118,6 +126,16 @@ export const RefundService = {
       reason,
       note,
     });
+
+    if (evidence?.length) {
+      await prisma.refundEvidence.createMany({
+        data: evidence.map((img) => ({
+          refundId: dbRefund.id,
+          url: img.url,
+          publicId: img.publicId,
+        })),
+      });
+    }
 
     await prisma.orderEvent.create({
       data: {
@@ -187,6 +205,16 @@ export const RefundService = {
       },
     });
 
+    await sendRefundApprovedEmail(refund.orderId);
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: "Tu solicitud de devolución ha sido aprobada",
+      },
+    });
+
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
@@ -194,7 +222,62 @@ export const RefundService = {
     return updatedRefund;
   },
 
-  async markCustomerSent(refundId: string) {
+  async rejectRefund(refundId: string, rejectionReason?: string) {
+    const refund = await prisma.refund.findUnique({
+      where: { id: refundId },
+    });
+
+    if (!refund) {
+      throw new Error("Refund not found");
+    }
+
+    if (refund.status !== "PENDING_REVIEW") {
+      throw new Error("Refund already processed");
+    }
+
+    const updatedRefund = await prisma.refund.update({
+      where: {
+        id: refundId,
+      },
+
+      data: {
+        status: "REJECTED",
+
+        rejectionReason,
+
+        reviewedAt: new Date(),
+      },
+    });
+
+    await sendRefundRejectedEmail(
+      refund.orderId,
+      rejectionReason || "La solicitud no cumple los requisitos de devolución",
+    );
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+
+        type: "ORDER_UPDATED",
+
+        message: rejectionReason
+          ? `Solicitud rechazada: ${rejectionReason}`
+          : "Solicitud de devolución rechazada",
+      },
+    });
+
+    getIO().emit("orderUpdated", {
+      orderId: refund.orderId,
+    });
+
+    return updatedRefund;
+  },
+
+  async markCustomerSent(
+    refundId: string,
+    carrier?: string,
+    trackingNumber?: string,
+  ) {
     const refund = await prisma.refund.update({
       where: {
         id: refundId,
@@ -202,12 +285,25 @@ export const RefundService = {
 
       data: {
         status: "CUSTOMER_SENT",
+        carrier,
+        trackingNumber,
+        customerSentAt: new Date(),
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: `El cliente ha enviado el paquete (${carrier} - ${trackingNumber})`,
       },
     });
 
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
+
+    console.log(refund);
 
     return refund;
   },
@@ -220,6 +316,14 @@ export const RefundService = {
 
       data: {
         status: "RECEIVED",
+      },
+    });
+
+    await prisma.orderEvent.create({
+      data: {
+        orderId: refund.orderId,
+        type: "ORDER_UPDATED",
+        message: "Refund package received",
       },
     });
 
@@ -264,6 +368,11 @@ export const RefundService = {
       },
     });
 
+    await sendRefundCompletedEmail(
+      refund.orderId,
+      `${(refund.amount / 100).toFixed(2)} €`,
+    );
+
     const totalRefunded = await prisma.refund.aggregate({
       where: {
         orderId: refund.orderId,
@@ -294,40 +403,6 @@ export const RefundService = {
         orderId: refund.orderId,
         type: "REFUND_COMPLETED",
         message: "Refund completed",
-      },
-    });
-
-    getIO().emit("orderUpdated", {
-      orderId: refund.orderId,
-    });
-
-    return updatedRefund;
-  },
-
-  async rejectRefund(refundId: string, rejectionReason?: string) {
-    const refund = await prisma.refund.findUnique({
-      where: { id: refundId },
-    });
-
-    if (!refund) {
-      throw new Error("Refund not found");
-    }
-
-    if (refund.status !== "PENDING_REVIEW") {
-      throw new Error("Refund already processed");
-    }
-
-    const updatedRefund = await prisma.refund.update({
-      where: {
-        id: refundId,
-      },
-
-      data: {
-        status: "REJECTED",
-
-        rejectionReason,
-
-        reviewedAt: new Date(),
       },
     });
 
