@@ -228,9 +228,7 @@ model Refund {
   note            String?
   reason          RefundReason?
   rejectionReason String?
-  carrier String?
-  trackingNumber String?
-  customerSentAt DateTime?
+  
   reviewedAt      DateTime?
   reviewedBy      String?
   order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
