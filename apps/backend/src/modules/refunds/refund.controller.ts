@@ -87,7 +87,7 @@ export const RefundController = {
         const cloudinary = (await import("@/common/utils/cloudinary")).default;
 
         const allowed = ["image/jpeg", "image/png", "image/webp"];
-        
+
         for (const file of files) {
           if (!allowed.includes(file.mimetype)) {
             return res.status(400).json({
@@ -193,7 +193,13 @@ export const RefundController = {
           ? req.params.refundId
           : req.params.refundId[0];
 
-      const refund = await RefundService.markCustomerSent(refundId);
+      const { carrier, trackingNumber } = req.body;
+
+      const refund = await RefundService.markCustomerSent(
+        refundId,
+        carrier,
+        trackingNumber,
+      );
 
       return res.json({
         success: true,

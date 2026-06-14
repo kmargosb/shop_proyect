@@ -48,7 +48,6 @@ export const RefundService = {
     if (!order) {
       throw new Error("Order not found");
     }
-    
 
     if (!order.stripePaymentIntentId) {
       throw new Error("Order has no payment intent");
@@ -274,7 +273,11 @@ export const RefundService = {
     return updatedRefund;
   },
 
-  async markCustomerSent(refundId: string) {
+  async markCustomerSent(
+    refundId: string,
+    carrier?: string,
+    trackingNumber?: string,
+  ) {
     const refund = await prisma.refund.update({
       where: {
         id: refundId,
@@ -282,20 +285,23 @@ export const RefundService = {
 
       data: {
         status: "CUSTOMER_SENT",
+
       },
     });
 
     await prisma.orderEvent.create({
-      data: {
-        orderId: refund.orderId,
-        type: "ORDER_UPDATED",
-        message: "Customer sent refund package",
-      },
-    });
+  data: {
+    orderId: refund.orderId,
+    type: "ORDER_UPDATED",
+    message: `El cliente ha enviado el paquete (${carrier} - ${trackingNumber})`,
+  },
+});
 
     getIO().emit("orderUpdated", {
       orderId: refund.orderId,
     });
+
+    console.log(refund)
 
     return refund;
   },

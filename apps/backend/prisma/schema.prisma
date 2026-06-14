@@ -8,471 +8,273 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  password String?
-  name     String?
-  role     Role    @default(USER)
-
-  tokenVersion Int @default(0)
-
-  loginAttempts Int       @default(0)
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String?
+  name          String?
+  role          Role           @default(USER)
   lockUntil     DateTime?
-
-  refreshTokens RefreshToken[]
-  orders        Order[]
+  loginAttempts Int            @default(0)
+  tokenVersion  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  provider      String?
+  addresses     Address[]
   carts         Cart[]
-
-  provider String?
-
-  addresses Address[] // 🔥 NUEVO (IMPORTANTE)
-
-  createdAt DateTime @default(now())
+  orders        Order[]
+  refreshTokens RefreshToken[]
 }
-
-/**
- * ============================
- * BRAND
- * ============================
- */
 
 model Brand {
-  id   String @id @default(cuid())
-  name String
-  slug String @unique
-
-  products Product[]
-
-  createdAt DateTime @default(now())
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
 }
 
-/**
- * ============================
- * PRODUCT
- * ============================
- */
-
 model Product {
-  id          String  @id @default(uuid())
+  id          String           @id @default(uuid())
   name        String
+  price       Int
+  createdAt   DateTime         @default(now())
   description String?
-
-  price Int
-
-  gender ProductGender @default(UNISEX)
-
-  variants ProductVariant[]
-
-  isActive Boolean @default(true)
-
-  brandId String?
-  brand   Brand?  @relation(fields: [brandId], references: [id])
-
-  category ProductCategory @default(OTHER)
-
-  /**
-   * ============================
-   * RELATIONS
-   * ============================
-   */
-
-  images     ProductImage[]
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-
-  createdAt DateTime @default(now())
+  isActive    Boolean          @default(true)
+  brandId     String?
+  category    ProductCategory  @default(OTHER)
+  gender      ProductGender    @default(UNISEX)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  brand       Brand?           @relation(fields: [brandId], references: [id])
+  images      ProductImage[]
+  variants    ProductVariant[]
 
   @@index([brandId])
 }
 
-/**
- * ============================
- * PRODUCT IMAGE
- * ============================
- */
-
 model ProductImage {
-  id       String @id @default(uuid())
-  url      String
-  publicId String
-
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  url       String
+  publicId  String
   productId String
-
-  isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
+  isPrimary Boolean  @default(false)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model ProductVariant {
-  id String @id @default(uuid())
-
-  productId String
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  size  ProductSize
-  color ProductColor
-
-  stock         Int @default(0)
-  reservedStock Int @default(0)
-
-  sku String?
-
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-
-  reservations InventoryReservation[]
-
-  createdAt DateTime @default(now())
+  id            String                 @id @default(uuid())
+  productId     String
+  size          ProductSize
+  color         ProductColor
+  stock         Int                    @default(0)
+  reservedStock Int                    @default(0)
+  sku           String?
+  createdAt     DateTime               @default(now())
+  cartItems     CartItem[]
+  reservations  InventoryReservation[]
+  orderItems    OrderItem[]
+  product       Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
 
-/**
- * ============================
- * CART
- * ============================
- */
-
 model Cart {
-  id String @id @default(uuid())
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  items CartItem[]
-
-  status CartStatus @default(ACTIVE)
-
+  id        String     @id @default(uuid())
+  userId    String?
+  status    CartStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   expiresAt DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user      User?      @relation(fields: [userId], references: [id])
+  items     CartItem[]
 }
 
-/**
- * CART ITEM
- */
-
 model CartItem {
-  id String @id @default(uuid())
-
-  cartId String
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
+  id        String          @id @default(uuid())
+  cartId    String
   productId String
-  product   Product @relation(fields: [productId], references: [id])
-
+  quantity  Int
+  createdAt DateTime        @default(now())
+  price     Int
   variantId String?
+  cart      Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product         @relation(fields: [productId], references: [id])
   variant   ProductVariant? @relation(fields: [variantId], references: [id])
-
-  quantity Int
-  price    Int
-
-  createdAt DateTime @default(now())
 
   @@index([cartId])
   @@index([variantId])
 }
 
-/**
- * ============================
- * Reservation
- * ============================
- */
-
 model InventoryReservation {
-  id String @id @default(uuid())
-
-  variantId String
+  id        String         @id @default(uuid())
   orderId   String
-
-  quantity Int
-
+  quantity  Int
   expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  variant ProductVariant @relation(fields: [variantId], references: [id])
-
-  order Order @relation(fields: [orderId], references: [id])
+  createdAt DateTime       @default(now())
+  variantId String
+  order     Order          @relation(fields: [orderId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
 
   @@unique([variantId, orderId])
   @@index([variantId, expiresAt])
 }
 
-/**
- * ============================
- * ORDER
- * ============================
- */
-
 model Order {
-  id String @id @default(uuid())
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  fullName String
-  email    String
-  phone    String
-
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  postalCode   String
-  country      String
-
-  totalAmount Int
-  currency    String @default("eur")
-
-  paymentSessions PaymentSession[]
-
-  paymentProvider PaymentProvider @default(STRIPE)
-  paymentMethod   PaymentMethod?
-
-  stripePaymentIntentId String? @unique
+  id                    String                 @id @default(uuid())
+  userId                String?
+  status                OrderStatus            @default(PENDING)
+  createdAt             DateTime               @default(now())
+  addressLine1          String
+  addressLine2          String?
+  city                  String
+  country               String
+  email                 String
+  fullName              String
+  phone                 String
+  postalCode            String
+  currency              String                 @default("eur")
+  paidAt                DateTime?
   stripeCustomerId      String?
-
-  status OrderStatus @default(PENDING)
-  paidAt DateTime?
-
-  abandonedEmailStage Int @default(0)
-
-  items        OrderItem[]
-  invoice      Invoice?
-  refunds      Refund[]
-  transactions OrderTransaction[]
-  events       OrderEvent[] 
-  reservations InventoryReservation[]
-
-  shipment Shipment?
-
-  createdAt DateTime @default(now())
+  stripePaymentIntentId String?                @unique
+  totalAmount           Int
+  paymentProvider       PaymentProvider        @default(STRIPE)
+  paymentMethod         PaymentMethod?
+  abandonedEmailStage   Int                    @default(0)
+  reservations          InventoryReservation[]
+  invoice               Invoice?
+  user                  User?                  @relation(fields: [userId], references: [id])
+  OrderChangeRequest    OrderChangeRequest[]
+  events                OrderEvent[]
+  items                 OrderItem[]
+  transactions          OrderTransaction[]
+  paymentSessions       PaymentSession[]
+  refunds               Refund[]
+  shipment              Shipment?
 }
-
-/**
- * ============================
- * Shipment
- * ============================
- */
 
 model Shipment {
-  id String @id @default(uuid())
-
-  orderId String @unique
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
+  id             String         @id @default(uuid())
+  orderId        String         @unique
   carrier        String
   trackingNumber String
-
-  status ShipmentStatus @default(PENDING)
-
-  shippedAt   DateTime?
-  deliveredAt DateTime?
-
-  createdAt DateTime @default(now())
+  status         ShipmentStatus @default(PENDING)
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime       @default(now())
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
-/**
- * ORDER ITEM
- */
-
 model OrderItem {
-  id String @id @default(uuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  variantId String?
-  variant   ProductVariant? @relation(fields: [variantId], references: [id])
-
+  id          String          @id @default(uuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  price       Int
   productName String?
   productSku  String?
-
-  size  ProductSize?
-  color ProductColor?
-
-  quantity Int
-  price    Int
-
+  color       ProductColor?
+  size        ProductSize?
+  variantId   String?
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product         @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
   refundItems RefundItem[]
 
   @@index([variantId])
 }
 
-/**
- * ============================
- * PaymentSession
- * ============================
- */
-
 model PaymentSession {
-  id String @id @default(uuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  provider PaymentProvider
-  method   PaymentMethod
-
+  id              String               @id @default(uuid())
+  orderId         String
+  provider        PaymentProvider
+  method          PaymentMethod
   paymentIntentId String?
-
-  status PaymentSessionStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status          PaymentSessionStatus @default(PENDING)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  order           Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
-
-/**
- * ============================
- * ORDER TRANSACTION
- * ============================
- */
 
 model OrderTransaction {
-  id String @id @default(uuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  type TransactionType
-
-  amount   Int
-  currency String
-
+  id                    String          @id @default(uuid())
+  orderId               String
+  type                  TransactionType
+  amount                Int
+  currency              String
   stripePaymentIntentId String?
   stripeRefundId        String?
-
-  createdAt DateTime @default(now())
+  createdAt             DateTime        @default(now())
+  order                 Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
-
-/**
- * ============================
- * OrderEvent
- * ============================
- */
 
 model OrderEvent {
-  id String @id @default(uuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  type OrderEventType
-
-  message String?
-
-  createdAt DateTime @default(now())
+  id        String         @id @default(uuid())
+  orderId   String
+  type      OrderEventType
+  message   String?
+  createdAt DateTime       @default(now())
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
-/**
- * ============================
- * REFUND
- * ============================
- */
-
 model Refund {
-  id String @id @default(uuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  stripeRefundId String? @unique
-
-  amount   Int
-  currency String
-
-  reason RefundReason?
-  note   String?
-
-  reviewedAt DateTime?
-
-  reviewedBy String?
-
+  id              String           @id @default(uuid())
+  orderId         String
+  stripeRefundId  String?          @unique
+  amount          Int
+  currency        String
+  status          RefundStatus     @default(PENDING_REVIEW)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  note            String?
+  reason          RefundReason?
   rejectionReason String?
-
-  status RefundStatus @default(PENDING_REVIEW)
-
-  items RefundItem[]
-
-  evidence RefundEvidence[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  carrier String?
+  trackingNumber String?
+  customerSentAt DateTime?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  evidence        RefundEvidence[]
+  items           RefundItem[]
 }
 
 model RefundEvidence {
-  id String @id @default(uuid())
-
-  refundId String
-
-  refund Refund @relation(fields: [refundId], references: [id], onDelete: Cascade)
-
-  url String
-
-  publicId String?
-
+  id        String   @id @default(uuid())
+  refundId  String
+  url       String
+  publicId  String?
   createdAt DateTime @default(now())
+  refund    Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
 }
-
-/**
- * ============================
- * REFUND ITEM
- * ============================
- */
 
 model RefundItem {
-  id String @id @default(uuid())
-
-  refundId String
-  refund   Refund @relation(fields: [refundId], references: [id], onDelete: Cascade)
-
+  id          String    @id @default(uuid())
+  refundId    String
   orderItemId String
+  quantity    Int
+  amount      Int
+  createdAt   DateTime  @default(now())
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
-
-  quantity Int
-  amount   Int
-
-  createdAt DateTime @default(now())
+  refund      Refund    @relation(fields: [refundId], references: [id], onDelete: Cascade)
 }
-
-/**
- * ============================
- * REFRESH TOKEN
- * ============================
- */
 
 model RefreshToken {
-  id    String @id @default(uuid())
-  token String @unique
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
   createdAt DateTime @default(now())
   expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-/**
- * ============================
- * INVOICE
- * ============================
- */
-
 model Invoice {
-  id            String @id @default(uuid())
-  invoiceNumber String @unique
-
-  orderId String @unique
-  order   Order  @relation(fields: [orderId], references: [id])
-
+  id            String   @id @default(uuid())
+  invoiceNumber String   @unique
+  orderId       String   @unique
   customerEmail String
+  createdAt     DateTime @default(now())
   totalAmount   Int
-
-  createdAt DateTime @default(now())
+  order         Order    @relation(fields: [orderId], references: [id])
 }
 
 model InvoiceSequence {
@@ -483,121 +285,90 @@ model InvoiceSequence {
 }
 
 model Address {
-  id     String @id @default(cuid())
-  userId String
-
-  fullName String
-  phone    String
-
+  id           String   @id @default(cuid())
+  userId       String
+  fullName     String
+  phone        String
   addressLine1 String
   addressLine2 String?
+  city         String
+  postalCode   String
+  country      String
+  createdAt    DateTime @default(now())
+  isDefault    Boolean  @default(false)
+  user         User     @relation(fields: [userId], references: [id])
 
-  city       String
-  postalCode String
-  country    String
-
-  isDefault Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([userId]) // 🔥 rendimiento (déjalo)
+  @@index([userId])
 }
 
 model Coupon {
-  id String @id @default(uuid())
-
-  code String @unique
-
-  type CouponType
-
-  value Int
-
+  id             String     @id @default(uuid())
+  code           String     @unique
+  type           CouponType
+  value          Int
   minOrderAmount Int?
-
-  maxUses   Int?
-  usedCount Int  @default(0)
-
-  expiresAt DateTime?
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
+  maxUses        Int?
+  usedCount      Int        @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
 }
 
-/**
- * ============================
- * STRIPE WEBHOOK EVENT
- * ============================
- */
-
 model StripeWebhookEvent {
-  id String @id
-
+  id        String   @id
   createdAt DateTime @default(now())
 
   @@index([createdAt])
 }
 
-/**
- * ============================
- * ADMIN SETTINGS
- * ============================
- */
-
 model AdminSettings {
-  id String @id @default("singleton")
-
-  storeName    String @default("Shop Proyect")
-  supportEmail String @default("support@shopproyect.com")
-  domain       String @default("shopproyect.com")
-  country      String @default("España")
-
-  currency  String  @default("EUR")
-  taxRate   Decimal @default(21) @db.Decimal(5, 2)
-  taxLabel  String  @default("IVA")
-  showTaxes Boolean @default(true)
-
-  shippingZone      String  @default("EU shipping zone")
-  estimatedDelivery String  @default("2-5 días laborables")
-  trackingAutomatic Boolean @default(false)
-
-  emailFromName          String  @default("Shop Proyect")
-  emailFromAddress       String  @default("no-reply@shopproyect.com")
-  orderConfirmationEmail Boolean @default(true)
-
-  theme               String  @default("Dark premium")
-  accentColor         String  @default("Emerald / Indigo")
-  themeEditorPrepared Boolean @default(false)
-
-  notifyOrders  Boolean @default(true)
-  notifyStock   Boolean @default(true)
-  notifyRefunds Boolean @default(true)
-  notifyWeekly  Boolean @default(false)
-
-  compactTableDensity  Boolean @default(false)
-  keyboardShortcuts    Boolean @default(true)
-  autoRefreshDashboard Boolean @default(true)
-
-  maintenanceMode Boolean @default(false)
-
-  webhookEndpoint String @default("https://shopproyect.com/api/webhooks")
-  apiKeysLabel    String @default("Secret management pending")
-
-  refundAutomation Boolean @default(false)
-  shipmentTracking Boolean @default(false)
-  invoiceActions   Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                     String   @id @default("singleton")
+  storeName              String   @default("Shop Proyect")
+  supportEmail           String   @default("support@shopproyect.com")
+  domain                 String   @default("shopproyect.com")
+  country                String   @default("España")
+  currency               String   @default("EUR")
+  taxRate                Decimal  @default(21) @db.Decimal(5, 2)
+  taxLabel               String   @default("IVA")
+  showTaxes              Boolean  @default(true)
+  shippingZone           String   @default("EU shipping zone")
+  estimatedDelivery      String   @default("2-5 días laborables")
+  trackingAutomatic      Boolean  @default(false)
+  emailFromName          String   @default("Shop Proyect")
+  emailFromAddress       String   @default("no-reply@shopproyect.com")
+  orderConfirmationEmail Boolean  @default(true)
+  theme                  String   @default("Dark premium")
+  accentColor            String   @default("Emerald / Indigo")
+  themeEditorPrepared    Boolean  @default(false)
+  notifyOrders           Boolean  @default(true)
+  notifyStock            Boolean  @default(true)
+  notifyRefunds          Boolean  @default(true)
+  notifyWeekly           Boolean  @default(false)
+  compactTableDensity    Boolean  @default(false)
+  keyboardShortcuts      Boolean  @default(true)
+  autoRefreshDashboard   Boolean  @default(true)
+  maintenanceMode        Boolean  @default(false)
+  webhookEndpoint        String   @default("https://shopproyect.com/api/webhooks")
+  apiKeysLabel           String   @default("Secret management pending")
+  refundAutomation       Boolean  @default(false)
+  shipmentTracking       Boolean  @default(false)
+  invoiceActions         Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
-/**
- * ============================
- * ENUMS
- * ============================
- */
+model OrderChangeRequest {
+  id             String                   @id
+  orderId        String
+  type           OrderChangeRequestType
+  status         OrderChangeRequestStatus @default(PENDING)
+  currentValue   String?
+  requestedValue String?
+  note           String?
+  createdAt      DateTime                 @default(now())
+  reviewedAt     DateTime?
+  Order          Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
 
 enum ProductCategory {
   T_SHIRTS
@@ -606,14 +377,12 @@ enum ProductCategory {
   PANTS
   SOCKS
   CAPS
-
   SKATE_DECKS
   TRUCKS
   BEARINGS
   WHEELS
   HARDWARE
   WAX
-
   STICKERS
   SPECIAL_ITEMS
   OTHER
@@ -655,24 +424,24 @@ enum Role {
 
 enum OrderStatus {
   PENDING
-  PAYMENT_PROCESSING
   PAID
   SHIPPED
-  DELIVERED
   CANCELLED
+  PAYMENT_PROCESSING
   FAILED
-  PARTIALLY_REFUNDED
   REFUNDED
+  PARTIALLY_REFUNDED
+  DELIVERED
 }
 
 enum RefundStatus {
   PENDING_REVIEW
   APPROVED
-  CUSTOMER_SENT
-  RECEIVED
   REJECTED
   SUCCEEDED
   FAILED
+  RECEIVED
+  CUSTOMER_SENT
 }
 
 enum RefundReason {
@@ -692,14 +461,13 @@ enum TransactionType {
 enum OrderEventType {
   ORDER_CREATED
   PAYMENT_SUCCEEDED
-  PAYMENT_FAILED
   REFUND_CREATED
   REFUND_COMPLETED
   ORDER_CANCELLED
   ORDER_SHIPPED
-  ORDER_DELIVERED
+  PAYMENT_FAILED
   ORDER_UPDATED
-
+  ORDER_DELIVERED
   CUSTOMER_REQUESTED_SIZE_CHANGE
   CUSTOMER_REQUESTED_COLOR_CHANGE
   CUSTOMER_REQUESTED_PRODUCT_CHANGE
@@ -746,4 +514,17 @@ enum CartStatus {
   CONVERTED
   EXPIRED
   MERGED
+}
+
+enum OrderChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderChangeRequestType {
+  ADDRESS
+  SIZE
+  COLOR
+  PRODUCT
 }

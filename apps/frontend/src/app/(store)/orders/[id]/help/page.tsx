@@ -237,6 +237,10 @@ export default function OrderHelpPage() {
       return refundedQuantity < item.quantity;
     }) ?? false;
 
+  const activeRefund = order.refunds?.find(
+    (refund: any) => refund.status === "APPROVED",
+  );
+
   return (
     <div className="mx-auto max-w-7xl px-4 pb-6">
       {/* HERO */}

@@ -8,6 +8,7 @@ import type {
   DashboardUpdatePayload,
   OrderUpdatedPayload,
 } from "@/shared/lib/socket";
+import { toast } from "sonner";
 
 import {
   CheckCircle2,
@@ -49,6 +50,11 @@ export default function Page() {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("CUSTOMER_REQUEST");
+  const [showSentModal, setShowSentModal] = useState(false);
+  const [selectedRefund, setSelectedRefund] = useState<any>(null);
+  const [carrier, setCarrier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [sendingRefund, setSendingRefund] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -146,15 +152,69 @@ export default function Page() {
     );
   }
 
-  const isPaid = order.status === "PAID";
+  console.log("REFUNDS PAGE", order.refunds);
+
+  const canDownloadInvoice =
+    order.invoice &&
+    ["PAID", "SHIPPED", "DELIVERED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
+      order.status,
+    );
+
+  const isPaid =
+    order.status !== "PENDING" && order.status !== "PAYMENT_PROCESSING";
 
   const canContinuePayment =
     order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
 
-  const canCancel =
-    order.status === "PENDING" ||
-    order.status === "PAYMENT_PROCESSING" ||
-    order.status === "PAID";
+  const markRefundSent = async () => {
+    if (!selectedRefund) return;
+
+    if (!carrier.trim()) {
+      toast.error("Introduce la empresa de transporte");
+      return;
+    }
+
+    if (!trackingNumber.trim()) {
+      toast.error("Introduce el código de seguimiento");
+      return;
+    }
+
+    try {
+      setSendingRefund(true);
+
+      await apiFetch(`/refunds/${selectedRefund.id}/sent`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          carrier,
+          trackingNumber,
+        }),
+      });
+
+      setShowSentModal(false);
+
+      setCarrier("");
+      setTrackingNumber("");
+      setSelectedRefund(null);
+
+      const refreshed = await apiFetch(`/orders/${order.id}`);
+
+      if (refreshed?.ok) {
+        const updatedOrder = await refreshed.json();
+        setOrder(updatedOrder);
+      }
+
+      toast.success("Información enviada");
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Error al actualizar la devolución");
+    } finally {
+      setSendingRefund(false);
+    }
+  };
 
   const handleDownloadInvoice = () => {
     const queryEmail = searchParams.get("email");
@@ -680,10 +740,60 @@ export default function Page() {
           </div>
         )}
 
+        {/* REFUNDS */}
+
+        {order.refunds?.length > 0 && (
+          <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold">Devoluciones</h2>
+
+              <p className="mt-2 text-sm text-neutral-500">
+                Estado de tus solicitudes de devolución
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {order.refunds.map((refund: any) => (
+                <div
+                  key={refund.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Solicitud #{refund.id.slice(0, 8)}
+                    </span>
+
+                    <span className="text-xs text-neutral-400">
+                      {getRefundStatusLabel(refund.status)}
+                    </span>
+                  </div>
+
+                  {refund.note && (
+                    <p className="mt-3 text-sm text-neutral-500">
+                      {refund.note}
+                    </p>
+                  )}
+                  {refund.status === "APPROVED" && (
+                    <button
+                      onClick={() => {
+                        setSelectedRefund(refund);
+                        setShowSentModal(true);
+                      }}
+                      className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
+                    >
+                      He enviado el paquete
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ACTIONS */}
 
         <div className="flex flex-col gap-4 md:flex-row">
-          {isPaid && (
+          {canDownloadInvoice && (
             <Button
               className="h-12 w-full rounded-2xl"
               onClick={handleDownloadInvoice}
@@ -793,6 +903,53 @@ export default function Page() {
             </div>
           </div>
         )}
+        {showSentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-neutral-950 p-6">
+              <h2 className="text-xl font-semibold">He enviado el paquete</h2>
+
+              <p className="mt-2 text-sm text-neutral-500">
+                Introduce la empresa de transporte y el número de seguimiento.
+              </p>
+
+              <div className="mt-6 space-y-4">
+                <input
+                  value={carrier}
+                  onChange={(e) => setCarrier(e.target.value)}
+                  placeholder="Correos"
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                />
+
+                <input
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  placeholder="PQ123456789ES"
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
+                />
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <Button
+                  variant="outline"
+                  className="w-full text-black"
+                  onClick={() => {
+                    setShowSentModal(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  className="w-full"
+                  disabled={sendingRefund}
+                  onClick={markRefundSent}
+                >
+                  {sendingRefund ? "Enviando..." : "Confirmar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -876,5 +1033,30 @@ function getTimelineConfig(type: string) {
         icon: Clock3,
         className: "border-white/10 bg-white/5 text-white",
       };
+  }
+}
+
+function getRefundStatusLabel(status: string) {
+  switch (status) {
+    case "PENDING_REVIEW":
+      return "Pendiente de revisión";
+
+    case "APPROVED":
+      return "Aprobada";
+
+    case "CUSTOMER_SENT":
+      return "Paquete enviado";
+
+    case "RECEIVED":
+      return "Paquete recibido";
+
+    case "SUCCEEDED":
+      return "Reembolso completado";
+
+    case "REJECTED":
+      return "Solicitud rechazada";
+
+    default:
+      return status;
   }
 }
