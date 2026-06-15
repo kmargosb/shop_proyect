@@ -3,25 +3,61 @@ import { prisma } from "@/lib/prisma";
 import { asyncHandler } from "@/common/utils/asyncHandler";
 
 function groupRevenueByDate(
-  orders: { createdAt: Date; totalAmount: number }[]
+  orders: {
+    createdAt: Date;
+    totalAmount: number;
+  }[],
+  refunds: {
+    updatedAt: Date;
+    amount: number;
+  }[],
 ) {
-  const map = new Map<string, number>();
+  const map = new Map<
+    string,
+    {
+      grossRevenue: number;
+      refunded: number;
+    }
+  >();
 
   for (const order of orders) {
-    const date = order.createdAt.toISOString().split("T")[0];
+    const date = order.createdAt.toLocaleDateString("sv-SE");
 
-    map.set(date, (map.get(date) ?? 0) + order.totalAmount);
+    const current = map.get(date) ?? {
+      grossRevenue: 0,
+      refunded: 0,
+    };
+
+    current.grossRevenue += order.totalAmount;
+
+    map.set(date, current);
   }
 
-  return Array.from(map.entries()).map(([date, revenue]) => ({
-    date,
-    revenue,
-  }));
+  for (const refund of refunds) {
+    const date = refund.updatedAt.toLocaleDateString("sv-SE");
+
+    const current = map.get(date) ?? {
+      grossRevenue: 0,
+      refunded: 0,
+    };
+
+    current.refunded += refund.amount;
+
+    map.set(date, current);
+  }
+
+  return Array.from(map.entries())
+    .map(([date, values]) => ({
+      date,
+      grossRevenue: values.grossRevenue,
+      refunded: values.refunded,
+      netRevenue: values.grossRevenue - values.refunded,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export const getDashboardMetricsController = asyncHandler(
   async (req: Request, res: Response) => {
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -38,71 +74,138 @@ export const getDashboardMetricsController = asyncHandler(
       todayRevenue,
       refundedAmount,
       orders7d,
-      orders30d
+      orders30d,
+      refunds7d,
+      refunds30d,
     ] = await prisma.$transaction([
-
       prisma.order.count({
         where: {
-          createdAt: { gte: today }
-        }
+          createdAt: { gte: today },
+        },
       }),
 
       prisma.order.count(),
 
       prisma.order.aggregate({
         _sum: { totalAmount: true },
-        where: { status: "PAID" }
+        where: {
+          status: {
+            in: [
+              "PAID",
+              "SHIPPED",
+              "DELIVERED",
+              "PARTIALLY_REFUNDED",
+              "REFUNDED",
+            ],
+          },
+        },
       }),
 
       prisma.order.aggregate({
         _sum: { totalAmount: true },
         where: {
-          status: "PAID",
-          createdAt: { gte: today }
-        }
+          status: {
+            in: [
+              "PAID",
+              "SHIPPED",
+              "DELIVERED",
+              "PARTIALLY_REFUNDED",
+              "REFUNDED",
+            ],
+          },
+          createdAt: { gte: today },
+        },
       }),
 
       prisma.refund.aggregate({
         _sum: { amount: true },
-        where: { status: "SUCCEEDED" }
+        where: { status: "SUCCEEDED" },
       }),
 
       prisma.order.findMany({
         where: {
-          status: "PAID",
-          createdAt: { gte: last7Days }
+          status: {
+            in: [
+              "PAID",
+              "SHIPPED",
+              "DELIVERED",
+              "PARTIALLY_REFUNDED",
+              "REFUNDED",
+            ],
+          },
+          createdAt: { gte: last7Days },
         },
         select: {
           createdAt: true,
-          totalAmount: true
-        }
+          totalAmount: true,
+        },
       }),
 
       prisma.order.findMany({
         where: {
-          status: "PAID",
-          createdAt: { gte: last30Days }
+          status: {
+            in: [
+              "PAID",
+              "SHIPPED",
+              "DELIVERED",
+              "PARTIALLY_REFUNDED",
+              "REFUNDED",
+            ],
+          },
+          createdAt: { gte: last30Days },
         },
         select: {
           createdAt: true,
-          totalAmount: true
-        }
-      })
+          totalAmount: true,
+        },
+      }),
 
+      prisma.refund.findMany({
+        where: {
+          status: "SUCCEEDED",
+          updatedAt: {
+            gte: last7Days,
+          },
+        },
+        select: {
+          amount: true,
+          updatedAt: true,
+        },
+      }),
+
+      prisma.refund.findMany({
+        where: {
+          status: "SUCCEEDED",
+          updatedAt: {
+            gte: last30Days,
+          },
+        },
+        select: {
+          amount: true,
+          updatedAt: true,
+        },
+      }),
     ]);
 
-    const revenue7d = groupRevenueByDate(orders7d);
-    const revenue30d = groupRevenueByDate(orders30d);
+    const revenue7d = groupRevenueByDate(orders7d, refunds7d);
+    const revenue30d = groupRevenueByDate(orders30d, refunds30d);
+    const grossRevenue = totalRevenue._sum.totalAmount ?? 0;
+    const totalRefunded = refundedAmount._sum.amount ?? 0;
+
+    const netRevenue = grossRevenue - totalRefunded;
 
     res.json({
       todayOrders,
       totalOrders,
-      totalRevenue: totalRevenue._sum.totalAmount ?? 0,
-      todayRevenue: todayRevenue._sum.totalAmount ?? 0,
-      refundedAmount: refundedAmount._sum.amount ?? 0,
-      revenue7d,
-      revenue30d
-    });
 
-  }
+      grossRevenue,
+      refundedAmount: totalRefunded,
+      netRevenue,
+
+      todayRevenue: todayRevenue._sum.totalAmount ?? 0,
+
+      revenue7d,
+      revenue30d,
+    });
+  },
 );

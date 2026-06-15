@@ -36,7 +36,8 @@ import type { LucideIcon } from "lucide-react";
 type Metrics = {
   todayOrders: number;
   totalOrders: number;
-  totalRevenue: number;
+  grossRevenue: number;
+  netRevenue: number;
   todayRevenue: number;
   refundedAmount: number;
   revenue7d: RevenuePoint[];
@@ -46,7 +47,9 @@ type Metrics = {
 
 type RevenuePoint = {
   date: string;
-  revenue: number;
+  grossRevenue: number;
+  refunded: number;
+  netRevenue: number;
 };
 
 type Country = {
@@ -144,7 +147,9 @@ export default function AdminDashboard() {
 
     return rawByRange[range].map((d) => ({
       date: formatDateLabel(d.date),
-      revenue: Number((d.revenue / 100).toFixed(2)),
+      grossRevenue: Number((d.grossRevenue / 100).toFixed(2)),
+      refunded: Number((d.refunded / 100).toFixed(2)),
+      netRevenue: Number((d.netRevenue / 100).toFixed(2)),
     }));
   }, [metrics, range]);
 
@@ -164,8 +169,8 @@ export default function AdminDashboard() {
   const growth = useMemo(() => {
     if (revenueData.length < 2) return 0;
 
-    const last = revenueData[revenueData.length - 1].revenue;
-    const prev = revenueData[revenueData.length - 2].revenue;
+    const last = revenueData[revenueData.length - 1].netRevenue;
+    const prev = revenueData[revenueData.length - 2].netRevenue;
 
     if (prev === 0) return 0;
 
@@ -173,12 +178,12 @@ export default function AdminDashboard() {
   }, [revenueData]);
 
   const conversionHint = useMemo(() => {
-    if (!metrics?.totalOrders || !metrics.totalRevenue)
+    if (!metrics?.totalOrders || !metrics.netRevenue)
       return "Sin datos todavía";
 
-    return `${format(metrics.totalRevenue / metrics.totalOrders)} ticket medio`;
+    return `${format(metrics.netRevenue / metrics.totalOrders)} ticket medio`;
   }, [metrics]);
-
+console.log(metrics)
   if (!metrics) return <DashboardSkeleton />;
 
   return (
@@ -248,8 +253,8 @@ export default function AdminDashboard() {
       {/* ================= KPIs ================= */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         <KpiCard
-          title="Ingresos totales"
-          value={format(metrics.totalRevenue)}
+          title="Ingresos netos"
+          value={format(metrics.netRevenue)}
           description={conversionHint}
           icon={Banknote}
           accent="from-emerald-400/20 to-emerald-400/5 text-emerald-300"
@@ -285,6 +290,38 @@ export default function AdminDashboard() {
           danger={metrics.refundedAmount > 0}
         />
       </div>
+
+      <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-6">
+        <h2 className="mb-6 text-lg font-semibold text-white">
+          Resumen financiero
+        </h2>
+        {/* ================= Resumen Financiero ================= */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 p-4">
+            <p className="text-sm text-neutral-500">Ventas brutas</p>
+
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {format(metrics.grossRevenue)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+            <p className="text-sm text-neutral-500">Reembolsado</p>
+
+            <p className="mt-2 text-2xl font-semibold text-red-300">
+              {format(metrics.refundedAmount)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+            <p className="text-sm text-neutral-500">Beneficio neto</p>
+
+            <p className="mt-2 text-2xl font-semibold text-emerald-300">
+              {format(metrics.netRevenue)}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* ================= CHART ================= */}
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
@@ -346,10 +383,15 @@ export default function AdminDashboard() {
                   tickFormatter={(value) => `€${value}`}
                 />
                 <Tooltip
-                  formatter={(value) => [
-                    `€${Number(value).toFixed(2)}`,
-                    "Ingresos",
-                  ]}
+                  formatter={(value, name) => {
+                    const label =
+                      String(name) === "grossRevenue"
+                        ? "Ventas brutas"
+                        : String(name) === "netRevenue"
+                          ? "Ingresos netos"
+                          : "Reembolsos";
+                    return [`€${Number(value).toFixed(2)}`, label];
+                  }}
                   contentStyle={{
                     background: "rgba(10,10,10,0.96)",
                     border: "1px solid rgba(255,255,255,0.12)",
@@ -360,10 +402,26 @@ export default function AdminDashboard() {
                 />
                 <Area
                   type="monotone"
-                  dataKey="revenue"
+                  dataKey="grossRevenue"
                   stroke="#818cf8"
-                  strokeWidth={3}
+                  strokeWidth={2}
                   fill="url(#colorRev)"
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="netRevenue"
+                  stroke="#34d399"
+                  strokeWidth={3}
+                  fillOpacity={0}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="refunded"
+                  stroke="#fb7185"
+                  strokeWidth={2}
+                  fillOpacity={0}
                 />
               </AreaChart>
             </ResponsiveContainer>
