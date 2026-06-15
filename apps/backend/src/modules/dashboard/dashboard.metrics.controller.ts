@@ -73,6 +73,7 @@ export const getDashboardMetricsController = asyncHandler(
       totalRevenue,
       todayRevenue,
       refundedAmount,
+      todayRefundedAmount,
       orders7d,
       orders30d,
       refunds7d,
@@ -120,6 +121,20 @@ export const getDashboardMetricsController = asyncHandler(
       prisma.refund.aggregate({
         _sum: { amount: true },
         where: { status: "SUCCEEDED" },
+      }),
+
+      prisma.refund.aggregate({
+        _sum: {
+          amount: true,
+        },
+
+        where: {
+          status: "SUCCEEDED",
+
+          updatedAt: {
+            gte: today,
+          },
+        },
       }),
 
       prisma.order.findMany({
@@ -191,21 +206,23 @@ export const getDashboardMetricsController = asyncHandler(
     const revenue30d = groupRevenueByDate(orders30d, refunds30d);
     const grossRevenue = totalRevenue._sum.totalAmount ?? 0;
     const totalRefunded = refundedAmount._sum.amount ?? 0;
-
     const netRevenue = grossRevenue - totalRefunded;
+    const todayGrossRevenue = todayRevenue._sum.totalAmount ?? 0;
+    const todayRefunded = todayRefundedAmount._sum.amount ?? 0;
+    const todayNetRevenue = todayGrossRevenue - todayRefunded;
 
     res.json({
-      todayOrders,
-      totalOrders,
-
-      grossRevenue,
-      refundedAmount: totalRefunded,
-      netRevenue,
-
-      todayRevenue: todayRevenue._sum.totalAmount ?? 0,
-
-      revenue7d,
-      revenue30d,
-    });
+  todayOrders,
+  totalOrders,
+  grossRevenue,
+  refundedAmount: totalRefunded,
+  netRevenue,
+  todayGrossRevenue,
+  todayRefunded,
+  todayNetRevenue,
+  todayRevenue: todayGrossRevenue,
+  revenue7d,
+  revenue30d,
+});
   },
 );

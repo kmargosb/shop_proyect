@@ -35,10 +35,12 @@ import type { LucideIcon } from "lucide-react";
 
 type Metrics = {
   todayOrders: number;
+  todayGrossRevenue: number;
+  todayRefunded: number;
+  todayNetRevenue: number;
   totalOrders: number;
   grossRevenue: number;
   netRevenue: number;
-  todayRevenue: number;
   refundedAmount: number;
   revenue7d: RevenuePoint[];
   revenue30d: RevenuePoint[];
@@ -82,6 +84,9 @@ type KpiCardProps = {
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [range, setRange] = useState<Range>("30d");
+  const [financialPeriod, setFinancialPeriod] = useState<
+    "day" | "month" | "year" | "total"
+  >("total");
   const [countries, setCountries] = useState<Country[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -180,10 +185,48 @@ export default function AdminDashboard() {
   const conversionHint = useMemo(() => {
     if (!metrics?.totalOrders || !metrics.netRevenue)
       return "Sin datos todavía";
-
     return `${format(metrics.netRevenue / metrics.totalOrders)} ticket medio`;
   }, [metrics]);
-console.log(metrics)
+
+  const financialData = useMemo(() => {
+    if (!metrics) {
+      return {
+        grossRevenue: 0,
+        refundedAmount: 0,
+        netRevenue: 0,
+        totalOrders: 0,
+      };
+    }
+
+    switch (financialPeriod) {
+      case "day":
+        return {
+          grossRevenue: metrics.todayGrossRevenue,
+          refundedAmount: metrics.todayRefunded,
+          netRevenue: metrics.todayNetRevenue,
+          totalOrders: metrics.todayOrders,
+        };
+
+      case "month":
+      case "year":
+      case "total":
+      default:
+        return {
+          grossRevenue: metrics.grossRevenue,
+          refundedAmount: metrics.refundedAmount,
+          netRevenue: metrics.netRevenue,
+          totalOrders: metrics.totalOrders,
+        };
+    }
+  }, [metrics, financialPeriod]);
+
+  const averageTicketSelected =
+    financialData.totalOrders > 0
+      ? financialData.grossRevenue / financialData.totalOrders
+      : 0;
+
+  console.log(metrics);
+
   if (!metrics) return <DashboardSkeleton />;
 
   return (
@@ -251,28 +294,28 @@ console.log(metrics)
       )}
 
       {/* ================= KPIs ================= */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
-          title="Ingresos netos"
-          value={format(metrics.netRevenue)}
-          description={conversionHint}
-          icon={Banknote}
+          title="Ingresos netos hoy"
+          value={format(metrics.todayNetRevenue)}
+          description="Después de devoluciones"
+          icon={CalendarDays}
           accent="from-emerald-400/20 to-emerald-400/5 text-emerald-300"
-          trend={growth}
         />
         <KpiCard
-          title="Ingresos de hoy"
-          value={format(metrics.todayRevenue)}
-          description="Ventas generadas hoy"
-          icon={CalendarDays}
+          title="Ingresos brutos hoy"
+          value={format(metrics.todayGrossRevenue)}
+          description="Antes de devoluciones"
+          icon={Banknote}
           accent="from-sky-400/20 to-sky-400/5 text-sky-300"
         />
         <KpiCard
-          title="Pedidos totales"
-          value={metrics.totalOrders}
-          description="Órdenes registradas"
-          icon={ShoppingBag}
-          accent="from-indigo-400/20 to-indigo-400/5 text-indigo-300"
+          title="Reembolsos hoy"
+          value={format(metrics.todayRefunded)}
+          description="Devuelto hoy"
+          icon={CreditCard}
+          accent="from-rose-400/20 to-rose-400/5 text-rose-300"
+          danger={metrics.todayRefunded > 0}
         />
         <KpiCard
           title="Pedidos hoy"
@@ -281,27 +324,41 @@ console.log(metrics)
           icon={PackageCheck}
           accent="from-amber-400/20 to-amber-400/5 text-amber-300"
         />
-        <KpiCard
-          title="Reembolsos"
-          value={format(metrics.refundedAmount)}
-          description="Importe devuelto"
-          icon={CreditCard}
-          accent="from-rose-400/20 to-rose-400/5 text-rose-300"
-          danger={metrics.refundedAmount > 0}
-        />
       </div>
 
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-6">
+        <div className="mb-6 flex gap-2">
+          {[
+            ["total", "Total"],
+            ["year", "Año"],
+            ["month", "Mes"],
+            ["day", "Día"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() =>
+                setFinancialPeriod(value as "day" | "month" | "year" | "total")
+              }
+              className={
+                financialPeriod === value
+                  ? "rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
+                  : "rounded-xl border border-white/10 px-4 py-2 text-sm text-neutral-300"
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <h2 className="mb-6 text-lg font-semibold text-white">
           Resumen financiero
         </h2>
         {/* ================= Resumen Financiero ================= */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-white/10 p-4">
             <p className="text-sm text-neutral-500">Ventas brutas</p>
 
             <p className="mt-2 text-2xl font-semibold text-white">
-              {format(metrics.grossRevenue)}
+              {format(financialData.grossRevenue)}
             </p>
           </div>
 
@@ -309,7 +366,7 @@ console.log(metrics)
             <p className="text-sm text-neutral-500">Reembolsado</p>
 
             <p className="mt-2 text-2xl font-semibold text-red-300">
-              {format(metrics.refundedAmount)}
+              {format(financialData.refundedAmount)}
             </p>
           </div>
 
@@ -317,7 +374,14 @@ console.log(metrics)
             <p className="text-sm text-neutral-500">Beneficio neto</p>
 
             <p className="mt-2 text-2xl font-semibold text-emerald-300">
-              {format(metrics.netRevenue)}
+              {format(financialData.netRevenue)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+            <p className="text-sm text-neutral-500">Ticket medio</p>
+
+            <p className="mt-2 text-2xl font-semibold text-indigo-300">
+              {format(averageTicketSelected)}
             </p>
           </div>
         </div>
