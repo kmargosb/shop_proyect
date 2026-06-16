@@ -8,6 +8,7 @@ import { getTopCustomersController } from "./dashboard.top-customers.controller"
 import { getRevenueGrowthController } from "./dashboard.revenue-growth.controller";
 import { getSalesByCountryController } from "./dashboard.sales-by-country.controller";
 import { getAlertsController } from "./dashboard.alerts.controller";
+import { getFinancialSummaryController } from "./dashboard.financial-summary.controller";
 
 const router = Router();
 
@@ -30,5 +31,7 @@ router.get("/revenue-growth", protect, adminOnly, getRevenueGrowthController);
 router.get("/sales-by-country", protect, adminOnly, getSalesByCountryController);
 
 router.get("/alerts", protect, adminOnly, getAlertsController);
+
+router.get("/financial-summary", protect, adminOnly, getFinancialSummaryController);
 
 export default router;

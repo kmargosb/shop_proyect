@@ -34,6 +34,8 @@ import type { LucideIcon } from "lucide-react";
 /* ================= TYPES ================= */
 
 type Metrics = {
+  period: string;
+  averageTicket: number;
   todayOrders: number;
   todayGrossRevenue: number;
   todayRefunded: number;
@@ -45,6 +47,15 @@ type Metrics = {
   revenue7d: RevenuePoint[];
   revenue30d: RevenuePoint[];
   revenue90d?: RevenuePoint[];
+};
+
+type FinancialSummary = {
+  period: string;
+  grossRevenue: number;
+  refundedAmount: number;
+  netRevenue: number;
+  totalOrders: number;
+  averageTicket: number;
 };
 
 type RevenuePoint = {
@@ -83,6 +94,8 @@ type KpiCardProps = {
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [financialSummary, setFinancialSummary] =
+    useState<FinancialSummary | null>(null);
   const [range, setRange] = useState<Range>("30d");
   const [financialPeriod, setFinancialPeriod] = useState<
     "day" | "month" | "year" | "total"
@@ -120,14 +133,33 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadFinancialSummary = useCallback(async () => {
+    try {
+      const res = await apiFetch(
+        `/dashboard/financial-summary?period=${financialPeriod}`,
+      );
+
+      if (!res?.ok) return;
+
+      setFinancialSummary(await res.json());
+    } catch (err) {
+      console.error(err);
+    }
+  }, [financialPeriod]);
+
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  useEffect(() => {
+    loadFinancialSummary();
+  }, [loadFinancialSummary]);
 
   /* ================= SOCKET REALTIME ================= */
   useEffect(() => {
     const refreshDashboard = () => {
       void loadAll();
+      void loadFinancialSummary();
     };
 
     socket.on("dashboard:update", refreshDashboard);
@@ -188,44 +220,15 @@ export default function AdminDashboard() {
     return `${format(metrics.netRevenue / metrics.totalOrders)} ticket medio`;
   }, [metrics]);
 
-  const financialData = useMemo(() => {
-    if (!metrics) {
-      return {
-        grossRevenue: 0,
-        refundedAmount: 0,
-        netRevenue: 0,
-        totalOrders: 0,
-      };
-    }
+  const financialData = financialSummary ?? {
+    grossRevenue: 0,
+    refundedAmount: 0,
+    netRevenue: 0,
+    totalOrders: 0,
+    averageTicket: 0,
+  };
 
-    switch (financialPeriod) {
-      case "day":
-        return {
-          grossRevenue: metrics.todayGrossRevenue,
-          refundedAmount: metrics.todayRefunded,
-          netRevenue: metrics.todayNetRevenue,
-          totalOrders: metrics.todayOrders,
-        };
-
-      case "month":
-      case "year":
-      case "total":
-      default:
-        return {
-          grossRevenue: metrics.grossRevenue,
-          refundedAmount: metrics.refundedAmount,
-          netRevenue: metrics.netRevenue,
-          totalOrders: metrics.totalOrders,
-        };
-    }
-  }, [metrics, financialPeriod]);
-
-  const averageTicketSelected =
-    financialData.totalOrders > 0
-      ? financialData.grossRevenue / financialData.totalOrders
-      : 0;
-
-  console.log(metrics);
+  const averageTicketSelected = financialData.averageTicket;
 
   if (!metrics) return <DashboardSkeleton />;
 
@@ -269,7 +272,10 @@ export default function AdminDashboard() {
             </div>
 
             <button
-              onClick={loadAll}
+              onClick={() => {
+                loadAll();
+                loadFinancialSummary();
+              }}
               disabled={isRefreshing}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
