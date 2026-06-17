@@ -100,6 +100,7 @@ export const RefundService = {
       where: {
         orderId: orderId,
         status: "SUCCEEDED",
+        type: "CUSTOMER_RETURN",
       },
       _sum: {
         amount: true,
