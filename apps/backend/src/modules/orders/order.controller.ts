@@ -421,6 +421,10 @@ export const getMyOrderByIdController = asyncHandler(
         shipment: true,
 
         refunds: {
+          where: {
+            type: "CUSTOMER_RETURN",
+          },
+
           include: {
             items: true,
             evidence: true,
@@ -476,6 +480,10 @@ export const getAdminOrderByIdController = asyncHandler(
         shipment: true,
 
         refunds: {
+          where: {
+            type: "CUSTOMER_RETURN",
+          },
+
           include: {
             items: true,
             evidence: true,

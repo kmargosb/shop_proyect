@@ -1,17 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { RefundReason } from "@prisma/client";
+import { RefundReason, RefundType } from "@prisma/client";
+
 
 export const RefundRepository = {
   create(data: {
-    orderId: string;
-    stripeRefundId?: string;
-    amount: number;
-    currency: string;
-    reason?: RefundReason;
-    note?: string;
-  }) {
-    return prisma.refund.create({ data });
-  },
+  orderId: string;
+  stripeRefundId?: string;
+  amount: number;
+  currency: string;
+  reason?: RefundReason;
+  note?: string;
+  type?: RefundType;
+}) {
+  return prisma.refund.create({ data });
+},
 
   updateStatus(
     id: string,

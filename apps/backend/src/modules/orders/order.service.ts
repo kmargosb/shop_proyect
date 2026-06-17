@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
 import { Prisma, OrderStatus } from "@prisma/client";
 import { RefundService } from "@/modules/refunds/refund.service";
+import Stripe from "stripe";
 
 type CreateOrderInput = {
   userId?: string;
@@ -21,6 +22,10 @@ type CreateOrderInput = {
   postalCode: string;
   country: string;
 };
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2026-02-25.clover",
+});
 
 /* =========================================================
    CREATE ORDER
@@ -598,6 +603,7 @@ export async function updateOrderAdmin(
     if (!order) {
       throw new Error("Order not found");
     }
+    const oldTotal = order.totalAmount;
 
     /* =========================
        BLOCK EDITING
@@ -609,9 +615,7 @@ export async function updateOrderAdmin(
       order.status === "REFUNDED" ||
       order.status === "CANCELLED"
     ) {
-      throw new Error(
-        "This order can no longer be edited",
-      );
+      throw new Error("This order can no longer be edited");
     }
 
     /* =========================
@@ -643,108 +647,153 @@ export async function updateOrderAdmin(
 
     if (Array.isArray(data.items)) {
       for (const item of data.items) {
-        const currentItem =
-          await tx.orderItem.findUnique({
-            where: {
-              id: item.orderItemId,
-            },
-          });
+        const currentItem = await tx.orderItem.findUnique({
+          where: {
+            id: item.orderItemId,
+          },
+        });
 
         if (!currentItem) {
           continue;
         }
 
-        // Por ahora NO permitimos
-        // cambiar cantidad desde admin
+        const removedQuantity = currentItem.quantity - item.quantity;
 
-        if (
-          item.quantity !==
-          currentItem.quantity
-        ) {
-          throw new Error(
-            "Changing quantity is not supported yet",
-          );
-        }
+        const sameVariant = currentItem.variantId === item.variantId;
 
-        // misma variante -> no hacer nada
-
-        if (
-          currentItem.variantId ===
-          item.variantId
-        ) {
+        if (sameVariant && currentItem.quantity === item.quantity) {
           continue;
         }
 
-        const oldVariant =
-          await tx.productVariant.findUnique({
-            where: {
-              id:
-                currentItem.variantId ??
-                undefined,
-            },
-          });
+        const oldVariant = await tx.productVariant.findUnique({
+          where: {
+            id: currentItem.variantId ?? undefined,
+          },
+        });
 
-        const newVariant =
-          await tx.productVariant.findUnique({
-            where: {
-              id: item.variantId,
-            },
-          });
+        const newVariant = await tx.productVariant.findUnique({
+          where: {
+            id: item.variantId,
+          },
+        });
 
         if (!newVariant) {
-          throw new Error(
-            "Variant not found",
-          );
+          throw new Error("Variant not found");
         }
 
-        const availableStock =
-          newVariant.stock -
-          newVariant.reservedStock;
+        const availableStock = newVariant.stock - newVariant.reservedStock;
 
-        if (
-          availableStock <
-          currentItem.quantity
-        ) {
+        const quantityDiff = item.quantity - currentItem.quantity;
+
+        if (quantityDiff > 0 && availableStock < quantityDiff) {
           throw new Error(
             `Not enough stock for ${newVariant.size} ${newVariant.color}`,
           );
         }
 
         /* =========================
-           RETURN STOCK TO OLD
+              SAME VARIANT
         ========================= */
 
-        if (oldVariant) {
+        if (sameVariant) {
+          const diff = item.quantity - currentItem.quantity;
+
+          /* =========================
+     PENDING / PAYMENT_PROCESSING
+  ========================= */
+
+          if (
+            order.status === "PENDING" ||
+            order.status === "PAYMENT_PROCESSING"
+          ) {
+            if (diff > 0) {
+              await tx.productVariant.update({
+                where: {
+                  id: newVariant.id,
+                },
+                data: {
+                  reservedStock: {
+                    increment: diff,
+                  },
+                },
+              });
+            }
+
+            if (diff < 0) {
+              await tx.productVariant.update({
+                where: {
+                  id: newVariant.id,
+                },
+                data: {
+                  reservedStock: {
+                    decrement: Math.abs(diff),
+                  },
+                },
+              });
+            }
+          }
+
+          /* =========================
+     PAID
+  ========================= */
+
+          if (order.status === "PAID") {
+            if (diff > 0) {
+              await tx.productVariant.update({
+                where: {
+                  id: newVariant.id,
+                },
+                data: {
+                  stock: {
+                    decrement: diff,
+                  },
+                },
+              });
+            }
+
+            if (diff < 0) {
+              await tx.productVariant.update({
+                where: {
+                  id: newVariant.id,
+                },
+                data: {
+                  stock: {
+                    increment: Math.abs(diff),
+                  },
+                },
+              });
+            }
+          }
+        } else {
+          /* =========================
+              DIFFERENT VARIANT
+        ========================= */
+          if (oldVariant) {
+            await tx.productVariant.update({
+              where: {
+                id: oldVariant.id,
+              },
+
+              data: {
+                reservedStock: {
+                  decrement: currentItem.quantity,
+                },
+              },
+            });
+          }
+
           await tx.productVariant.update({
             where: {
-              id: oldVariant.id,
+              id: newVariant.id,
             },
 
             data: {
-              stock: {
-                increment:
-                  currentItem.quantity,
+              reservedStock: {
+                increment: item.quantity,
               },
             },
           });
         }
-
-        /* =========================
-           REMOVE STOCK FROM NEW
-        ========================= */
-
-        await tx.productVariant.update({
-          where: {
-            id: newVariant.id,
-          },
-
-          data: {
-            stock: {
-              decrement:
-                currentItem.quantity,
-            },
-          },
-        });
 
         /* =========================
            UPDATE ORDER ITEM
@@ -761,22 +810,84 @@ export async function updateOrderAdmin(
             size: newVariant.size,
 
             color: newVariant.color,
+
+            quantity: item.quantity,
           },
         });
       }
+    }
+
+    const updatedItems = await tx.orderItem.findMany({
+      where: {
+        orderId,
+      },
+    });
+
+    const newTotal = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+
+    const refundAmount = oldTotal - newTotal;
+
+    await tx.order.update({
+      where: {
+        id: orderId,
+      },
+
+      data: {
+        totalAmount: newTotal,
+      },
+    });
+
+    /* =========================
+   PAID ORDER ADJUSTMENT
+========================= */
+
+    if (order.status === "PAID" && refundAmount > 0) {
+      const stripeRefund = await stripe.refunds.create({
+        payment_intent: order.stripePaymentIntentId!,
+        amount: refundAmount,
+      });
+
+      await tx.refund.create({
+        data: {
+          orderId: order.id,
+          amount: refundAmount,
+          currency: order.currency,
+
+          stripeRefundId: stripeRefund.id,
+
+          type: "ORDER_ADJUSTMENT",
+
+          status: "SUCCEEDED",
+
+          note: "Automatic refund generated from admin order adjustment",
+        },
+      });
     }
 
     /* =========================
        TIMELINE
     ========================= */
 
+    if (order.status === "PAID" && refundAmount > 0) {
+      console.log(`💰 Auto refund required: ${refundAmount}`);
+    }
+
     await tx.orderEvent.create({
       data: {
         orderId,
 
-        type: "ORDER_UPDATED",
+        type:
+          order.status === "PAID" && refundAmount > 0
+            ? "ORDER_ADJUSTED"
+            : "ORDER_UPDATED",
 
-        message: "Order edited by admin",
+        message:
+          order.status === "PAID" && refundAmount > 0
+            ? `Automatic refund issued: €${(refundAmount / 100).toFixed(2)}`
+            : "Order edited by admin",
       },
     });
 

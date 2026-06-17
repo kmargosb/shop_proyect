@@ -222,6 +222,8 @@ export default function OrderHelpPage() {
     );
   }
 
+  console.log("ORDER STATUS", order.status);
+
   const canRequestRefund = ["DELIVERED", "PARTIALLY_REFUNDED"].includes(
     order.status,
   );
@@ -230,7 +232,8 @@ export default function OrderHelpPage() {
     order.items?.some((item: any) => {
       const refundedQuantity =
         order.refunds
-          ?.flatMap((refund: any) => refund.items || [])
+          ?.filter((refund: any) => refund.type !== "ORDER_ADJUSTMENT")
+          .flatMap((refund: any) => refund.items || [])
           .filter((ri: any) => ri.orderItemId === item.id)
           .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
 
@@ -464,20 +467,24 @@ export default function OrderHelpPage() {
                 .filter((item: any) => {
                   const refundedQuantity =
                     order.refunds
-                      ?.flatMap((refund: any) => refund.items || [])
+                      ?.filter(
+                        (refund: any) => refund.type !== "ORDER_ADJUSTMENT",
+                      )
+                      .flatMap((refund: any) => refund.items || [])
                       .filter((ri: any) => ri.orderItemId === item.id)
-                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
-                    0;
+                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
 
                   return refundedQuantity < item.quantity;
                 })
                 .map((item: any) => {
                   const refundedQuantity =
                     order.refunds
-                      ?.flatMap((refund: any) => refund.items || [])
+                      ?.filter(
+                        (refund: any) => refund.type !== "ORDER_ADJUSTMENT",
+                      )
+                      .flatMap((refund: any) => refund.items || [])
                       .filter((ri: any) => ri.orderItemId === item.id)
-                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
-                    0;
+                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
 
                   const remainingQuantity = item.quantity - refundedQuantity;
                   console.log({

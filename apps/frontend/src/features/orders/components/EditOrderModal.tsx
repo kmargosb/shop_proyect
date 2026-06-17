@@ -70,7 +70,7 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/10 bg-neutral-950 p-6">
+      <div className="max-h-[90vh] w-full max-w-4xl premium-scrollbar overflow-y-auto rounded-3xl border border-white/10 bg-neutral-950 p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
@@ -227,19 +227,42 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
                   ))}
                 </select>
 
-                <input
-                  type="number"
-                  min={1}
-                  value={items[index].quantity}
-                  onChange={(e) => {
-                    const copy = [...items];
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const copy = [...items];
 
-                    copy[index].quantity = Number(e.target.value);
+                      copy[index].quantity = Math.max(
+                        1,
+                        copy[index].quantity - 1,
+                      );
 
-                    setItems(copy);
-                  }}
-                  className="mt-3 w-32 rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
-                />
+                      setItems(copy);
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10"
+                  >
+                    -
+                  </button>
+
+                  <div className="min-w-[60px] text-center text-lg font-semibold text-white">
+                    {items[index].quantity}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const copy = [...items];
+
+                      copy[index].quantity += 1;
+
+                      setItems(copy);
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             ))}
           </div>

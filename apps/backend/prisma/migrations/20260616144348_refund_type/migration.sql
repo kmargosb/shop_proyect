@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "RefundType" AS ENUM ('CUSTOMER_RETURN', 'ORDER_ADJUSTMENT');
+
+-- AlterTable
+ALTER TABLE "Refund" ADD COLUMN     "type" "RefundType" NOT NULL DEFAULT 'CUSTOMER_RETURN';

@@ -303,8 +303,6 @@ export const RefundService = {
       orderId: refund.orderId,
     });
 
-    console.log(refund);
-
     return refund;
   },
 
@@ -377,6 +375,7 @@ export const RefundService = {
       where: {
         orderId: refund.orderId,
         status: "SUCCEEDED",
+        type: "CUSTOMER_RETURN",
       },
       _sum: {
         amount: true,

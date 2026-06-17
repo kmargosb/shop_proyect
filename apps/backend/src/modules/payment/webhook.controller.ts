@@ -380,13 +380,44 @@ async function handleRefundUpdated(refund: any) {
 
   const totalRefunded = refundAggregate._sum.amount ?? 0;
 
-  const newStatus =
-    totalRefunded >= order.totalAmount ? "REFUNDED" : "PARTIALLY_REFUNDED";
+/* =========================
+   ORDER ADJUSTMENT REFUND
+========================= */
 
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { status: newStatus },
+const orderAdjustedEvent =
+  await prisma.orderEvent.findFirst({
+    where: {
+      orderId: order.id,
+      type: "ORDER_ADJUSTED",
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
+
+if (orderAdjustedEvent) {
+  console.log(
+    "⚠️ Order adjustment refund detected",
+  );
+
+  return;
+}
+
+/* =========================
+   NORMAL CUSTOMER REFUND
+========================= */
+
+const newStatus =
+  totalRefunded >= order.totalAmount
+    ? "REFUNDED"
+    : "PARTIALLY_REFUNDED";
+
+await prisma.order.update({
+  where: { id: order.id },
+  data: {
+    status: newStatus,
+  },
+});
 
   await prisma.orderEvent.create({
     data: {

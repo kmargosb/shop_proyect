@@ -152,6 +152,12 @@ export default function Page() {
     );
   }
 
+  const adjustments =
+    order?.refunds?.filter((r: any) => r.type === "ORDER_ADJUSTMENT") || [];
+
+  const returns =
+    order?.refunds?.filter((r: any) => r.type !== "ORDER_ADJUSTMENT") || [];
+
   const canDownloadInvoice =
     order.invoice &&
     ["PAID", "SHIPPED", "DELIVERED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
@@ -761,7 +767,40 @@ export default function Page() {
 
         {/* REFUNDS */}
 
-        {order.refunds?.length > 0 && (
+        {adjustments.length > 0 && (
+          <div className="rounded-[28px] border border-emerald-500/20 bg-emerald-500/5 p-6">
+            <h2 className="text-xl font-semibold text-emerald-300">
+              Ajustes del pedido
+            </h2>
+
+            <p className="mt-2 text-sm text-emerald-200/70">
+              Se realizaron cambios en tu pedido antes del envío.
+            </p>
+
+            <div className="mt-5 space-y-3">
+              {adjustments.map((refund: any) => (
+                <div
+                  key={refund.id}
+                  className="rounded-2xl border border-emerald-500/20 bg-black/30 p-4"
+                >
+                  <p className="font-medium text-white">
+                    Reembolso automático emitido
+                  </p>
+
+                  <p className="mt-1 text-2xl font-bold text-emerald-300">
+                    €{(refund.amount / 100).toFixed(2)}
+                  </p>
+
+                  <p className="mt-2 text-sm text-neutral-400">
+                    No es necesario devolver ningún producto.
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {returns.length > 0 && (
           <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
             <div className="mb-6">
               <h2 className="text-xl font-semibold">Devoluciones</h2>
@@ -772,7 +811,7 @@ export default function Page() {
             </div>
 
             <div className="space-y-4">
-              {order.refunds.map((refund: any) => (
+              {returns.map((refund: any) => (
                 <div
                   key={refund.id}
                   className="
@@ -1102,6 +1141,13 @@ function getTimelineConfig(type: string) {
         label: "Actualización",
         icon: RefreshCcw,
         className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
+      };
+
+    case "ORDER_ADJUSTED":
+      return {
+        label: "Pedido ajustado",
+        icon: RefreshCcw,
+        className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
       };
 
     case "ORDER_CANCELLED":

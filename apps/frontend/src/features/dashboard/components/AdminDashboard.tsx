@@ -391,6 +391,51 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
+        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10">
+  <table className="w-full text-sm">
+    <tbody>
+      <tr className="border-b border-white/10">
+        <td className="px-5 py-4 text-neutral-400">
+          Ventas brutas
+        </td>
+
+        <td className="px-5 py-4 text-right font-medium text-white">
+          {format(financialData.grossRevenue)}
+        </td>
+      </tr>
+
+      <tr className="border-b border-white/10">
+        <td className="px-5 py-4 text-neutral-400">
+          Reembolsos
+        </td>
+
+        <td className="px-5 py-4 text-right font-medium text-red-300">
+          -{format(financialData.refundedAmount)}
+        </td>
+      </tr>
+
+      <tr className="border-b border-white/10">
+        <td className="px-5 py-4 text-neutral-400">
+          Ingresos netos
+        </td>
+
+        <td className="px-5 py-4 text-right font-medium text-emerald-300">
+          {format(financialData.netRevenue)}
+        </td>
+      </tr>
+
+      <tr>
+        <td className="px-5 py-4 text-neutral-400">
+          Ticket medio
+        </td>
+
+        <td className="px-5 py-4 text-right font-medium text-indigo-300">
+          {format(averageTicketSelected)}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
       </section>
 
       {/* ================= CHART ================= */}

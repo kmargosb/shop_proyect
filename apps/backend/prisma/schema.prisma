@@ -223,6 +223,7 @@ model Refund {
   stripeRefundId  String?          @unique
   amount          Int
   currency        String
+  type            RefundType       @default(CUSTOMER_RETURN)
   reason          RefundReason?
   note            String?
   reviewedAt      DateTime?
@@ -370,6 +371,8 @@ model OrderChangeRequest {
   Order          Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
+
+
 enum ProductCategory {
   T_SHIRTS
   SHIRTS
@@ -467,6 +470,7 @@ enum OrderEventType {
   ORDER_SHIPPED
   PAYMENT_FAILED
   ORDER_UPDATED
+  ORDER_ADJUSTED
   ORDER_DELIVERED
   CUSTOMER_REQUESTED_SIZE_CHANGE
   CUSTOMER_REQUESTED_COLOR_CHANGE
@@ -527,4 +531,9 @@ enum OrderChangeRequestType {
   SIZE
   COLOR
   PRODUCT
+}
+
+enum RefundType {
+  CUSTOMER_RETURN
+  ORDER_ADJUSTMENT
 }
