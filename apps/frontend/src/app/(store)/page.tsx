@@ -14,7 +14,7 @@ export default function Home() {
       <FeaturedBrands />
 
       {/* PRODUCTS */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-0 md:px-6 py-12 md:py-16">
         <ProductsView />
       </div>
 

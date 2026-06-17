@@ -35,7 +35,7 @@ export default function ProductCard({ product }: Props) {
     >
       {/* IMAGE */}
       <Link href={`/product/${product.id}`} className="block">
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative aspect-[4/5] overflow-hidden">
           <motion.div
             className="absolute inset-0"
             whileHover={{ scale: 1.05 }}
@@ -66,24 +66,24 @@ export default function ProductCard({ product }: Props) {
       </Link>
 
       {/* INFO */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 md:p-4 space-y-2 md:space-y-3">
         <div className="space-y-1">
           {product.brand?.name && (
-            <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+            <p className="text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-neutral-500">
               {product.brand.name}
             </p>
           )}
 
           <Link
-            href={`/product/${product.id}`}
-            className="block text-sm font-medium text-white hover:underline"
-          >
+  href={`/product/${product.id}`}
+  className="block text-xs md:text-sm font-medium text-white leading-tight line-clamp-2 min-h-[32px] md:min-h-[40px]"
+>
             {product.name}
           </Link>
         </div>
 
         <div className="space-y-1">
-          <p className="text-lg font-semibold">
+          <p className="text-base md:text-lg font-semibold">
             €{(product.price / 100).toFixed(2)}
           </p>
 
@@ -99,7 +99,7 @@ export default function ProductCard({ product }: Props) {
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: outOfStock ? 1 : 1.02 }}
             transition={{ duration: 0.15 }}
-            className="w-full bg-white text-black py-2 rounded-md font-medium text-center hover:bg-neutral-200"
+            className="w-full bg-white text-black py-1.5 rounded-md font-medium text-xs text-center hover:bg-neutral-200"
           >
             Ver producto
           </motion.div>

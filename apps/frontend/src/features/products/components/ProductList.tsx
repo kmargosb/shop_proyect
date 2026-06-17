@@ -37,12 +37,30 @@ export default function ProductList({ brand }: Props) {
   const skeletons = Array.from({ length: 8 });
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-6">
-      <h1 className="text-4xl font-bold mb-10">
-        {brand ? `Productos de ${brand}` : "Latest Drops"}
-      </h1>
+    <section className="w-full px-2 md:px-6 py-6">
+      <div className="mb-12 flex items-end justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
+            New Collection
+          </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <h1 className="mt-3 text-4xl font-bold text-white md:text-5xl">
+            {brand ? `Productos de ${brand}` : "Latest Drops"}
+          </h1>
+
+          <p className="mt-3 text-sm text-neutral-400 md:text-base">
+            Las últimas piezas seleccionadas para esta temporada.
+          </p>
+        </div>
+
+        <div className="hidden md:block text-right">
+          <p className="text-sm text-neutral-500">
+            {products.length} productos
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
         {loading
           ? skeletons.map((_, i) => (
               <div
