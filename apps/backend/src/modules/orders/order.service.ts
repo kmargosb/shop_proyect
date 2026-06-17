@@ -765,34 +765,63 @@ export async function updateOrderAdmin(
             }
           }
         } else {
-          /* =========================
-              DIFFERENT VARIANT
-        ========================= */
-          if (oldVariant) {
+          const oldQty = currentItem.quantity;
+          const newQty = item.quantity;
+
+          if (
+            order.status === "PENDING" ||
+            order.status === "PAYMENT_PROCESSING"
+          ) {
+            if (oldVariant) {
+              await tx.productVariant.update({
+                where: {
+                  id: oldVariant.id,
+                },
+                data: {
+                  reservedStock: {
+                    decrement: oldQty,
+                  },
+                },
+              });
+            }
+
             await tx.productVariant.update({
               where: {
-                id: oldVariant.id,
+                id: newVariant.id,
               },
-
               data: {
                 reservedStock: {
-                  decrement: currentItem.quantity,
+                  increment: newQty,
                 },
               },
             });
           }
 
-          await tx.productVariant.update({
-            where: {
-              id: newVariant.id,
-            },
+          if (order.status === "PAID") {
+            if (oldVariant) {
+              await tx.productVariant.update({
+                where: {
+                  id: oldVariant.id,
+                },
+                data: {
+                  stock: {
+                    increment: oldQty,
+                  },
+                },
+              });
+            }
 
-            data: {
-              reservedStock: {
-                increment: item.quantity,
+            await tx.productVariant.update({
+              where: {
+                id: newVariant.id,
               },
-            },
-          });
+              data: {
+                stock: {
+                  decrement: newQty,
+                },
+              },
+            });
+          }
         }
 
         /* =========================
