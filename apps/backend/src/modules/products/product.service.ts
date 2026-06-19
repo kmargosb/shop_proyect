@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import cloudinary from "@/common/utils/cloudinary";
 import { AppError } from "@/common/errors/AppError";
+import { getIO } from "@/lib/socket";
 
 /* ===============================
    HELPERS
@@ -442,6 +443,10 @@ export async function updateProduct(
         variants: true,
       },
     });
+
+    getIO().emit("productUpdated", {
+  productId: updated.id,
+});
 
     return updated;
   });

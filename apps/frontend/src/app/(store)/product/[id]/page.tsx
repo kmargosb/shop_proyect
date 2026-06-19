@@ -1,75 +1,96 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import RelatedProducts from "@/features/products/components/RelatedProducts";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { useCart } from "@/features/cart/CartContext";
 import { apiFetch } from "@/shared/lib/api";
+import { socket } from "@/shared/lib/socket";
 
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
-
   const { addItem } = useCart();
-
   const [product, setProduct] = useState<any>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-
   const [loading, setLoading] = useState(true);
 
   /* ===============================
      LOAD PRODUCT
   =============================== */
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      const res = await apiFetch(`/products/${id}`);
+  const loadProduct = async () => {
+    const res = await apiFetch(`/products/${id}`);
 
-      if (!res || !res.ok) {
-        console.error("Product fetch failed");
-        return;
-      }
-
-      const data = await res.json();
-
-      setProduct(data);
-
-      if (data.variants?.length) {
-        const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
-
-        const COLOR_ORDER = ["White", "Black"];
-
-        const sortedVariants = [...data.variants].sort((a: any, b: any) => {
-          const colorDiff =
-            COLOR_ORDER.indexOf(a.color) - COLOR_ORDER.indexOf(b.color);
-
-          if (colorDiff !== 0) {
-            return colorDiff;
-          }
-
-          return SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size);
-        });
-
-        const firstAvailableVariant =
-          sortedVariants.find(
-            (variant: any) => variant.stock - variant.reservedStock > 0,
-          ) ?? sortedVariants[0];
-
-        setSelectedSize(firstAvailableVariant.size);
-        setSelectedColor(firstAvailableVariant.color);
-      }
-
+    if (!res || !res.ok) {
       setLoading(false);
+      return;
+    }
+
+    const data = await res.json();
+
+    setProduct(data);
+
+    if (data.variants?.length) {
+      const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
+
+      const COLOR_ORDER = [
+        "WHITE",
+        "BLACK",
+        "CREAM",
+        "BEIGE",
+        "GREY",
+        "GRAY",
+        "BROWN",
+        "GREEN",
+        "BLUE",
+        "RED",
+      ];
+
+      const sortedVariants = [...data.variants].sort((a: any, b: any) => {
+        const colorDiff =
+          COLOR_ORDER.indexOf(a.color?.toUpperCase()) -
+          COLOR_ORDER.indexOf(b.color?.toUpperCase());
+
+        if (colorDiff !== 0) return colorDiff;
+
+        return SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size);
+      });
+
+      const firstAvailableVariant =
+        sortedVariants.find(
+          (variant: any) => variant.stock - variant.reservedStock > 0,
+        ) ?? sortedVariants[0];
+
+      setSelectedSize(firstAvailableVariant.size);
+      setSelectedColor(firstAvailableVariant.color);
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadProduct();
+  }, [id]);
+
+  useEffect(() => {
+    const handleProductUpdated = (payload: { productId: string }) => {
+      if (payload.productId === id) {
+        loadProduct();
+      }
     };
 
-    loadProduct();
+    socket.on("productUpdated", handleProductUpdated);
+
+    return () => {
+      socket.off("productUpdated", handleProductUpdated);
+    };
   }, [id]);
 
   if (loading) {
@@ -106,13 +127,24 @@ export default function ProductPage() {
     new Set<string>(variants.map((v: any) => String(v.size))),
   ).sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
 
-  const COLOR_ORDER = ["White", "Black"];
+  const COLOR_ORDER = [
+    "WHITE",
+    "BLACK",
+    "CREAM",
+    "BEIGE",
+    "GREY",
+    "GRAY",
+    "BROWN",
+    "GREEN",
+    "BLUE",
+    "RED",
+  ];
 
   const colors = Array.from(
     new Set<string>(variants.map((v: any) => String(v.color))),
   ).sort((a, b) => {
-    const ai = COLOR_ORDER.indexOf(a);
-    const bi = COLOR_ORDER.indexOf(b);
+    const ai = COLOR_ORDER.indexOf(a.toUpperCase());
+    const bi = COLOR_ORDER.indexOf(b.toUpperCase());
 
     if (ai === -1 && bi === -1) {
       return a.localeCompare(b);
@@ -240,6 +272,12 @@ export default function ProductPage() {
       =============================== */}
 
         <div className="space-y-6">
+          {product.brand?.name && (
+            <p className="text-m uppercase tracking-[0.3em] text-neutral-500">
+              {product.brand.name}
+            </p>
+          )}
+
           <h1 className="text-3xl font-bold">{product.name}</h1>
 
           <p className="text-2xl font-semibold">
@@ -280,24 +318,85 @@ export default function ProductPage() {
                 Color
               </p>
 
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => {
-                      setSelectedColor(color);
-                      setQuantity(1);
-                    }}
-                    className={`h-11 min-w-[52px] rounded-xl border px-4 cursor-pointer transition-all duration-200
-          ${
-            selectedColor === color
-              ? "border-white bg-neutral-900 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]"
-              : "border-neutral-700 hover:border-neutral-500 text-neutral-700"
-          }`}
-                  >
-                    {color}
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-5">
+                {colors.map((color) => {
+                  const colorMap: Record<string, string> = {
+                    WHITE: "bg-white border border-neutral-500",
+                    BLACK: "bg-black",
+                    CREAM: "bg-yellow-50",
+                    BEIGE: "bg-stone-200",
+                    GREY: "bg-neutral-500",
+                    GRAY: "bg-neutral-500",
+                    BROWN: "bg-amber-800",
+                    GREEN: "bg-green-700",
+                    BLUE: "bg-blue-700",
+                    RED: "bg-red-700",
+                  };
+
+                  const swatch =
+                    colorMap[color.toUpperCase()] ?? "bg-neutral-400";
+
+                  const active = selectedColor === color;
+
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => {
+                        if (selectedColor === color) return;
+                        setSelectedColor(color);
+                        setQuantity(1);
+
+                        const variantsForColor = variants
+                          .filter((v: any) => v.color === color)
+                          .sort((a: any, b: any) => {
+                            const SIZE_ORDER = [
+                              "XS",
+                              "S",
+                              "M",
+                              "L",
+                              "XL",
+                              "XXL",
+                            ];
+
+                            return (
+                              SIZE_ORDER.indexOf(a.size) -
+                              SIZE_ORDER.indexOf(b.size)
+                            );
+                          });
+
+                        const firstAvailable =
+                          variantsForColor.find(
+                            (v: any) => v.stock - v.reservedStock > 0,
+                          ) ?? variantsForColor[0];
+
+                        if (firstAvailable) {
+                          setSelectedSize(firstAvailable.size);
+                        }
+                      }}
+                      className="flex flex-col items-center gap-2 cursor-pointer"
+                    >
+                      <span
+                        className={`
+                          flex items-center justify-center
+                          h-8 w-8 rounded-full
+                          transition-all duration-200
+                          ${active ? "border-black scale-140" : "border-neutral-400"}`}
+                      >
+                        <span className={`h-5 w-5 rounded-full ${swatch}`} />
+                      </span>
+
+                      <span
+                        className={`text-xs uppercase tracking-wide ${
+                          active
+                            ? "text-black font-semibold"
+                            : "text-neutral-400"
+                        }`}
+                      >
+                        {color}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -346,7 +445,15 @@ export default function ProductPage() {
             <Button
               onClick={handleAddToCart}
               disabled={outOfStock}
-              className="bg-white text-black hover:bg-neutral-200 cursor-pointer disabled:bg-neutral-700 disabled:text-neutral-400"
+              className="
+    bg-white text-black
+    hover:bg-neutral-200
+    shadow-sm hover:shadow-md
+    transition-all
+    cursor-pointer
+    disabled:bg-neutral-700
+    disabled:text-neutral-400
+  "
             >
               Añadir al carrito
             </Button>
@@ -355,7 +462,11 @@ export default function ProductPage() {
               onClick={handleBuyNow}
               disabled={outOfStock}
               variant="outline"
-              className="cursor-pointer"
+              className="
+    cursor-pointer
+    shadow-sm hover:shadow-md
+    transition-all
+  "
             >
               Comprar ahora
             </Button>

@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/shared/lib/api";
+import { socket } from "@/shared/lib/socket";
 import {
   createContext,
   useContext,
@@ -7,8 +9,6 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-
-import { apiFetch } from "@/shared/lib/api";
 
 const CART_KEY = "cartId";
 
@@ -147,6 +147,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     init();
+  }, []);
+
+  useEffect(() => {
+    const handleProductUpdated = async () => {
+      const cartId = localStorage.getItem(CART_KEY);
+
+      if (!cartId) return;
+
+      await fetchCart(cartId);
+    };
+
+    socket.on("productUpdated", handleProductUpdated);
+
+    return () => {
+      socket.off("productUpdated", handleProductUpdated);
+    };
   }, []);
 
   /* ================= ADD ITEM ================= */

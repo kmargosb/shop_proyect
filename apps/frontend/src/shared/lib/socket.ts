@@ -16,6 +16,7 @@ type ServerToClientEvents = {
   orderUpdated: (payload: OrderUpdatedPayload) => void;
   orderCancelled: (payload: OrderUpdatedPayload) => void;
   orderPaid: (payload: OrderUpdatedPayload) => void;
+  productUpdated: (payload: {productId: string}) => void;
 };
 
 type ClientToServerEvents = Record<string, never>;

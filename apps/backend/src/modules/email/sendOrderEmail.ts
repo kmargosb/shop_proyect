@@ -6,6 +6,7 @@ import {
   helpRequestTemplate,
   customerReplyTemplate,
 } from "./email.templates";
+
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
 
 export async function sendOrderConfirmationEmail(orderId: string) {

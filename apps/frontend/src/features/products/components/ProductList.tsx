@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProductCard from "./ProductCard";
 import { Skeleton } from "@/shared/ui/skeleton";
-
-import { productsApi } from "@/features/products/api/products.api"; // ✅ NEW
-
+import { productsApi } from "@/features/products/api/products.api";
+import { socket } from "@/shared/lib/socket";
 import type { Product } from "@/types/product";
+import ProductCard from "./ProductCard";
 
 interface Props {
   brand?: string;
@@ -16,22 +15,34 @@ export default function ProductList({ brand }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = brand
-          ? await productsApi.getByBrand(brand)
-          : await productsApi.getAll();
+  const loadProducts = async () => {
+    try {
+      const data = brand
+        ? await productsApi.getByBrand(brand)
+        : await productsApi.getAll();
 
-        setProducts(data);
-      } catch (error) {
-        console.error("Error loading products:", error);
-      } finally {
-        setLoading(false);
-      }
+      setProducts(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, [brand]);
+
+  useEffect(() => {
+    const handleProductUpdated = () => {
+      loadProducts();
     };
 
-    loadProducts();
+    socket.on("productUpdated", handleProductUpdated);
+
+    return () => {
+      socket.off("productUpdated", handleProductUpdated);
+    };
   }, [brand]);
 
   const skeletons = Array.from({ length: 8 });

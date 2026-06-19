@@ -83,7 +83,7 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         <div className="space-y-1">
-          <p className="text-base md:text-lg font-semibold">
+          <p className="text-white md:text-lg font-semibold">
             €{(product.price / 100).toFixed(2)}
           </p>
 

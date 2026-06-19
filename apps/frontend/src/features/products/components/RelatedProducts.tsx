@@ -33,10 +33,16 @@ export default function RelatedProducts({ productId }: Props) {
   if (loading || products.length === 0) return null;
 
   return (
-    <section className="mt-24">
-      <h2 className="text-2xl font-semibold mb-6">También te puede gustar</h2>
+    <section className="mt-20 border-t border-neutral-800 pt-16">
+      <div className="mb-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
+          Recommended
+        </p>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <h2 className="mt-2 text-3xl font-bold">You may also like</h2>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-6">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
