@@ -22,6 +22,7 @@ model User {
   carts         Cart[]
   orders        Order[]
   refreshTokens RefreshToken[]
+  wishlistItems WishlistItem[]
 }
 
 model Brand {
@@ -47,6 +48,7 @@ model Product {
   brand       Brand?           @relation(fields: [brandId], references: [id])
   images      ProductImage[]
   variants    ProductVariant[]
+  wishlistItems WishlistItem[]
 
   @@index([brandId])
 }
@@ -76,6 +78,19 @@ model ProductVariant {
   product       Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
 }
 
 model Cart {

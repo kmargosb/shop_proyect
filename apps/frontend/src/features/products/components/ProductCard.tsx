@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Heart } from "lucide-react";
+import { useWishlist } from "@/features/wishlist/WishListContext";
 import type { Product } from "@/types/product";
 
 type Props = {
@@ -10,6 +12,10 @@ type Props = {
 };
 
 export default function ProductCard({ product }: Props) {
+  const { isWishlisted, toggleWishlist } = useWishlist();
+
+  const wishlisted = isWishlisted(product.id);
+
   const availableStock =
     product.variants?.reduce(
       (total, variant) => total + (variant.stock ?? 0),
@@ -22,7 +28,7 @@ export default function ProductCard({ product }: Props) {
     product.images?.find((img) => img.isPrimary)?.url ??
     product.images?.[0]?.url ??
     "/placeholder-product.png";
-    
+
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
 
   return (
@@ -36,6 +42,22 @@ export default function ProductCard({ product }: Props) {
       {/* IMAGE */}
       <Link href={`/product/${product.id}`} className="block">
         <div className="relative aspect-[4/5] overflow-hidden">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              toggleWishlist(product.id);
+            }}
+            className="absolute right-3 top-3 z-20 rounded-full bg-black/60 p-2 backdrop-blur"
+          >
+            <Heart
+              size={18}
+              className={
+                wishlisted ? "fill-rose-500 text-rose-500" : "text-white"
+              }
+            />
+          </button>
           <motion.div
             className="absolute inset-0"
             whileHover={{ scale: 1.05 }}
@@ -75,9 +97,9 @@ export default function ProductCard({ product }: Props) {
           )}
 
           <Link
-  href={`/product/${product.id}`}
-  className="block text-xs md:text-sm font-medium text-white leading-tight line-clamp-2 min-h-[32px] md:min-h-[40px]"
->
+            href={`/product/${product.id}`}
+            className="block text-xs md:text-sm font-medium text-white leading-tight line-clamp-2 min-h-[32px] md:min-h-[40px]"
+          >
             {product.name}
           </Link>
         </div>

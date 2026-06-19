@@ -22,32 +22,17 @@ export const AbandonedCheckoutService = {
     for (const order of orders) {
       const ageMinutes = (now - order.createdAt.getTime()) / (1000 * 60);
 
-      console.log(
-  "📧 CHECK",
-  order.id,
-  order.status,
-  "stage:",
-  order.abandonedEmailStage,
-  "age:",
-  ageMinutes,
-);
-
       /* =============================
          EMAIL 1 → 1 hour
       ============================= */
 
       if (ageMinutes > 10 && order.abandonedEmailStage === 0) {
-       
-    console.log("🚀 EMAIL 1 TRIGGERED", order.id);
-       
         const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
         await sendEmail({
           to: order.email,
           subject: "You forgot something in your cart 🛒",
           html: abandonedCheckoutEmail1Template(order.fullName, orderUrl),
         });
-
-    console.log("✅ EMAIL 1 SENT", order.id);
 
         await prisma.order.update({
           where: { id: order.id },
@@ -62,7 +47,7 @@ export const AbandonedCheckoutService = {
       ============================= */
 
       if (ageMinutes > 1440 && order.abandonedEmailStage === 1) {
-        const orderUrl =`${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
+        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
         await sendEmail({
           to: order.email,
           subject: "Your cart is still waiting 🛍",
@@ -82,7 +67,7 @@ export const AbandonedCheckoutService = {
       ============================= */
 
       if (ageMinutes > 2880 && order.abandonedEmailStage === 2) {
-        const orderUrl =`${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
+        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
         await sendEmail({
           to: order.email,
           subject: "Last chance to complete your order",

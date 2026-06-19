@@ -9,6 +9,8 @@ import { Button } from "@/shared/ui/button";
 import { useCart } from "@/features/cart/CartContext";
 import { apiFetch } from "@/shared/lib/api";
 import { socket } from "@/shared/lib/socket";
+import { Heart } from "lucide-react";
+import { useWishlist } from "@/features/wishlist/WishListContext";
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -20,6 +22,7 @@ export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [loading, setLoading] = useState(true);
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   /* ===============================
      LOAD PRODUCT
@@ -278,7 +281,24 @@ export default function ProductPage() {
             </p>
           )}
 
-          <h1 className="text-3xl font-bold">{product.name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-bold">{product.name}</h1>
+
+            <button
+              onClick={() => toggleWishlist(product.id)}
+              title={isWishlisted(product.id) ? "Saved" : "Save for later"}
+              className="rounded-full p-2 transition hover:bg-white/5"
+            >
+              <Heart
+                size={22}
+                className={
+                  isWishlisted(product.id)
+                    ? "fill-rose-500 text-rose-500"
+                    : "text-neutral-500"
+                }
+              />
+            </button>
+          </div>
 
           <p className="text-2xl font-semibold">
             €{(product.price / 100).toFixed(2)}

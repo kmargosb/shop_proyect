@@ -19,6 +19,7 @@ import cartRoutes from "@/modules/cart/cart.routes"
 import checkoutRoutes from "@/modules/checkout/checkout.routes"
 import brandRoutes from "@/modules/brands/brands.routes"
 import { allowedOrigins } from "@/config/origins"
+import wishlistRoutes from "@/modules/wishlist/wishlist.routes";
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/shipping", shippingRoutes);
 app.use("/coupons", couponRoutes);
 app.use("/cart", cartRoutes);
 app.use("/checkout", checkoutRoutes);
+app.use("/wishlist", wishlistRoutes);
 app.use("/api/auth", authRoutes);
 
 
