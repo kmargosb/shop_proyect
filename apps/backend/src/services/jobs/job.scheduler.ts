@@ -9,7 +9,7 @@ export function startJobScheduler() {
   console.log("🟢 Job Scheduler started");
 
   /* ===============================
-     ORDER CLEANUP (🔥 CRÍTICO)
+     ORDER CLEANUP
   =============================== */
 
   cron.schedule("* * * * *", async () => {
@@ -40,15 +40,15 @@ export function startJobScheduler() {
      ABANDONED CHECKOUT (MARKETING)
   =============================== */
 
-  cron.schedule("*/30 * * * *", async () => {
-    console.log("🛒 Checking abandoned checkouts");
+  cron.schedule("* * * * *", async () => {
+  console.log("🛒 Checking abandoned checkouts");
 
-    try {
-      await AbandonedCheckoutService.processAbandonedOrders();
-    } catch (error) {
-      console.error("❌ Abandoned checkout error:", error);
-    }
-  });
+  try {
+    await AbandonedCheckoutService.processAbandonedOrders();
+  } catch (error) {
+    console.error("❌ Abandoned checkout error:", error);
+  }
+});
 
   /* ===============================
      INVENTORY CONSISTENCY GUARD

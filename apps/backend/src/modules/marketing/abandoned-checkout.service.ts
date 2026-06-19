@@ -11,7 +11,9 @@ export const AbandonedCheckoutService = {
   async processAbandonedOrders() {
     const orders = await prisma.order.findMany({
       where: {
-        status: OrderStatus.PENDING,
+        status: {
+          in: [OrderStatus.PENDING, OrderStatus.PAYMENT_PROCESSING],
+        },
       },
     });
 
@@ -24,9 +26,7 @@ export const AbandonedCheckoutService = {
          EMAIL 1 → 1 hour
       ============================= */
 
-      
-
-      if (ageMinutes > 60 && order.abandonedEmailStage === 0) {
+      if (ageMinutes > 10 && order.abandonedEmailStage === 0) {
         const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
         await sendEmail({
           to: order.email,
@@ -47,7 +47,7 @@ export const AbandonedCheckoutService = {
       ============================= */
 
       if (ageMinutes > 1440 && order.abandonedEmailStage === 1) {
-        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
+        const orderUrl =`${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
         await sendEmail({
           to: order.email,
           subject: "Your cart is still waiting 🛍",
@@ -67,7 +67,7 @@ export const AbandonedCheckoutService = {
       ============================= */
 
       if (ageMinutes > 2880 && order.abandonedEmailStage === 2) {
-        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
+        const orderUrl =`${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
         await sendEmail({
           to: order.email,
           subject: "Last chance to complete your order",

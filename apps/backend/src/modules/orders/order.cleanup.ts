@@ -11,9 +11,8 @@ export async function cleanupExpiredOrders() {
 
   const now = Date.now();
 
-  const pendingLimit = new Date(now - 1 * 60 * 1000);
-
-  const processingLimit = new Date(now - 1 * 60 * 1000);
+  const pendingLimit = new Date(now - 20 * 60 * 1000);
+  const processingLimit = new Date(now - 20 * 60 * 1000);
 
   /* ===============================
      FIND EXPIRED ORDERS

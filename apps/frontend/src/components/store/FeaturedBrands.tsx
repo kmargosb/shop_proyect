@@ -27,8 +27,6 @@ export default async function FeaturedBrands() {
 
   const brands = res && res.ok ? await res.json() : [];
 
-  console.log(brands);
-
   if (!brands.length) return null;
 
   return (
