@@ -110,7 +110,7 @@ export default function Navbar() {
                 onClick={() => setOpenDropdown((prev) => !prev)}
                 className="text-sm text-black transition hover:opacity-70"
               >
-                Hola, {user?.email?.split("@")[0]}
+                Hello, {user?.email?.split("@")[0]}
               </button>
 
               {/* DROPDOWN */}
@@ -127,7 +127,7 @@ export default function Navbar() {
 
                 <div className="border-b border-black/5 p-5">
                   <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">
-                    Cuenta
+                    Account
                   </p>
 
                   <p className="mt-2 text-lg font-semibold text-black">
@@ -145,7 +145,7 @@ export default function Navbar() {
                     onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>Mi cuenta</span>
+                    <span>My Account</span>
 
                     <span className="text-neutral-400">→</span>
                   </Link>
@@ -155,7 +155,7 @@ export default function Navbar() {
                     onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>Pedidos</span>
+                    <span>Orders</span>
 
                     <span className="text-neutral-400">→</span>
                   </Link>
@@ -165,7 +165,7 @@ export default function Navbar() {
                     onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>Direcciones</span>
+                    <span>Addresses</span>
 
                     <span className="text-neutral-400">→</span>
                   </Link>
@@ -185,7 +185,7 @@ export default function Navbar() {
                     onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>Seguridad</span>
+                    <span>Security</span>
 
                     <span className="text-neutral-400">→</span>
                   </Link>
@@ -195,7 +195,7 @@ export default function Navbar() {
                     onClick={() => setOpenDropdown(false)}
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
-                    <span>Configuración</span>
+                    <span>Configurations</span>
 
                     <span className="text-neutral-400">→</span>
                   </Link>
@@ -205,7 +205,7 @@ export default function Navbar() {
                       <Link
                         href="/dashboard"
                         onClick={() => setOpenDropdown(false)}
-                        className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/20"
+                        className="flex items-center justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-600 transition hover:bg-emerald-400/20"
                       >
                         <span>Admin panel</span>
 
@@ -236,7 +236,7 @@ export default function Navbar() {
                     }}
                     className="w-full rounded-2xl px-4 py-3 text-left text-sm text-red-500 transition hover:bg-red-50"
                   >
-                    Cerrar sesión
+                    Logout
                   </button>
                 </div>
               </div>

@@ -123,7 +123,7 @@ export default function ProductCard({ product }: Props) {
             transition={{ duration: 0.15 }}
             className="w-full bg-white text-black py-1.5 rounded-md font-medium text-xs text-center hover:bg-neutral-200"
           >
-            Ver producto
+            View product
           </motion.div>
         </Link>
       </div>

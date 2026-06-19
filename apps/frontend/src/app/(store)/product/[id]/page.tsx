@@ -177,14 +177,14 @@ export default function ProductPage() {
   let stockBadge = null;
 
   if (outOfStock) {
-    stockBadge = <span className="text-red-500 font-medium">Agotado</span>;
+    stockBadge = <span className="text-red-500 font-medium">Sold Out</span>;
   } else if (availableStock <= 5) {
     stockBadge = (
-      <span className="text-amber-400 font-medium">Últimas unidades</span>
+      <span className="text-amber-400 font-medium">Low stock</span>
     );
   } else {
     stockBadge = (
-      <span className="text-emerald-500 font-medium">Disponible</span>
+      <span className="text-emerald-500 font-medium">In Stock</span>
     );
   }
 
@@ -281,8 +281,10 @@ export default function ProductPage() {
             </p>
           )}
 
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
+          <div className="flex items-center gap-3">
+  <h1 className="text-3xl font-bold">
+    {product.name}
+  </h1>
 
             <button
               onClick={() => toggleWishlist(product.id)}
@@ -432,7 +434,7 @@ export default function ProductPage() {
         =============================== */}
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-neutral-400">Cantidad</span>
+            <span className="text-sm text-neutral-400">Quantity</span>
 
             <div className="flex items-center border border-neutral-700 rounded-md">
               <button
@@ -475,7 +477,7 @@ export default function ProductPage() {
     disabled:text-neutral-400
   "
             >
-              Añadir al carrito
+              Add to cart
             </Button>
 
             <Button
@@ -488,7 +490,7 @@ export default function ProductPage() {
     transition-all
   "
             >
-              Comprar ahora
+              Buy now
             </Button>
           </div>
         </div>

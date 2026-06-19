@@ -59,7 +59,8 @@ export default function CreateOrderForm() {
   const [showLogin, setShowLogin] = useState(false);
 
   const [form, setForm] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     addressLine1: "",
@@ -75,7 +76,19 @@ export default function CreateOrderForm() {
     const saved = localStorage.getItem("checkoutData");
     if (saved) {
       try {
-        setForm(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+
+setForm({
+  firstName: parsed.firstName ?? "",
+  lastName: parsed.lastName ?? "",
+  email: parsed.email ?? "",
+  phone: parsed.phone ?? "",
+  addressLine1: parsed.addressLine1 ?? "",
+  addressLine2: parsed.addressLine2 ?? "",
+  city: parsed.city ?? "",
+  postalCode: parsed.postalCode ?? "",
+  country: parsed.country ?? "ES",
+});
       } catch {
         localStorage.removeItem("checkoutData");
       }
@@ -108,10 +121,17 @@ export default function CreateOrderForm() {
 
         setSelectedAddressId(first.id);
 
+        const [firstName = "", ...lastParts] = (first.fullName ?? "").split(
+          " ",
+        );
+
         setForm((prev) => ({
           ...prev,
           email: meData.user?.email || prev.email,
-          fullName: first.fullName,
+
+          firstName,
+          lastName: lastParts.join(" "),
+
           phone: first.phone,
           addressLine1: first.addressLine1,
           addressLine2: first.addressLine2 || "",
@@ -183,7 +203,8 @@ export default function CreateOrderForm() {
   /* ================= VALID ================= */
 
   const isValid =
-    form.fullName &&
+    form.firstName &&
+    form.lastName &&
     form.email &&
     form.phone &&
     form.addressLine1 &&
@@ -208,7 +229,16 @@ export default function CreateOrderForm() {
         body: JSON.stringify({
           cartId,
           method: "CARD",
-          ...form,
+
+          fullName: `${form.firstName} ${form.lastName}`.trim(),
+
+          email: form.email,
+          phone: form.phone,
+          addressLine1: form.addressLine1,
+          addressLine2: form.addressLine2,
+          city: form.city,
+          postalCode: form.postalCode,
+          country: form.country,
         }),
       });
 
@@ -320,9 +350,16 @@ export default function CreateOrderForm() {
                   onClick={() => {
                     setSelectedAddressId(addr.id);
 
+                    const [firstName = "", ...lastParts] = (
+                      addr.fullName ?? ""
+                    ).split(" ");
+
                     setForm((prev) => ({
                       ...prev,
-                      fullName: addr.fullName ?? "",
+
+                      firstName,
+                      lastName: lastParts.join(" "),
+
                       phone: addr.phone ?? "",
                       addressLine1: addr.addressLine1 ?? "",
                       addressLine2: addr.addressLine2 ?? "",
@@ -384,12 +421,21 @@ export default function CreateOrderForm() {
 
         {/* FORM */}
         <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            name="fullName"
-            value={form.fullName}
-            onChange={handleChange}
-            placeholder="Nombre completo"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              name="firstName"
+              value={form.firstName}
+              onChange={handleChange}
+              placeholder="First name"
+            />
+
+            <Input
+              name="lastName"
+              value={form.lastName}
+              onChange={handleChange}
+              placeholder="Last name"
+            />
+          </div>
           <Input
             name="email"
             value={form.email}

@@ -23,15 +23,14 @@ export default function HomeCTA() {
         {/* TITLE */}
 
         <h2 className="mt-8 text-4xl font-bold tracking-tight text-white md:text-6xl">
-          Descubre tu estilo
+          Find your vibe
         </h2>
 
         {/* DESCRIPTION */}
 
         <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-400 md:text-lg">
-          Diseño minimalista, inspiración urbana y una
-          experiencia creada para quienes buscan algo
-          diferente.
+          Minimalist design, urban inspiration, and an experience created for
+          those seeking something different.
         </p>
 
         {/* ACTIONS */}
@@ -53,7 +52,7 @@ export default function HomeCTA() {
               hover:bg-neutral-200
             "
           >
-            Explorar tienda
+            Shop now
           </Link>
 
           {/* SECONDARY */}
@@ -73,7 +72,7 @@ export default function HomeCTA() {
               hover:bg-white/[0.06]
             "
           >
-            Ver marcas
+            View all brands
           </Link>
         </div>
 

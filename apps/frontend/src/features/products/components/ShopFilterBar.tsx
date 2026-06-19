@@ -26,7 +26,7 @@ export default function ShopFilterBar({
         className="flex items-center gap-2 px-4 py-2 rounded-full border border-neutral-700 bg-neutral-900 text-white whitespace-nowrap"
       >
         <SlidersHorizontal size={16} />
-        Filtros {totalCount > 0 && `(${totalCount})`}
+        Filters {totalCount > 0 && `(${totalCount})`}
       </button>
 
       {/* BRAND */}
@@ -34,7 +34,7 @@ export default function ShopFilterBar({
         onClick={() => onOpenFilter("brand")}
         className="px-4 py-2 rounded-full border border-neutral-700 bg-neutral-900 text-white whitespace-nowrap"
       >
-        Marca {brandCount > 0 && `(${brandCount})`}
+        Brand {brandCount > 0 && `(${brandCount})`}
       </button>
 
       {/* PRICE */}
@@ -42,7 +42,7 @@ export default function ShopFilterBar({
         onClick={() => onOpenFilter("price")}
         className="px-4 py-2 rounded-full border border-neutral-700 bg-neutral-900 text-white whitespace-nowrap"
       >
-        Precio {priceCount > 0 && `(${priceCount})`}
+        Price {priceCount > 0 && `(${priceCount})`}
       </button>
 
       {/* CATEGORY */}
@@ -50,7 +50,7 @@ export default function ShopFilterBar({
         onClick={() => onOpenFilter("category")}
         className="px-4 py-2 rounded-full border border-neutral-700 bg-neutral-900 text-white whitespace-nowrap"
       >
-        Categoría
+        Category
       </button>
     </div>
   );
