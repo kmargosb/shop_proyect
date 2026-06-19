@@ -1,47 +1,45 @@
-import { prisma } from "@/lib/prisma"
-import { OrderStatus } from "@prisma/client"
-import { sendEmail } from "@/modules/email/email.service"
+import { prisma } from "@/lib/prisma";
+import { OrderStatus } from "@prisma/client";
+import { sendEmail } from "@/modules/email/email.service";
+import {
+  abandonedCheckoutEmail1Template,
+  abandonedCheckoutEmail2Template,
+  abandonedCheckoutEmail3Template,
+} from "@/modules/email/email.templates";
 
 export const AbandonedCheckoutService = {
-
   async processAbandonedOrders() {
-
     const orders = await prisma.order.findMany({
       where: {
-        status: OrderStatus.PENDING
-      }
-    })
+        status: OrderStatus.PENDING,
+      },
+    });
 
-    const now = Date.now()
+    const now = Date.now();
 
     for (const order of orders) {
-
-      const ageMinutes =
-        (now - order.createdAt.getTime()) / (1000 * 60)
+      const ageMinutes = (now - order.createdAt.getTime()) / (1000 * 60);
 
       /* =============================
          EMAIL 1 → 1 hour
       ============================= */
 
-      if (ageMinutes > 60 && order.abandonedEmailStage === 0) {
+      
 
+      if (ageMinutes > 60 && order.abandonedEmailStage === 0) {
+        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
         await sendEmail({
           to: order.email,
           subject: "You forgot something in your cart 🛒",
-          html: `
-            <h2>Hello ${order.fullName}</h2>
-            <p>You left items in your cart.</p>
-            <p>Complete your purchase before they sell out.</p>
-          `
-        })
+          html: abandonedCheckoutEmail1Template(order.fullName, orderUrl),
+        });
 
         await prisma.order.update({
           where: { id: order.id },
           data: {
-            abandonedEmailStage: 1
-          }
-        })
-
+            abandonedEmailStage: 1,
+          },
+        });
       }
 
       /* =============================
@@ -49,24 +47,19 @@ export const AbandonedCheckoutService = {
       ============================= */
 
       if (ageMinutes > 1440 && order.abandonedEmailStage === 1) {
-
+        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
         await sendEmail({
           to: order.email,
           subject: "Your cart is still waiting 🛍",
-          html: `
-            <h2>Hello ${order.fullName}</h2>
-            <p>Your items are still in your cart.</p>
-            <p>Checkout before they run out!</p>
-          `
-        })
+          html: abandonedCheckoutEmail2Template(order.fullName, orderUrl),
+        });
 
         await prisma.order.update({
           where: { id: order.id },
           data: {
-            abandonedEmailStage: 2
-          }
-        })
-
+            abandonedEmailStage: 2,
+          },
+        });
       }
 
       /* =============================
@@ -74,28 +67,20 @@ export const AbandonedCheckoutService = {
       ============================= */
 
       if (ageMinutes > 2880 && order.abandonedEmailStage === 2) {
-
+        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
         await sendEmail({
           to: order.email,
           subject: "Last chance to complete your order",
-          html: `
-            <h2>Hello ${order.fullName}</h2>
-            <p>Your cart is about to expire.</p>
-            <p>Complete your order now!</p>
-          `
-        })
+          html: abandonedCheckoutEmail3Template(order.fullName, orderUrl),
+        });
 
         await prisma.order.update({
           where: { id: order.id },
           data: {
-            abandonedEmailStage: 3
-          }
-        })
-
+            abandonedEmailStage: 3,
+          },
+        });
       }
-
     }
-
-  }
-
-}
+  },
+};

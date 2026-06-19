@@ -523,3 +523,117 @@ export function refundCompletedTemplate(
     </div>
   `;
 }
+
+export function abandonedCheckoutEmail1Template(
+  customerName: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+
+      <h1>Tu pedido sigue esperándote 🛒</h1>
+
+      <p>Hola ${customerName},</p>
+
+      <p>
+        Hemos guardado tu pedido para que puedas completarlo cuando quieras.
+      </p>
+
+      <p>
+        Algunos productos pueden agotarse pronto.
+      </p>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+        "
+      >
+        Completar pedido
+      </a>
+
+    </div>
+  `;
+}
+
+export function abandonedCheckoutEmail2Template(
+  customerName: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+
+      <h1>No olvides tu pedido</h1>
+
+      <p>Hola ${customerName},</p>
+
+      <p>
+        Tu pedido sigue disponible y todavía puedes finalizar la compra.
+      </p>
+
+      <p>
+        Si estabas esperando el momento adecuado, este es un buen recordatorio.
+      </p>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+        "
+      >
+        Continuar pago
+      </a>
+
+    </div>
+  `;
+}
+
+export function abandonedCheckoutEmail3Template(
+  customerName: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+
+      <h1>Última oportunidad</h1>
+
+      <p>Hola ${customerName},</p>
+
+      <p>
+        Tu pedido pendiente será cancelado automáticamente si no se completa.
+      </p>
+
+      <p>
+        Si todavía quieres los productos, finaliza el pago ahora.
+      </p>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+        "
+      >
+        Finalizar pedido
+      </a>
+
+    </div>
+  `;
+}
