@@ -65,7 +65,7 @@ export default function ProductCard({ product }: Props) {
           >
             {outOfStock && (
               <span className="absolute top-3 left-3 z-10 rounded bg-black/80 px-2 py-1 text-xs font-semibold text-red-300">
-                Sin stock
+                Sold out
               </span>
             )}
             {/* MAIN */}
