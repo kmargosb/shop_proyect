@@ -9,6 +9,8 @@ import {
   sendRefundCompletedEmail,
 } from "@/modules/email/refund.email";
 
+import { sendRefundRequestEmail } from "@/modules/email/sendOrderEmail";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
 });
@@ -127,6 +129,8 @@ export const RefundService = {
       reason,
       note,
     });
+
+    await sendRefundRequestEmail(orderId, reason ?? "CUSTOMER_RETURN");
 
     if (evidence?.length) {
       await prisma.refundEvidence.createMany({

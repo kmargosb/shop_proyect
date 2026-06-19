@@ -164,3 +164,44 @@ export async function sendCustomerReplyEmail(
     html,
   });
 }
+
+export async function sendRefundRequestEmail(
+  orderId: string,
+  reason: string,
+) {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  await sendEmail({
+    to: process.env.SUPPORT_EMAIL as string,
+
+    subject: `Refund request #${order.id.slice(0, 8)}`,
+
+    html: `
+      <div style="font-family:Arial,sans-serif;padding:24px">
+        <h2>Nueva solicitud de devolución</h2>
+
+        <p><strong>Pedido:</strong> ${order.id}</p>
+
+        <p><strong>Cliente:</strong> ${order.fullName}</p>
+
+        <p><strong>Email:</strong> ${order.email}</p>
+
+        <p><strong>Motivo:</strong> ${reason}</p>
+
+        <p>
+          Revisa la solicitud desde el dashboard.
+        </p>
+      </div>
+    `,
+  });
+
+  console.log("✅ Refund request email sent");
+}

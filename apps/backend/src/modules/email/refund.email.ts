@@ -76,3 +76,40 @@ export async function sendRefundCompletedEmail(
     ),
   });
 }
+
+export async function sendRefundCreatedAdminEmail(
+  orderId: string,
+  customerName: string,
+  customerEmail: string,
+  reason: string,
+) {
+  await sendEmail({
+    to: process.env.ADMIN_EMAIL!,
+    subject: `Nueva devolución - Pedido #${orderId.slice(0, 8)}`,
+    html: `
+      <div style="font-family:Arial;padding:24px">
+        <h1>Nueva solicitud de devolución</h1>
+
+        <p>
+          <strong>Pedido:</strong>
+          #${orderId.slice(0, 8)}
+        </p>
+
+        <p>
+          <strong>Cliente:</strong>
+          ${customerName}
+        </p>
+
+        <p>
+          <strong>Email:</strong>
+          ${customerEmail}
+        </p>
+
+        <p>
+          <strong>Motivo:</strong>
+          ${reason}
+        </p>
+      </div>
+    `,
+  });
+}

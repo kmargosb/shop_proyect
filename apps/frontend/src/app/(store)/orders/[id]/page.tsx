@@ -952,7 +952,22 @@ export default function Page() {
 
           <Button
             className="h-12 w-full rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-300"
-            onClick={() => router.push(`/orders/${order.id}/help`)}
+            onClick={() => {
+              const queryEmail = searchParams.get("email");
+
+              const storedOrderId = localStorage.getItem("orderEmailOrderId");
+
+              const storedEmail = localStorage.getItem("orderEmail");
+
+              const email =
+                queryEmail || (storedOrderId === id ? storedEmail : null);
+
+              const url = email
+                ? `/orders/${order.id}/help?email=${encodeURIComponent(email)}`
+                : `/orders/${order.id}/help`;
+
+              router.push(url);
+            }}
           >
             ¿Necesitas ayuda con tu pedido?
           </Button>
