@@ -394,10 +394,10 @@ export const getMyOrderByIdController = asyncHandler(
       typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
     const order = await prisma.order.findFirst({
-  where: {
-    id: orderId,
-    userId,
-  },
+      where: {
+        id: orderId,
+        userId,
+      },
       include: {
         items: {
           include: {
@@ -528,10 +528,46 @@ export const submitHelpRequestController = asyncHandler(
 
     const { message, phone } = req.body;
 
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const recentMessages = await prisma.orderEvent.count({
+      where: {
+        orderId: id,
+        type: "ORDER_UPDATED",
+        message: {
+          startsWith: "CUSTOMER_MESSAGE:",
+        },
+        createdAt: {
+          gte: oneHourAgo,
+        },
+      },
+    });
+
+    if (recentMessages >= 5) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many messages. Please try again later.",
+      });
+    }
+
     if (!message?.trim()) {
       return res.status(400).json({
         success: false,
         message: "Message is required",
+      });
+    }
+
+    if (message.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Message too short",
+      });
+    }
+
+    if (message.trim().length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: "Message too long",
       });
     }
 
