@@ -27,31 +27,45 @@ export async function loginWithGoogle(idToken: string) {
   ========================= */
 
   let user = await prisma.user.findUnique({
-    where: { email },
+  where: { email },
+});
+
+if (!user) {
+  user = await prisma.user.create({
+    data: {
+      email,
+      name: name || email.split("@")[0],
+      provider: "GOOGLE",
+    },
   });
+}
 
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email,
-        name: name || email.split("@")[0],
-        provider: "GOOGLE",
-      },
-    });
-  }
+/* =========================
+   LINK GUEST ORDERS
+========================= */
 
-  /* =========================
-     GENERATE JWT
-  ========================= */
+await prisma.order.updateMany({
+  where: {
+    userId: null,
+    email,
+  },
+  data: {
+    userId: user.id,
+  },
+});
 
-  const token = generateAccessToken({
-    id: user.id,
-    role: user.role,
-    tokenVersion: user.tokenVersion,
-  });
+/* =========================
+   GENERATE JWT
+========================= */
 
-  return {
-    user,
-    token,
-  };
+const token = generateAccessToken({
+  id: user.id,
+  role: user.role,
+  tokenVersion: user.tokenVersion,
+});
+
+return {
+  user,
+  token,
+};
 }
