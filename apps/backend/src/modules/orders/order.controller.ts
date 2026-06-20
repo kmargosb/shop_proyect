@@ -248,7 +248,7 @@ export const getPublicOrderController = asyncHandler(
 
     if (!email || email !== order.email) {
       return res.status(403).json({
-        error: "No autorizado",
+        error: "Unauthorized",
       });
     }
 
@@ -280,7 +280,7 @@ export const downloadPublicInvoice = asyncHandler(
 
     if (!email || email !== order.email) {
       return res.status(403).json({
-        error: "No autorizado",
+        error: "Unauthorized",
       });
     }
 

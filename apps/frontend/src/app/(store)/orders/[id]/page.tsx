@@ -302,15 +302,15 @@ export default function Page() {
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.25em] text-neutral-400">
-                Pedido
+                Order
               </div>
 
               <h1 className="text-4xl font-semibold tracking-tight">
-                {isPaid ? "Pago completado" : "Pedido creado"}
+                {isPaid ? "Payment completed" : "Order created"}
               </h1>
 
               <p className="mt-3 text-neutral-400">
-                Pedido #{order.id.slice(0, 8)}
+                Order # {order.id.slice(0, 8)}
               </p>
             </div>
 
@@ -334,19 +334,19 @@ export default function Page() {
           const steps = [
             {
               key: "PENDING",
-              label: "Pedido",
+              label: "Order",
             },
             {
               key: "PAID",
-              label: "Pagado",
+              label: "Paid",
             },
             {
               key: "SHIPPED",
-              label: "Enviado",
+              label: "Shiped",
             },
             {
               key: "DELIVERED",
-              label: "Entregado",
+              label: "Delivered",
             },
           ];
 
@@ -377,11 +377,11 @@ export default function Page() {
           return (
             <div className="overflow-hidden rounded-[28px] border border-white/10 bg-neutral-950 p-6">
               <div className="mb-8">
-                <h2 className="text-lg font-semibold">Estado del pedido</h2>
+                <h2 className="text-lg font-semibold">Order status</h2>
 
                 <div className="mt-2 space-y-1">
                   <p className="text-sm text-neutral-500">
-                    Seguimiento del progreso de tu pedido
+                    Track the progress of your order
                   </p>
 
                   {order.shipment && (
@@ -398,7 +398,7 @@ export default function Page() {
 
                       {order.shipment.shippedAt && (
                         <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1">
-                          Enviado:{" "}
+                          Sent:{" "}
                           {new Date(order.shipment.shippedAt).toLocaleString()}
                         </span>
                       )}
@@ -478,10 +478,10 @@ export default function Page() {
           <div className="mb-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold">Artículos del pedido</h2>
+                <h2 className="text-xl font-semibold">Order Items</h2>
 
                 <p className="mt-1 text-sm text-neutral-500">
-                  Productos comprados y estado de devolución
+                  Products purchased and return status
                 </p>
               </div>
 
@@ -501,7 +501,7 @@ export default function Page() {
 
             <div className="mt-5 border-t border-white/10 pt-5">
               <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
-                Entrega en
+                Delivery in
               </p>
 
               <p className="text-sm text-neutral-400">{order.addressLine1}</p>
@@ -608,7 +608,7 @@ export default function Page() {
                         )}
 
                         <p className="mt-2 text-sm text-neutral-500">
-                          Cantidad: {item.quantity}
+                          Quantity: {item.quantity}
                         </p>
 
                         <p className="mt-1 text-xs uppercase tracking-[0.2em] text-neutral-600">
@@ -676,10 +676,10 @@ export default function Page() {
         {order.events?.length > 0 && (
           <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
             <div className="mb-8">
-              <h2 className="text-xl font-semibold">Estado del pedido</h2>
+              <h2 className="text-xl font-semibold">Order status</h2>
 
               <p className="mt-2 text-sm text-neutral-500">
-                Seguimiento en tiempo real del pedido
+                Real-time order tracking
               </p>
             </div>
 
@@ -716,7 +716,7 @@ export default function Page() {
                       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                         <p className="text-xs font-semibold">
                           {isCustomerMessage
-                            ? "Mensaje enviado"
+                            ? "MESSAGE SENT"
                             : isAdminReply
                               ? "Respuesta de soporte"
                               : config.label}
@@ -916,7 +916,7 @@ export default function Page() {
               className="h-12 w-full rounded-2xl"
               onClick={handleDownloadInvoice}
             >
-              Descargar factura
+              Download invoice
             </Button>
           )}
 
@@ -969,20 +969,20 @@ export default function Page() {
               router.push(url);
             }}
           >
-            ¿Necesitas ayuda con tu pedido?
+            ¿Need Help?
           </Button>
 
           <Button
             className="h-12 w-full rounded-2xl bg-white text-black hover:bg-neutral-200"
             onClick={() => router.push("/shop")}
           >
-            Seguir comprando
+            Continue shopping
           </Button>
         </div>
         {showCancelModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">
-              <h2 className="text-2xl font-semibold">Cancelar pedido</h2>
+              <h2 className="text-2xl font-semibold">Cancel Order</h2>
 
               <p className="mt-3 text-sm text-neutral-400">
                 Esta acción devolverá el dinero y restaurará el stock reservado.
@@ -1097,84 +1097,84 @@ function getTimelineConfig(type: string) {
   switch (type) {
     case "ORDER_CREATED":
       return {
-        label: "Pedido creado",
+        label: "ORDER CREATED",
         icon: Package,
         className: "border-blue-500/20 bg-blue-500/10 text-blue-400",
       };
 
     case "PAYMENT_SUCCEEDED":
       return {
-        label: "Pago confirmado",
+        label: "PAYMENT SUCCEEDED",
         icon: CheckCircle2,
         className: "border-green-500/20 bg-green-500/10 text-green-400",
       };
 
     case "PAYMENT_FAILED":
       return {
-        label: "Pago fallido",
+        label: "PAYMENT FAILED",
         icon: XCircle,
         className: "border-red-500/20 bg-red-500/10 text-red-400",
       };
 
     case "PAYMENT_PROCESSING":
       return {
-        label: "Pago en procesamiento",
+        label: "PAYMENT PROCESSING",
         icon: CreditCard,
         className: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
       };
 
     case "ORDER_SHIPPED":
       return {
-        label: "Pedido enviado",
+        label: "ORDER SHIPPED",
         icon: Truck,
         className: "border-purple-500/20 bg-purple-500/10 text-purple-400",
       };
 
     case "ORDER_DELIVERED":
       return {
-        label: "Pedido entregado",
+        label: "ORDER DELIVERED",
         icon: CheckCircle2,
         className: "border-green-500/20 bg-green-500/10 text-green-400",
       };
 
     case "REFUND_CREATED":
       return {
-        label: "Reembolso iniciado",
+        label: "REFUND CREATED",
         icon: RefreshCcw,
         className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
       };
 
     case "REFUND_COMPLETED":
       return {
-        label: "Reembolso completado",
+        label: "REFUND COMPLETED",
         icon: RefreshCcw,
         className: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
       };
 
     case "ORDER_UPDATED":
       return {
-        label: "Actualización",
+        label: "ORDER UPDATED",
         icon: RefreshCcw,
         className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
       };
 
     case "ORDER_ADJUSTED":
       return {
-        label: "Pedido ajustado",
+        label: "ORDER ADJUSTED",
         icon: RefreshCcw,
         className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
       };
 
     case "ORDER_CANCELLED":
       return {
-        label: "Pedido cancelado",
+        label: "ORDER CANCELLED",
         icon: XCircle,
         className: "border-red-500/20 bg-red-500/10 text-red-400",
       };
 
     default:
       return {
-        label: "Actualización",
+        label: "UPDATE",
         icon: Clock3,
         className: "border-white/10 bg-white/5 text-white",
       };

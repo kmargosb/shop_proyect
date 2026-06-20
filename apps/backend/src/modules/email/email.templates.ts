@@ -15,7 +15,7 @@ export function orderConfirmationTemplate(
     <p>
       Puedes ver tu pedido aquí:
       <a href="${publicOrderUrl}">
-        Ver pedido
+        View Order
       </a>
     </p>
 
@@ -71,7 +71,7 @@ export function shipmentConfirmationTemplate(
           border-radius:10px;
         "
       >
-        Ver pedido
+        View Order
       </a>
     </div>
   `;
@@ -267,7 +267,7 @@ export function customerReplyTemplate(
                 font-weight:600;
               "
             >
-              Cancelar pedido
+              Cancel Order
             </a>
           </div>
           `
@@ -466,7 +466,7 @@ export function refundRejectedTemplate(
           border-radius:12px;
         "
       >
-        Ver pedido
+        View Order
       </a>
 
     </div>
@@ -517,7 +517,7 @@ export function refundCompletedTemplate(
           border-radius:12px;
         "
       >
-        Ver pedido
+        View Order
       </a>
 
     </div>

@@ -121,7 +121,7 @@ export const getMyAddressesController = asyncHandler(
 
     if (!userId) {
       return res.status(401).json({
-        error: "No autorizado",
+        error: "Unauthorized",
       });
     }
 
@@ -147,7 +147,7 @@ export const createAddressController = asyncHandler(
 
     if (!userId) {
       return res.status(401).json({
-        error: "No autorizado",
+        error: "Unauthorized",
       });
     }
 
@@ -221,7 +221,7 @@ export const updateAddressController = asyncHandler(
 
     if (!userId) {
       return res.status(401).json({
-        error: "No autorizado",
+        error: "Unauthorized",
       });
     }
 
@@ -273,7 +273,7 @@ export const deleteAddressController = asyncHandler(
     const { id } = req.params;
 
     if (!userId) {
-      return res.status(401).json({ error: "No autorizado" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     await prisma.address.deleteMany({
@@ -297,7 +297,7 @@ export const setDefaultAddressController = asyncHandler(
     const { id } = req.params;
 
     if (!userId) {
-      return res.status(401).json({ error: "No autorizado" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     /* ===============================

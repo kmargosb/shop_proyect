@@ -63,7 +63,7 @@ export const me = asyncHandler(async (req: AuthRequest, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) {
-    return res.status(401).json({ error: "No autorizado" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const user = await prisma.user.findUnique({
@@ -116,7 +116,7 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
 
-  res.json({ message: "Logout exitoso" });
+  res.json({ message: "Successfully signed out" });
 });
 
 /* ============================
@@ -128,7 +128,7 @@ export const logoutAll = asyncHandler(
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ error: "No autorizado" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     await prisma.refreshToken.deleteMany({
@@ -145,7 +145,7 @@ export const logoutAll = asyncHandler(
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);
 
-    res.json({ message: "Sesión cerrada en todos los dispositivos" });
+    res.json({ message: "Signed out from all devices" });
   },
 );
 
@@ -162,25 +162,25 @@ export const changePassword = asyncHandler(async (req: AuthRequest, res: Respons
   const userId = req.user?.id;
 
   if (!userId) {
-    return res.status(401).json({ error: "No autorizado" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { currentPassword, newPassword } = req.body as { currentPassword?: unknown; newPassword?: unknown };
 
   if (!isString(currentPassword) || !isString(newPassword) || newPassword.length < 8) {
-    return res.status(400).json({ error: "Contraseña inválida" });
+    return res.status(400).json({ error: "Invalid password" });
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user?.password) {
-    return res.status(400).json({ error: "Esta cuenta no tiene contraseña local" });
+    return res.status(400).json({ error: "This account does not have a local password" });
   }
 
   const validPassword = await bcrypt.compare(currentPassword, user.password);
 
   if (!validPassword) {
-    return res.status(400).json({ error: "Contraseña actual incorrecta" });
+    return res.status(400).json({ error: "Current password is incorrect" });
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -205,7 +205,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
 
   if (!token) {
-    return res.status(401).json({ error: "No autorizado" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   let decoded: JwtPayload & { id: string };
@@ -214,14 +214,14 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
 
     if (typeof payload === "string" || typeof payload.id !== "string") {
-      return res.status(403).json({ error: "Refresh inválido" });
+      return res.status(403).json({ error: "Invalid refresh token" });
     }
 
     decoded = payload as JwtPayload & { id: string };
   } catch {
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);
-    return res.status(403).json({ error: "Refresh inválido" });
+    return res.status(403).json({ error: "Invalid refresh token" });
   }
 
   const storedTokens = await prisma.refreshToken.findMany({
@@ -244,7 +244,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     res.clearCookie("refreshToken", cookieOptions);
 
     return res.status(403).json({
-      error: "Sesión inválida. Inicia sesión nuevamente.",
+      error: "Session expired. Please sign in again.",
     });
   }
 
@@ -257,7 +257,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     res.clearCookie("refreshToken", cookieOptions);
 
     return res.status(403).json({
-      error: "Refresh expirado",
+      error: "Refresh token expired",
     });
   }
 

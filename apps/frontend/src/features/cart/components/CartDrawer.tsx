@@ -48,7 +48,7 @@ export default function CartDrawer() {
 
         {/* HEADER */}
         <div className="pb-4 border-b border-white/10">
-          <h2 className="text-base font-semibold">Tu carrito</h2>
+          <h2 className="text-base font-semibold">Your Cart</h2>
         </div>
 
         {/* SHIPPING BAR */}
@@ -59,7 +59,7 @@ export default function CartDrawer() {
             <p className="text-xs text-neutral-400">
               {unlocked
                 ? "Envío gratis desbloqueado"
-                : `Añade €${remaining.toFixed(2)} para envío gratis`}
+                : `Add €${remaining.toFixed(2)} for free shipping`}
             </p>
           </div>
 
@@ -172,12 +172,12 @@ export default function CartDrawer() {
                 router.push("/checkout");
               }}
             >
-              Finalizar compra →
+              Checkout →
             </Button>
           </motion.div>
 
           <p className="text-[11px] text-neutral-500 text-center">
-            Pago seguro · Entrega rápida · Soporte premium
+            Secure payment · Fast delivery · Premium support
           </p>
         </div>
       </SheetContent>

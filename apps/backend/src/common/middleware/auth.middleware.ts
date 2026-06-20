@@ -24,7 +24,7 @@ export const protect = async (
   const token = req.cookies.accessToken;
 
   if (!token) {
-    return res.status(401).json({ error: "No autorizado" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
@@ -34,7 +34,7 @@ export const protect = async (
     );
 
     if (typeof payload === "string" || typeof payload.id !== "string" || typeof payload.role !== "string" || typeof payload.tokenVersion !== "number") {
-      return res.status(401).json({ error: "Token inválido" });
+      return res.status(401).json({ error: "Invalid or expired token" });
     }
 
     const decoded = payload as JwtPayload & { id: string; role: string; tokenVersion: number };
@@ -44,17 +44,17 @@ export const protect = async (
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Usuario no encontrado" });
+      return res.status(401).json({ error: "User not found" });
     }
 
     if (user.tokenVersion !== decoded.tokenVersion) {
-      return res.status(401).json({ error: "Token inválido" });
+      return res.status(401).json({ error: "Invalid or expired token" });
     }
 
     req.user = decoded;
     next();
   } catch {
-    return res.status(401).json({ error: "Token inválido o expirado" });
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
 };
 
@@ -109,7 +109,7 @@ export const adminOnly = (
   next: NextFunction,
 ) => {
   if (req.user?.role !== Role.ADMIN) {
-    return res.status(403).json({ error: "Solo administradores" });
+    return res.status(403).json({ error: "Admin access required" });
   }
 
   next();

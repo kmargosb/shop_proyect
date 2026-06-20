@@ -28,6 +28,7 @@ export default function OrderHelpPage() {
   const [refundImages, setRefundImages] = useState<File[]>([]);
   const [refundPreviews, setRefundPreviews] = useState<string[]>([]);
   const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -100,10 +101,12 @@ export default function OrderHelpPage() {
   }, [showRefundModal]);
 
   const handleSubmit = async () => {
-    if (!message.trim()) {
-      alert("Por favor escribe un mensaje.");
+    if (message.trim().length < 20) {
+      setError("Please enter at least 20 characters.");
       return;
     }
+
+    setError("");
 
     try {
       setSending(true);
@@ -119,16 +122,24 @@ export default function OrderHelpPage() {
         }),
       });
 
-      if (!response?.ok) {
-        throw new Error();
+      if (!response) {
+        throw new Error("Connection error");
+      }
+
+      if (!response.ok) {
+        const data = await response.json();
+
+        throw new Error(data?.message || "Unable to send message");
       }
 
       setSent(true);
       setMessage("");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
 
-      alert("No hemos podido enviar tu mensaje. Inténtalo de nuevo.");
+      setError(
+        error?.message || "Unable to send your message. Please try again.",
+      );
     } finally {
       setSending(false);
     }
@@ -261,16 +272,16 @@ export default function OrderHelpPage() {
           <div className="px-6 md:px-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm text-white backdrop-blur">
               <LifeBuoy size={16} />
-              Atención personalizada
+              Personalized attention
             </div>
 
             <h1 className="mt-5 max-w-2xl text-3xl font-semibold text-white md:text-5xl">
-              ¿Tienes un problema con tu pedido?
+              Are you having a problem with your order?
             </h1>
 
             <p className="mt-3 text-white">
-              Si ha habido un problema con la talla, color, producto, dirección
-              o cualquier otro detalle, explícanoslo aquí.
+              If there has been a problem with the size, color, product,
+              address, or any other detail, please explain it to us here.
             </p>
           </div>
         </div>
@@ -285,16 +296,17 @@ export default function OrderHelpPage() {
           {!sent ? (
             <>
               <h2 className="text-2xl font-semibold text-white">
-                Cuéntanos qué ha ocurrido
+                Tell us what happened
               </h2>
 
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={7}
-                placeholder="Explícanos brevemente qué ha ocurrido con tu pedido..."
+                placeholder="Please briefly explain what happened to your order..."
                 className="mt-6 w-full resize-none rounded-3xl border border-white/10 bg-black px-5 py-4 text-white outline-none placeholder:text-neutral-600"
               />
+              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
 
               <div className="relative mt-4">
                 <Phone
@@ -305,14 +317,14 @@ export default function OrderHelpPage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Otro teléfono de contacto (opcional)"
+                  placeholder="Another contact phone number (optional)"
                   className="w-full rounded-2xl border border-white/10 bg-black py-4 pl-12 pr-4 text-white outline-none placeholder:text-neutral-600"
                 />
               </div>
 
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-xs uppercase tracking-wider text-neutral-500">
-                  Te responderemos en
+                  We will respond to you in
                 </p>
 
                 <p className="mt-1 text-white break-all">{order.email}</p>
@@ -325,25 +337,25 @@ export default function OrderHelpPage() {
               >
                 <Send size={18} />
 
-                {sending ? "Enviando..." : "Enviar mensaje"}
+                {sending ? "Sending..." : "Submit"}
               </button>
             </>
           ) : (
             <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6">
               <h2 className="text-2xl font-semibold text-emerald-300">
-                Hemos recibido tu mensaje
+                We have received your message
               </h2>
 
               <p className="mt-4 leading-relaxed text-neutral-300">
-                Gracias por escribirnos. Revisaremos tu caso personalmente y te
-                responderemos por correo electrónico lo antes posible.
+                Thank you for writing to us. We will review your case personally
+                and respond to you by email as soon as possible.
               </p>
             </div>
           )}
           {canRequestRefund && hasRefundableItems && (
             <div className="mt-auto border-t border-white/10 pt-6">
               <p className="text-xs text-neutral-500">
-                ¿No estás satisfecho con tu compra?
+                Not satisfied with your purchase?
               </p>
 
               <button
@@ -357,7 +369,7 @@ export default function OrderHelpPage() {
                       hover:text-white
                     "
               >
-                Solicitar una devolución
+                Request a return
               </button>
             </div>
           )}
@@ -367,24 +379,24 @@ export default function OrderHelpPage() {
 
         <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
           <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
-            Resumen del pedido
+            Order Summary
           </p>
 
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-xs text-neutral-500">Pedido</p>
+            <p className="text-xs text-neutral-500">Order</p>
 
             <p className="mt-1 font-medium text-white">
               #{order.id.slice(0, 8)}
             </p>
 
-            <p className="mt-4 text-xs text-neutral-500">Cliente</p>
+            <p className="mt-4 text-xs text-neutral-500">Customer</p>
 
             <p className="mt-1 text-white">{order.fullName}</p>
 
             <p className="mt-4 text-xs text-neutral-500">Email</p>
 
             <p className="mt-1 break-all text-white">{order.email}</p>
-            <p className="mt-4 text-xs text-neutral-500">Dirección de envío</p>
+            <p className="mt-4 text-xs text-neutral-500">Mailing address</p>
 
             <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-sm text-white">{order.addressLine1}</p>
@@ -398,9 +410,7 @@ export default function OrderHelpPage() {
               </p>
 
               <p className="mt-1 text-sm text-neutral-300">{order.country}</p>
-              <p className="mt-4 text-xs text-neutral-500">
-                Teléfono del pedido
-              </p>
+              <p className="mt-4 text-xs text-neutral-500">Phone number</p>
 
               <p className="mt-1 text-white">{order.phone}</p>
             </div>
@@ -433,7 +443,7 @@ export default function OrderHelpPage() {
                   </p>
 
                   <p className="mt-1 text-sm text-neutral-500">
-                    Cantidad: {item.quantity}
+                    Quantity: {item.quantity}
                   </p>
                 </div>
               </div>
@@ -455,11 +465,11 @@ export default function OrderHelpPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-neutral-950 p-6 md:p-8">
             <h2 className="text-3xl font-semibold text-white">
-              Solicitar devolución
+              Request Return
             </h2>
 
             <p className="mt-2 text-sm text-neutral-500">
-              Selecciona los productos que deseas devolver.
+              Select the products you wish to return.
             </p>
 
             <div className="mt-6 space-y-4">
@@ -472,7 +482,8 @@ export default function OrderHelpPage() {
                       )
                       .flatMap((refund: any) => refund.items || [])
                       .filter((ri: any) => ri.orderItemId === item.id)
-                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
+                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
+                    0;
 
                   return refundedQuantity < item.quantity;
                 })
@@ -484,7 +495,8 @@ export default function OrderHelpPage() {
                       )
                       .flatMap((refund: any) => refund.items || [])
                       .filter((ri: any) => ri.orderItemId === item.id)
-                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
+                      .reduce((sum: number, ri: any) => sum + ri.quantity, 0) ||
+                    0;
 
                   const remainingQuantity = item.quantity - refundedQuantity;
                   console.log({
@@ -512,8 +524,7 @@ export default function OrderHelpPage() {
                           </p>
 
                           <p className="mt-1 text-sm text-neutral-500">
-                            Cantidad disponible para devolución:{" "}
-                            {remainingQuantity}
+                            Quantity available for return: {remainingQuantity}
                           </p>
                         </div>
 
@@ -618,15 +629,15 @@ export default function OrderHelpPage() {
               <label
                 htmlFor="refund-images"
                 className="
-      flex cursor-pointer items-center justify-center
-      rounded-2xl border border-dashed border-white/15
-      bg-white/[0.02]
-      px-6 py-8
-      text-center
-      transition
-      hover:border-white/30
-      hover:bg-white/[0.04]
-    "
+                  flex cursor-pointer items-center justify-center
+                  rounded-2xl border border-dashed border-white/15
+                  bg-white/[0.02]
+                  px-6 py-8
+                  text-center
+                  transition
+                  hover:border-white/30
+                  hover:bg-white/[0.04]
+                "
               >
                 <div>
                   <p className="text-sm text-white">
@@ -682,17 +693,17 @@ export default function OrderHelpPage() {
                           <div
                             key={slotIndex}
                             className="
-            group
-    relative
-    aspect-square
-    overflow-hidden
-    rounded-xl
-    border border-white/10
-    bg-white/[0.03]
-    transition-all
-    hover:border-white/30
-    hover:shadow-lg
-  "
+                                      group
+                              relative
+                              aspect-square
+                              overflow-hidden
+                              rounded-xl
+                              border border-white/10
+                              bg-white/[0.03]
+                              transition-all
+                              hover:border-white/30
+                              hover:shadow-lg
+                            "
                           >
                             {preview ? (
                               <>

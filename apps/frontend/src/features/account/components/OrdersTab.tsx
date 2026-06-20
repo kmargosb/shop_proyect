@@ -36,22 +36,22 @@ export default function OrdersTab({ orders }: Props) {
   return (
     <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-neutral-950 p-6 overflow-hidden">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Mis pedidos</h2>
+        <h2 className="text-2xl font-bold">My Orders</h2>
 
         <p className="mt-2 text-sm text-neutral-500">
-          Historial completo de pedidos y pagos.
+          Complete order and payment history.
         </p>
       </div>
 
       {orders.length === 0 ? (
         <div className="rounded-2xl border border-white/10 p-10 text-center">
-          <p className="text-neutral-400">No tienes pedidos todavía</p>
+          <p className="text-neutral-400">You have no orders yet</p>
 
           <Link
             href="/shop"
             className="mt-4 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
           >
-            Ir a la tienda
+            Go to the store
           </Link>
         </div>
       ) : (

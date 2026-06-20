@@ -133,7 +133,7 @@ export default function CancelOrderPage() {
                 disabled={loading}
                 className="rounded-2xl bg-red-600 px-6 py-4 font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Cancelando..." : "Cancelar pedido"}
+                {loading ? "Canceling.." : "Cancel Order"}
               </button>
             </div>
           </div>

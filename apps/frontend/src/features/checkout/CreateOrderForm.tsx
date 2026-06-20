@@ -335,7 +335,7 @@ export default function CreateOrderForm() {
         {/* ADDRESSES */}
         {addresses.length > 0 && (
           <div className="bg-neutral-900 p-4 rounded-xl space-y-3">
-            <h3 className="text-sm text-neutral-400">Direcciones guardadas</h3>
+            <h3 className="text-sm text-neutral-400">Saved addresses</h3>
 
             {addresses.map((addr) => {
               const selected = selectedAddressId === addr.id;

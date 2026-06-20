@@ -56,10 +56,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-6">
       <div className="w-full max-w-md space-y-8 text-center">
-        <h1 className="text-3xl font-semibold">Iniciar sesión</h1>
+        <h1 className="text-3xl font-semibold">Sign In</h1>
 
         <p className="text-neutral-400 text-sm">
-          Accede a tu cuenta o continúa con Google
+          Sign in to your account or continue with Google
         </p>
 
         {/* GOOGLE LOGIN */}
@@ -69,7 +69,7 @@ export default function LoginPage() {
         {!showEmailLogin && (
           <div className="flex items-center gap-4 text-neutral-500 text-sm">
             <div className="flex-1 h-px bg-white/10" />
-            o
+            or
             <div className="flex-1 h-px bg-white/10" />
           </div>
         )}
@@ -80,7 +80,7 @@ export default function LoginPage() {
             onClick={() => setShowEmailLogin(true)}
             className="w-full border border-white/10 py-3 rounded-xl text-sm hover:bg-white/5 transition"
           >
-            Continuar con email
+            Continue with Email
           </button>
         )}
 
@@ -114,7 +114,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-white text-black py-3 rounded-xl text-sm font-medium"
             >
-              {loading ? "Entrando..." : "Entrar"}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
 
             <button
@@ -122,7 +122,7 @@ export default function LoginPage() {
               onClick={() => setShowEmailLogin(false)}
               className="w-full text-xs text-neutral-400 hover:text-white"
             >
-              ← Volver
+              ← Back
             </button>
           </form>
         )}
