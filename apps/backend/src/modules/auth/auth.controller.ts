@@ -1,16 +1,18 @@
 import { Request, Response } from "express";
+import { loginWithGoogle } from "./google.service";
 import { asyncHandler } from "@/common/utils/asyncHandler";
+import { AuthRequest } from "@/common/middleware/auth.middleware";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
+import * as authService from "./auth.service";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/common/utils/generateToken";
-import jwt from "jsonwebtoken";
-import type { JwtPayload } from "jsonwebtoken";
-import * as authService from "./auth.service";
-import { AuthRequest } from "@/common/middleware/auth.middleware";
-import { loginWithGoogle } from "./google.service";
+import crypto from "crypto";
+import { sendPasswordResetEmail } from "@/modules/email/sendOrderEmail";
 
 /**
  * 🔐 Opciones de cookie CONSISTENTES
@@ -194,8 +196,125 @@ export const changePassword = asyncHandler(async (req: AuthRequest, res: Respons
 
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
-  res.json({ message: "Contraseña actualizada" });
+  res.json({ message: "Password updated successfully" });
 });
+
+export const forgotPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Email is required",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // No revelar si existe o no
+    if (!user) {
+      return res.json({
+        message:
+          "If an account exists with this email, a reset link has been sent.",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    await prisma.passwordResetToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt: new Date(
+          Date.now() + 60 * 60 * 1000,
+        ), // 1 hora
+      },
+    });
+
+    await sendPasswordResetEmail(
+      user.email,
+      user.name || user.email,
+      token,
+    );
+
+    res.json({
+      message:
+        "If an account exists with this email, a reset link has been sent.",
+    });
+  },
+);
+
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+
+    if (
+      !token ||
+      !password ||
+      password.length < 8
+    ) {
+      return res.status(400).json({
+        error: "Invalid password",
+      });
+    }
+
+    const resetToken =
+      await prisma.passwordResetToken.findUnique({
+        where: {
+          token,
+        },
+      });
+
+    if (
+      !resetToken ||
+      resetToken.expiresAt < new Date()
+    ) {
+      return res.status(400).json({
+        error: "Invalid or expired token",
+      });
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(password, 12);
+
+    await prisma.user.update({
+      where: {
+        id: resetToken.userId,
+      },
+      data: {
+        password: hashedPassword,
+        tokenVersion: {
+          increment: 1,
+        },
+      },
+    });
+
+    await prisma.refreshToken.deleteMany({
+      where: {
+        userId: resetToken.userId,
+      },
+    });
+
+    await prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: resetToken.userId,
+      },
+    });
+
+    res.json({
+      message:
+        "Password reset successfully",
+    });
+  },
+);
 
 /* ============================
    REFRESH
@@ -298,7 +417,7 @@ res.cookie("refreshToken", newRefreshToken, {
 });
 
   res.json({
-    message: "Tokens renovados correctamente",
+    message: "Tokens refreshed successfully",
   });
 });
 

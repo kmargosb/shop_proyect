@@ -4,11 +4,7 @@ import { useState } from "react";
 import { apiFetch } from "@/shared/lib/api";
 import GoogleLoginButton from "./GoogleLoginButton";
 
-export default function LoginInline({
-  onSuccess,
-}: {
-  onSuccess?: () => void;
-}) {
+export default function LoginInline({ onSuccess }: { onSuccess?: () => void }) {
   const [showEmail, setShowEmail] = useState(false);
 
   const [email, setEmail] = useState("");
@@ -31,13 +27,13 @@ export default function LoginInline({
     setLoading(false);
 
     if (!res) {
-      setError("Error de conexión");
+      setError("Connection error");
       return;
     }
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data?.error || "Credenciales inválidas");
+      setError(data?.error || "Invalid credentials");
       return;
     }
 
@@ -47,7 +43,6 @@ export default function LoginInline({
 
   return (
     <div className="space-y-4">
-
       {/* GOOGLE */}
       {!showEmail && (
         <div className="flex justify-center">
@@ -59,7 +54,7 @@ export default function LoginInline({
       {!showEmail && (
         <div className="flex items-center gap-3 text-xs text-neutral-500">
           <div className="flex-1 h-px bg-white/10" />
-          o
+          or
           <div className="flex-1 h-px bg-white/10" />
         </div>
       )}
@@ -70,14 +65,13 @@ export default function LoginInline({
           onClick={() => setShowEmail(true)}
           className="w-full border border-white/10 py-2 rounded-lg text-sm hover:bg-white/5"
         >
-          Continuar con email
+          Continue with Email
         </button>
       )}
 
       {/* EMAIL FORM */}
       {showEmail && (
         <form onSubmit={handleEmailLogin} className="space-y-3">
-
           <input
             type="email"
             placeholder="Email"
@@ -96,16 +90,23 @@ export default function LoginInline({
             required
           />
 
-          {error && (
-            <p className="text-red-400 text-xs text-center">{error}</p>
-          )}
+          <div className="flex justify-end">
+            <a
+              href="/login/forgot-password"
+              className="text-xs text-neutral-400 hover:text-white"
+            >
+              Forgot your password?
+            </a>
+          </div>
+
+          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-white text-black py-2 rounded-lg text-sm"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Signing in..." : "Sign In"}
           </button>
 
           <button
@@ -113,7 +114,7 @@ export default function LoginInline({
             onClick={() => setShowEmail(false)}
             className="w-full text-xs text-neutral-400"
           >
-            ← Volver
+            ← Back
           </button>
         </form>
       )}

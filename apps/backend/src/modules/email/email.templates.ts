@@ -462,7 +462,6 @@ export function customerReplyTemplate(
 }
 
 export function refundApprovedTemplate(customerName: string, orderUrl: string) {
-
   return `
     <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
@@ -916,6 +915,93 @@ export function abandonedCheckoutEmail3Template(
           border-top:1px solid #eee;
         "
       />
+
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        Need help? Contact us at ${process.env.SUPPORT_EMAIL}
+      </p>
+
+    </div>
+  `;
+}
+
+export function passwordResetTemplate(
+  customerName: string,
+  resetUrl: string,
+) {
+  return `
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
+
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2 style="margin-top:32px;font-size:28px;">
+        Reset Your Password
+      </h2>
+
+      <p>
+        Hi ${customerName},
+      </p>
+
+      <p>
+        We received a request to reset the password for your account.
+      </p>
+
+      <p>
+        If you made this request, click the button below to choose a new password.
+      </p>
+
+      <a
+        href="${resetUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+          font-weight:600;
+        "
+      >
+        Reset Password
+      </a>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border-radius:16px;
+          background:#fafafa;
+          border:1px solid #e5e5e5;
+        "
+      >
+        This link will expire in 1 hour for security reasons.
+      </div>
+
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
+
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        If you did not request a password reset, you can safely ignore this email.
+      </p>
 
       <p
         style="

@@ -5,6 +5,7 @@ import {
   shipmentConfirmationTemplate,
   helpRequestTemplate,
   customerReplyTemplate,
+  passwordResetTemplate,
 } from "./email.templates";
 
 import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
@@ -213,4 +214,26 @@ export async function sendRefundRequestEmail(orderId: string, reason: string) {
   });
 
   console.log("✅ Refund request email sent");
+}
+
+export async function sendPasswordResetEmail(
+  email: string,
+  customerName: string,
+  token: string,
+) {
+  const resetUrl =
+    `${process.env.FRONTEND_URL}/login/reset-password?token=${token}`;
+
+  const html = passwordResetTemplate(
+    customerName,
+    resetUrl,
+  );
+
+  await sendEmail({
+    to: email,
+    subject: "Reset Your Password",
+    html,
+  });
+
+  console.log("✅ Password reset email sent");
 }
