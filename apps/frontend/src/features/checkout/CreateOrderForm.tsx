@@ -78,17 +78,17 @@ export default function CreateOrderForm() {
       try {
         const parsed = JSON.parse(saved);
 
-setForm({
-  firstName: parsed.firstName ?? "",
-  lastName: parsed.lastName ?? "",
-  email: parsed.email ?? "",
-  phone: parsed.phone ?? "",
-  addressLine1: parsed.addressLine1 ?? "",
-  addressLine2: parsed.addressLine2 ?? "",
-  city: parsed.city ?? "",
-  postalCode: parsed.postalCode ?? "",
-  country: parsed.country ?? "ES",
-});
+        setForm({
+          firstName: parsed.firstName ?? "",
+          lastName: parsed.lastName ?? "",
+          email: parsed.email ?? "",
+          phone: parsed.phone ?? "",
+          addressLine1: parsed.addressLine1 ?? "",
+          addressLine2: parsed.addressLine2 ?? "",
+          city: parsed.city ?? "",
+          postalCode: parsed.postalCode ?? "",
+          country: parsed.country ?? "ES",
+        });
       } catch {
         localStorage.removeItem("checkoutData");
       }
@@ -209,7 +209,8 @@ setForm({
     form.phone &&
     form.addressLine1 &&
     form.city &&
-    form.postalCode;
+    form.postalCode &&
+    form.country;
 
   /* ================= SUBMIT ================= */
 
@@ -437,16 +438,18 @@ setForm({
             />
           </div>
           <Input
+            type="email"
             name="email"
             value={form.email}
             onChange={handleChange}
             placeholder="Email"
           />
           <Input
+            type="tel"
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            placeholder="Teléfono"
+            placeholder="Phone number"
           />
 
           <AddressAutocomplete
@@ -458,19 +461,19 @@ setForm({
             name="addressLine2"
             value={form.addressLine2}
             onChange={handleChange}
-            placeholder="Piso / puerta"
+            placeholder="Door / Apartment number"
           />
           <Input
             name="city"
             value={form.city}
             onChange={handleChange}
-            placeholder="Ciudad"
+            placeholder="City"
           />
           <Input
             name="postalCode"
             value={form.postalCode}
             onChange={handleChange}
-            placeholder="Código postal"
+            placeholder="Zip code"
           />
 
           <select
@@ -494,7 +497,7 @@ setForm({
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Resumen</h2>
           <span className="text-xs text-neutral-400">
-            {items.length} {items.length === 1 ? "artículo" : "artículos"}
+            {items.length} {items.length === 1 ? "item" : "items"}
           </span>
         </div>
 
@@ -527,7 +530,7 @@ setForm({
 
                   {(item.size || item.color) && (
                     <span className="mt-1 text-xs text-neutral-400">
-                      {item.size && `Talla ${item.size}`}
+                      {item.size && `Size ${item.size}`}
                       {item.size && item.color && " · "}
                       {item.color}
                     </span>
@@ -559,7 +562,7 @@ setForm({
                       onClick={() => removeItem(item.id)}
                       className="ml-2 text-xs text-neutral-500 hover:text-red-400 transition"
                     >
-                      Eliminar
+                      Remove
                     </button>
                   </div>
                 </div>
@@ -584,13 +587,13 @@ setForm({
           </div>
 
           <div className="flex justify-between text-neutral-400">
-            <span>Envío</span>
-            <span className="text-green-400">Gratis</span>
+            <span>Shipping</span>
+            <span className="text-green-400">Free</span>
           </div>
 
           <div className="flex justify-between text-neutral-400">
-            <span>Impuestos</span>
-            <span>Incluidos</span>
+            <span>Taxes</span>
+            <span>Included</span>
           </div>
         </div>
 
@@ -608,15 +611,13 @@ setForm({
           disabled={!isValid || loading}
           className="h-12 w-full rounded-xl !bg-white !text-black font-semibold border border-white/20 shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
         >
-          {loading
-            ? "Procesando..."
-            : `Pagar €${(totalPrice / 100).toFixed(2)}`}
+          {loading ? "Processing..." : `Pay €${(totalPrice / 100).toFixed(2)}`}
         </Button>
 
         {/* TRUST / UX BOOST */}
         <div className="mt-20 text-xs text-neutral-500 space-y-1">
-          <p>🔒 Pago seguro con cifrado SSL</p>
-          <p>💳 Procesado por Stripe</p>
+          <p>🔒 Secure SSL encrypted payment</p>
+          <p>💳 Processed by Stripe</p>
         </div>
       </div>
     </div>

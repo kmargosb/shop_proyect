@@ -13,7 +13,9 @@ export function startJobScheduler() {
   =============================== */
 
   cron.schedule("* * * * *", async () => {
-    console.log("🧹 Running order cleanup");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🧹 Running order cleanup");
+    }
 
     try {
       await cleanupExpiredOrders();
@@ -41,14 +43,16 @@ export function startJobScheduler() {
   =============================== */
 
   cron.schedule("* * * * *", async () => {
-  console.log("🛒 Checking abandoned checkouts");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🛒 Checking abandoned checkouts");
+    }
 
-  try {
-    await AbandonedCheckoutService.processAbandonedOrders();
-  } catch (error) {
-    console.error("❌ Abandoned checkout error:", error);
-  }
-});
+    try {
+      await AbandonedCheckoutService.processAbandonedOrders();
+    } catch (error) {
+      console.error("❌ Abandoned checkout error:", error);
+    }
+  });
 
   /* ===============================
      INVENTORY CONSISTENCY GUARD

@@ -40,7 +40,9 @@ export async function cleanupExpiredOrders() {
     },
   });
 
-  console.log("🧾 Orders found:", expiredOrders.length);
+  if (expiredOrders.length > 0) {
+    console.log("🧾 Orders found:", expiredOrders.length);
+  }
 
   /* ===============================
      PROCESS EACH ORDER

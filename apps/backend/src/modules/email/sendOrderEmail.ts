@@ -150,8 +150,7 @@ export async function sendCustomerReplyEmail(
     throw new Error("Order not found");
   }
 
-  const cancelUrl =
-  includeCancelLink
+  const cancelUrl = includeCancelLink
     ? `${process.env.FRONTEND_URL}/orders/${order.id}/cancel?email=${order.email}`
     : undefined;
 
@@ -166,10 +165,7 @@ export async function sendCustomerReplyEmail(
   });
 }
 
-export async function sendRefundRequestEmail(
-  orderId: string,
-  reason: string,
-) {
+export async function sendRefundRequestEmail(orderId: string, reason: string) {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -197,9 +193,9 @@ export async function sendRefundRequestEmail(
 
         <p><strong>Motivo:</strong> ${reason}</p>
 
-        <p>
-          Revisa la solicitud desde el dashboard.
-        </p>
+        <a href="${process.env.ADMIN_PANEL_URL}/refunds">
+           Abrir Dashboard
+        </a>
       </div>
     `,
   });
