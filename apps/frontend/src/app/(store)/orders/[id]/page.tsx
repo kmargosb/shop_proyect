@@ -31,12 +31,12 @@ type OrderEvent = {
 };
 
 const cancellationReasons: Record<string, string> = {
-  WRONG_PRODUCT: "Producto equivocado",
-  WRONG_SIZE: "Talla Equivocada",
-  WRONG_COLOR: "Color Equivocado",
-  CHANGED_MIND: "Ya no lo quiero",
-  ACCIDENTAL_ORDER: "Compra por error",
-  OTHER: "Otro motivo",
+  WRONG_PRODUCT: "Wrong Product",
+  WRONG_SIZE: "Wrong Size",
+  WRONG_COLOR: "Wrong Color",
+  CHANGED_MIND: "Changed Mind",
+  ACCIDENTAL_ORDER: "Accidental Order",
+  OTHER: "Other",
 };
 
 export default function Page() {
@@ -139,7 +139,7 @@ export default function Page() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white">
-        Cargando pedido...
+        Loading order...
       </div>
     );
   }
@@ -985,12 +985,13 @@ export default function Page() {
               <h2 className="text-2xl font-semibold">Cancel Order</h2>
 
               <p className="mt-3 text-sm text-neutral-400">
-                Esta acción devolverá el dinero y restaurará el stock reservado.
+                This action will refund the money and restore the reserved
+                stock.
               </p>
 
               <div className="mt-6">
                 <label className="mb-2 block text-sm text-neutral-400">
-                  Motivo
+                  Reason
                 </label>
 
                 <select
@@ -998,17 +999,15 @@ export default function Page() {
                   onChange={(e) => setCancelReason(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black px-4 py-3"
                 >
-                  <option value="WRONG_PRODUCT">
-                    Me equivoqué de producto
-                  </option>
-                  <option value="WRONG_SIZE">Me equivoqué de talla</option>
-                  <option value="WRONG_COLOR">Me equivoqué de color</option>
-                  <option value="CHANGED_MIND">Ya no lo quiero</option>
-                  <option value="ACCIDENTAL_ORDER">Compra por error</option>
+                  <option value="WRONG_PRODUCT">Wrong Product</option>
+                  <option value="WRONG_SIZE">Wrong Size</option>
+                  <option value="WRONG_COLOR">Wrong Color</option>
+                  <option value="CHANGED_MIND">Changed Mind</option>
+                  <option value="ACCIDENTAL_ORDER">Accidental Order</option>
                   <option value="Wrong shipping address">
-                    Direccion incorrecta
+                    Wrong Shipping Address
                   </option>
-                  <option value="OTHER">Otro</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
 
@@ -1018,7 +1017,7 @@ export default function Page() {
                   className="w-full"
                   onClick={() => setShowCancelModal(false)}
                 >
-                  Volver
+                  Back
                 </Button>
 
                 <Button
@@ -1030,7 +1029,7 @@ export default function Page() {
                     await handleCancelOrder();
                   }}
                 >
-                  {cancelling ? "Cancelando..." : "Confirmar cancelación"}
+                  {cancelling ? "Cancelling..." : "Confirm cancellation"}
                 </Button>
               </div>
             </div>
@@ -1039,15 +1038,14 @@ export default function Page() {
         {showSentModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-neutral-950 p-6">
-              <h2 className="text-xl font-semibold">He enviado el paquete</h2>
+              <h2 className="text-xl font-semibold">I have sent the package</h2>
 
               <p className="mt-2 text-sm text-neutral-500">
-                Introduce la empresa de transporte (Correos, MRW, SEUR, DHL,
-                etc.) y el número de seguimiento.
+                Enter the shipping company (Correos, MRW, SEUR, DHL, etc.) and
+                the tracking number.
               </p>
               <span className="text-xs">
-                Conserva el justificante de envío hasta que la devolución sea
-                procesada.
+                Keep the shipping receipt until the return is processed.
               </span>
 
               <div className="mt-6 space-y-4">
@@ -1074,7 +1072,7 @@ export default function Page() {
                     setShowSentModal(false);
                   }}
                 >
-                  Cancelar
+                  Cancel
                 </Button>
 
                 <Button

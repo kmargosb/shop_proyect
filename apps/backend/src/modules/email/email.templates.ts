@@ -424,14 +424,14 @@ export function refundRejectedTemplate(
   return `
     <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
 
-      <h1>Solicitud de devolución rechazada</h1>
+      <h1>Refund request rejected</h1>
 
       <p>
-        Hola ${customerName},
+        Hello ${customerName},
       </p>
 
       <p>
-        Hemos revisado tu solicitud.
+        We have reviewed your application.
       </p>
 
       <div
@@ -443,7 +443,7 @@ export function refundRejectedTemplate(
           border:1px solid #fecaca;
         "
       >
-        <strong>Motivo:</strong>
+        <strong>Reason:</strong>
 
         <p>
           ${reason}
@@ -451,7 +451,7 @@ export function refundRejectedTemplate(
       </div>
 
       <p style="margin-top:20px">
-        Si crees que se trata de un error puedes responder desde la página de tu pedido.
+        If you believe this is an error, you can reply from your order page.
       </p>
 
       <a

@@ -163,12 +163,18 @@ export default function OrderHelpPage() {
         }));
 
       if (items.length === 0) {
-        setRefundError("Selecciona al menos un producto");
+        setRefundError("Please select at least one product.");
         return;
       }
 
       if (refundComment.trim().length < 20) {
-        setRefundError("Describe el motivo con al menos 20 caracteres");
+        setRefundError("Please provide at least 20 characters describing the issue.");
+
+        return;
+      }
+
+      if (refundImages.length === 0) {
+        setRefundError("Please upload at least one photo showing the issue.");
 
         return;
       }
@@ -191,7 +197,7 @@ export default function OrderHelpPage() {
       const data = await res?.json();
 
       if (!res || !res.ok) {
-        setRefundError(data?.message || "No se pudo procesar");
+        setRefundError(data?.message || "Unable to submit return request.");
         return;
       }
 
@@ -210,7 +216,7 @@ export default function OrderHelpPage() {
     } catch (error) {
       console.error(error);
 
-      setRefundError("Error inesperado");
+      setRefundError("Unexpected error. Please try again.");
     } finally {
       setProcessingRefund(false);
       setSubmittingRefund(false);
@@ -220,7 +226,7 @@ export default function OrderHelpPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20">
-        <p className="text-center text-neutral-500">Cargando pedido...</p>
+        <p className="text-center text-neutral-500">Loading order...</p>
       </div>
     );
   }
@@ -228,7 +234,7 @@ export default function OrderHelpPage() {
   if (!order) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20">
-        <p className="text-center text-neutral-500">Pedido no encontrado.</p>
+        <p className="text-center text-neutral-500">Order not found.</p>
       </div>
     );
   }
@@ -568,7 +574,7 @@ export default function OrderHelpPage() {
 
             <div className="mt-6">
               <label className="mb-2 block text-sm text-neutral-400">
-                Motivo
+                Reason
               </label>
 
               <select
@@ -580,29 +586,29 @@ export default function OrderHelpPage() {
                   value="CUSTOMER_RETURN"
                   className="bg-neutral-900 text-white"
                 >
-                  Ya no lo quiero
+                  I don't want it anymore
                 </option>
 
                 <option
                   value="WRONG_ITEM"
                   className="bg-neutral-900 text-white"
                 >
-                  Producto incorrecto
+                  Wrong product
                 </option>
 
                 <option value="DAMAGED" className="bg-neutral-900 text-white">
-                  Producto dañado
+                  Damaged product
                 </option>
 
                 <option value="OTHER" className="bg-neutral-900 text-white">
-                  Otro motivo
+                  Another reason
                 </option>
               </select>
             </div>
 
             <div className="mt-4">
               <label className="mb-2 block text-sm text-neutral-400">
-                Comentario
+                Comment
               </label>
 
               <textarea
@@ -610,7 +616,7 @@ export default function OrderHelpPage() {
                 value={refundComment}
                 maxLength={300}
                 onChange={(e) => setRefundComment(e.target.value)}
-                placeholder="Explícanos qué ha ocurrido..."
+                placeholder="Tell us what happened..."
                 className="w-full rounded-2xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none"
               />
 
@@ -623,8 +629,12 @@ export default function OrderHelpPage() {
 
             <div className="mt-5">
               <label className="mb-2 block text-sm text-neutral-400">
-                Evidencias fotográficas (opcional)
+                Photographic evidence *
               </label>
+              <p className="mb-3 text-xs text-neutral-500">
+                Please provide clear photos and accurate information so we can
+                review your request faster.
+              </p>
 
               <label
                 htmlFor="refund-images"
@@ -641,11 +651,11 @@ export default function OrderHelpPage() {
               >
                 <div>
                   <p className="text-sm text-white">
-                    Arrastra imágenes o haz clic para subirlas
+                    Drag images or click to upload them
                   </p>
 
                   <p className="mt-1 text-xs text-neutral-500">
-                    JPG, PNG, WEBP · Máximo 5 imágenes
+                    JPG, PNG, WEBP · Maximum 5 images
                   </p>
                 </div>
               </label>
@@ -677,7 +687,7 @@ export default function OrderHelpPage() {
               {refundPreviews.length > 0 && (
                 <div className="mt-4">
                   <p className="mb-3 text-xs text-neutral-500">
-                    {refundImages.length}/5 imágenes seleccionadas
+                    {refundImages.length}/5 selected images
                   </p>
 
                   <div className="mt-4">
@@ -771,13 +781,12 @@ export default function OrderHelpPage() {
 
             {refundSuccess && (
               <p className="mt-4 text-sm text-emerald-400">
-                Solicitud enviada correctamente
+                Request submitted successfully
               </p>
             )}
 
             <p className="mt-6 text-xs text-neutral-500">
-              Las devoluciones pueden solicitarse dentro de los 21 días
-              posteriores a la entrega.
+              Returns can be requested within 21 days of delivery. Please ensure all information and photos are accurate before submitting your request.
             </p>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
@@ -785,7 +794,7 @@ export default function OrderHelpPage() {
                 onClick={() => setShowRefundModal(false)}
                 className="w-full rounded-2xl border border-white/10 py-3 text-white"
               >
-                Cancelar
+                Cancel
               </button>
 
               <button
@@ -798,10 +807,10 @@ export default function OrderHelpPage() {
                 className="w-full rounded-2xl bg-white py-3 text-black disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submittingRefund
-                  ? "Enviando solicitud..."
+                  ? "Sending request..."
                   : processingRefund
-                    ? "Procesando..."
-                    : "Confirmar devolución"}
+                    ? "Processing..."
+                    : "Confirm return"}
               </button>
             </div>
           </div>
