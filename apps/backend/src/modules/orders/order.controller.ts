@@ -246,12 +246,10 @@ export const getPublicOrderController = asyncHandler(
       });
     }
 
-    if (order.status !== "PAID" && order.status !== "PAYMENT_PROCESSING") {
-      if (!email || email !== order.email) {
-        return res.status(403).json({
-          error: "No autorizado",
-        });
-      }
+    if (!email || email !== order.email) {
+      return res.status(403).json({
+        error: "No autorizado",
+      });
     }
 
     res.json(order);
@@ -280,15 +278,10 @@ export const downloadPublicInvoice = asyncHandler(
       });
     }
 
-    // 🔒 Solo permitir si:
-    // - Está pagada
-    // - O coincide email
-    if (order.status !== "PAID") {
-      if (!email || email !== order.email) {
-        return res.status(403).json({
-          error: "No autorizado",
-        });
-      }
+    if (!email || email !== order.email) {
+      return res.status(403).json({
+        error: "No autorizado",
+      });
     }
 
     const pdf = await generateInvoicePDF(order.invoice.id);

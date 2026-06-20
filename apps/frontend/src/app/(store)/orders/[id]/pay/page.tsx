@@ -5,18 +5,19 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ clientSecret?: string }>;
+  searchParams: Promise<{
+    clientSecret?: string;
+    email?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { clientSecret } = await searchParams;
+  const { clientSecret, email } = await searchParams;
 
   if (!clientSecret) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-semibold">
-            Sesión de pago no válida
-          </h1>
+          <h1 className="text-2xl font-semibold">Sesión de pago no válida</h1>
 
           <p className="text-neutral-400">
             No se encontró información de pago para este pedido.
@@ -34,7 +35,9 @@ export default async function Page({
   }
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/orders/${id}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/orders/${id}?email=${encodeURIComponent(
+      email || "",
+    )}`,
     {
       cache: "no-store",
     },
@@ -44,9 +47,7 @@ export default async function Page({
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-semibold">
-            Sesión de pago expirada
-          </h1>
+          <h1 className="text-2xl font-semibold">Sesión de pago expirada</h1>
 
           <p className="text-neutral-400">
             Este pedido ya no puede ser pagado o la sesión ha expirado.
@@ -65,39 +66,32 @@ export default async function Page({
 
   const order = await res.json();
 
-  if (
-    [
-      "CANCELLED",
-      "FAILED",
-      "REFUNDED",
-      "DELIVERED",
-    ].includes(order.status)
-  ) {
+  if (["CANCELLED", "FAILED", "REFUNDED", "DELIVERED"].includes(order.status)) {
     return (
-  <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
-    <div className="max-w-2xl text-center">
-      <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-neutral-300">
-        Pedido expirado
-      </div>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+        <div className="max-w-2xl text-center">
+          <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-neutral-300">
+            Pedido expirado
+          </div>
 
-      <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-        Tu reserva ha expirado
-      </h1>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            Tu reserva ha expirado
+          </h1>
 
-      <p className="mt-6 text-lg text-neutral-400 leading-relaxed">
-        Los productos ya no están reservados y su disponibilidad puede haber
-        cambiado.
-      </p>
+          <p className="mt-6 text-lg text-neutral-400 leading-relaxed">
+            Los productos ya no están reservados y su disponibilidad puede haber
+            cambiado.
+          </p>
 
-      <p className="mt-3 text-neutral-500">
-        Si todavía estás interesado, puedes volver a la tienda y realizar un
-        nuevo pedido.
-      </p>
+          <p className="mt-3 text-neutral-500">
+            Si todavía estás interesado, puedes volver a la tienda y realizar un
+            nuevo pedido.
+          </p>
 
-      <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-        <a
-          href="/shop"
-          className="
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/shop"
+              className="
             rounded-2xl
             bg-white
             px-8
@@ -107,13 +101,13 @@ export default async function Page({
             transition
             hover:bg-neutral-200
           "
-        >
-          Explorar tienda
-        </a>
+            >
+              Explorar tienda
+            </a>
 
-        <a
-          href="/brands"
-          className="
+            <a
+              href="/brands"
+              className="
             rounded-2xl
             border
             border-white/10
@@ -123,19 +117,14 @@ export default async function Page({
             transition
             hover:bg-white/5
           "
-        >
-          Descubrir marcas
-        </a>
+            >
+              Descubrir marcas
+            </a>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-);
+    );
   }
 
-  return (
-    <PayOrderView
-      orderId={id}
-      clientSecret={clientSecret}
-    />
-  );
+  return <PayOrderView orderId={id} clientSecret={clientSecret} />;
 }

@@ -193,7 +193,7 @@ export async function sendRefundRequestEmail(orderId: string, reason: string) {
 
         <p><strong>Motivo:</strong> ${reason}</p>
 
-        <a href="${process.env.ADMIN_PANEL_URL}/refunds">
+        <a href="${process.env.ADMIN_PANEL_URL}/orders/${order.id}">
            Abrir Dashboard
         </a>
       </div>

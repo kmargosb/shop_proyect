@@ -259,7 +259,9 @@ export default function CreateOrderForm() {
 
       localStorage.setItem("orderEmailOrderId", data.orderId);
 
-      window.location.href = `/orders/${data.orderId}/pay?clientSecret=${data.payment.clientSecret}`;
+      window.location.href = `/orders/${data.orderId}/pay?clientSecret=${encodeURIComponent(
+        data.payment.clientSecret,
+      )}&email=${encodeURIComponent(form.email)}`;
     } catch (error: any) {
       toast.error(error?.message || "Error al procesar checkout");
     } finally {
