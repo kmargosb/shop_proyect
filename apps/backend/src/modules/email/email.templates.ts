@@ -1,29 +1,113 @@
+const adminUrl = process.env.ADMIN_PANEL_URL || "http://localhost:3000";
+
 export function orderConfirmationTemplate(
   customerName: string,
   orderId: string,
   publicOrderUrl: string,
 ) {
   return `
-    <h2>Gracias por tu compra ${customerName} 🎉</h2>
+    <div
+      style="
+        max-width:640px;
+        margin:0 auto;
+        font-family:Arial,Helvetica,sans-serif;
+        color:#111;
+        padding:32px;
+      "
+    >
 
-    <p>Tu pedido ha sido confirmado.</p>
+      <div
+        style="
+          background:#111;
+          padding:28px;
+          border-radius:16px;
+          text-align:center;
+        "
+      >
+        <h1
+          style="
+            margin:0;
+            color:#fff;
+            font-size:28px;
+          "
+        >
+          Camarguette Store
+        </h1>
+      </div>
 
-    <p>
-      <strong>Número de pedido:</strong> ${orderId}
-    </p>
+      <h2
+        style="
+          margin-top:32px;
+          font-size:28px;
+        "
+      >
+        Order Confirmed
+      </h2>
 
-    <p>
-      Puedes ver tu pedido aquí:
-      <a href="${publicOrderUrl}">
+      <p>
+        Hi ${customerName},
+      </p>
+
+      <p>
+        Thank you for your purchase.
+        Your order has been successfully confirmed.
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
+        <strong>Order Number</strong>
+
+        <p style="margin-top:8px">
+          #${orderId.slice(0, 8)}
+        </p>
+      </div>
+
+      <a
+        href="${publicOrderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 24px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+          font-weight:600;
+        "
+      >
         View Order
       </a>
-    </p>
 
-    <p>Adjuntamos tu factura en PDF.</p>
+      <p style="margin-top:24px">
+        Your invoice is attached as a PDF.
+      </p>
 
-    <br/>
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
 
-    <p>Gracias por confiar en nuestra tienda ❤️</p>
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        Need help? Contact us at
+        ${process.env.SUPPORT_EMAIL}
+      </p>
+
+    </div>
   `;
 }
 
@@ -35,26 +119,45 @@ export function shipmentConfirmationTemplate(
   orderUrl: string,
 ) {
   return `
-    <div style="font-family:Arial;padding:24px;color:#111">
-      <h1>Tu pedido fue enviado 🚚</h1>
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
+
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2 style="margin-top:32px;font-size:28px;">
+        Your Order Has Shipped
+      </h2>
+
+      <p>Hi ${fullName},</p>
 
       <p>
-        Hola ${fullName},
+        Great news. Your order has been shipped and is now on its way.
       </p>
 
-      <p>
-        Tu pedido <strong>#${orderId.slice(0, 8)}</strong>
-        ya fue enviado.
-      </p>
-
-      <div style="margin-top:24px;padding:16px;border:1px solid #ddd;border-radius:12px">
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
         <p>
-          <strong>Transportista:</strong>
+          <strong>Order Number</strong><br/>
+          #${orderId.slice(0, 8)}
+        </p>
+
+        <p>
+          <strong>Carrier</strong><br/>
           ${carrier}
         </p>
 
         <p>
-          <strong>Tracking:</strong>
+          <strong>Tracking Number</strong><br/>
           ${trackingNumber}
         </p>
       </div>
@@ -64,15 +167,29 @@ export function shipmentConfirmationTemplate(
         style="
           display:inline-block;
           margin-top:24px;
-          padding:14px 20px;
-          background:black;
-          color:white;
+          padding:14px 24px;
+          background:#111;
+          color:#fff;
           text-decoration:none;
-          border-radius:10px;
+          border-radius:12px;
+          font-weight:600;
         "
       >
-        View Order
+        Track Order
       </a>
+
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
+
+      <p style="color:#666;font-size:14px;">
+        Need help? Contact us at ${process.env.SUPPORT_EMAIL}
+      </p>
+
     </div>
   `;
 }
@@ -86,54 +203,85 @@ export function helpRequestTemplate(
   message: string,
 ) {
   return `
-    <div style="font-family:Arial;padding:24px;color:#111">
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
-      <h1>Nuevo mensaje de soporte</h1>
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
 
-      <div style="margin-top:20px">
+      <h2 style="margin-top:32px;font-size:28px;">
+        New Support Request
+      </h2>
 
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
         <p>
-          <strong>Pedido:</strong>
+          <strong>Order Number</strong><br>
           #${orderId.slice(0, 8)}
         </p>
 
         <p>
-          <strong>Cliente:</strong>
+          <strong>Customer</strong><br>
           ${customerName}
         </p>
 
         <p>
-          <strong>Email:</strong>
+          <strong>Email</strong><br>
           ${customerEmail}
         </p>
 
         <p>
-          <strong>Teléfono pedido:</strong>
+          <strong>Order Phone</strong><br>
           ${orderPhone || "-"}
         </p>
 
         <p>
-          <strong>Teléfono contacto:</strong>
+          <strong>Contact Phone #2</strong><br>
           ${contactPhone || "-"}
         </p>
-
       </div>
 
       <div
         style="
           margin-top:24px;
-          padding:16px;
-          border:1px solid #ddd;
-          border-radius:12px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
         "
       >
-        <strong>Mensaje:</strong>
+        <p>
+          <strong>Message</strong>
+        </p>
 
-        <p style="white-space:pre-wrap">
+        <p style="white-space:pre-wrap;">
           ${message}
         </p>
       </div>
-
+      <div style="margin-top:24px;">
+        <a
+          href="${adminUrl}/dashboard/orders/${orderId}"
+          style="
+            display:inline-block;
+            padding:14px 24px;
+            background:#111;
+            color:#fff;
+            text-decoration:none;
+            border-radius:12px;
+            font-weight:600;
+          "
+        >
+          Open Order in Dashboard
+        </a>
+      </div>
     </div>
   `;
 }
@@ -177,7 +325,7 @@ export function customerReplyTemplate(
               font-weight:600;
             "
           >
-            Camarguette
+            Camarguette Store
           </h1>
 
           <p
@@ -187,7 +335,7 @@ export function customerReplyTemplate(
               font-size:14px;
             "
           >
-            Atención personalizada
+            Personal Support
           </p>
         </div>
 
@@ -199,7 +347,7 @@ export function customerReplyTemplate(
               font-size:24px;
             "
           >
-            Hola ${customerName},
+            Hi ${customerName},
           </h2>
 
           <p
@@ -210,8 +358,8 @@ export function customerReplyTemplate(
               font-size:15px;
             "
           >
-            Hemos revisado personalmente tu solicitud
-            y queremos darte una respuesta.
+            We have personally reviewed your request
+            and would like to provide an update.
           </p>
 
           <div
@@ -248,10 +396,10 @@ export function customerReplyTemplate(
                 line-height:1.7;
               "
             >
-              Si no estás de acuerdo con la solución propuesta
-              o prefieres no continuar con el pedido, puedes
-              cancelarlo y solicitar el reembolso desde el
-              siguiente enlace.
+              If you do not agree with the proposed solution
+              or prefer not to continue with your order,
+              you can cancel it and request a refund using
+              the link below.
             </p>
 
             <a
@@ -281,8 +429,8 @@ export function customerReplyTemplate(
               line-height:1.7;
             "
           >
-            Si necesitas cualquier otra ayuda,
-            estaremos encantados de ayudarte.
+            If you need any further assistance,
+            we will be happy to help.
           </p>
 
           <p
@@ -292,7 +440,7 @@ export function customerReplyTemplate(
               font-weight:600;
             "
           >
-            Equipo Camarguette Collective
+            The Camarguette Store Team
           </p>
         </div>
 
@@ -305,7 +453,7 @@ export function customerReplyTemplate(
             font-size:13px;
           "
         >
-          Gracias por confiar en nosotros ❤️
+          Thank you for shopping with us.
         </div>
 
       </div>
@@ -313,23 +461,27 @@ export function customerReplyTemplate(
   `;
 }
 
-export function refundApprovedTemplate(
-  customerName: string,
-  orderUrl: string,
-) {
-  return `
-    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+export function refundApprovedTemplate(customerName: string, orderUrl: string) {
 
-      <h1>
-        Tu devolución ha sido aprobada ✅
-      </h1>
+  return `
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
+
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2 style="margin-top:32px;font-size:28px;">
+        Return Request Approved
+      </h2>
 
       <p>
-        Hola ${customerName},
+        Hi ${customerName},
       </p>
 
       <p>
-        Hemos revisado tu solicitud de devolución y ha sido aprobada.
+        We have reviewed your return request and it has been approved.
       </p>
 
       <div
@@ -341,14 +493,15 @@ export function refundApprovedTemplate(
           background:#fafafa;
         "
       >
-        <h3>
-          Próximos pasos
-        </h3>
+        <h3>Next Steps</h3>
 
-        <ol style="padding-left:20px;line-height:1.8">
-          <li>Empaqueta correctamente el producto.</li>
-          <li>Conserva el justificante de envío.</li>
-          <li>Cuando lo hayas enviado, marca el pedido como enviado desde tu área de pedido, introduciendo la empresa y el nro de rastreo.</li>
+        <ol style="padding-left:20px;line-height:1.8;">
+          <li>Pack the item securely.</li>
+          <li>Keep your shipping receipt.</li>
+          <li>
+            Once shipped, update the return from your order page
+            and provide the carrier and tracking number.
+          </li>
         </ol>
       </div>
 
@@ -361,17 +514,15 @@ export function refundApprovedTemplate(
           background:#fafafa;
         "
       >
-        <h3>
-          Dirección de devolución
-        </h3>
+        <h3>Return Address</h3>
 
         <p>
-          Camarguette Collective<br/>
-          DIRECCIÓN PENDIENTE DE CONFIGURAR
+          Camarguette Store<br/>
+          RETURN ADDRESS TO BE CONFIGURED
         </p>
 
         <p>
-          Incluye el número de pedido dentro del paquete.
+          Please include your order number inside the package.
         </p>
       </div>
 
@@ -384,16 +535,14 @@ export function refundApprovedTemplate(
           border:1px solid #fed7aa;
         "
       >
-        <strong>
-          Información importante
-        </strong>
+        <strong>Important Information</strong>
 
         <p>
-          Los gastos de devolución corren actualmente por cuenta del cliente.
+          Return shipping costs are currently the responsibility of the customer.
         </p>
 
         <p>
-          Recomendamos utilizar un envío con seguimiento.
+          We strongly recommend using a tracked shipping service.
         </p>
       </div>
 
@@ -407,9 +556,10 @@ export function refundApprovedTemplate(
           color:white;
           text-decoration:none;
           border-radius:12px;
+          font-weight:600;
         "
       >
-        Ver mi pedido
+        View Order
       </a>
 
     </div>
@@ -479,16 +629,24 @@ export function refundCompletedTemplate(
   orderUrl: string,
 ) {
   return `
-    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
-      <h1>Reembolso procesado 💸</h1>
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2 style="margin-top:32px;font-size:28px;">
+        Refund Processed
+      </h2>
 
       <p>
-        Hola ${customerName},
+        Hi ${customerName},
       </p>
 
       <p>
-        Hemos procesado correctamente tu devolución.
+        Your refund has been successfully processed.
       </p>
 
       <div
@@ -500,9 +658,161 @@ export function refundCompletedTemplate(
           border:1px solid #bbf7d0;
         "
       >
-        <strong>Importe reembolsado:</strong>
+        <strong>Refund Amount</strong>
 
-        <p>${amount}</p>
+        <p style="margin-top:8px;">
+          ${amount}
+        </p>
+      </div>
+
+      <p style="margin-top:24px;">
+        Depending on your bank or payment provider,
+        it may take a few business days for the refund
+        to appear on your account.
+      </p>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+          font-weight:600;
+        "
+      >
+        View Order
+      </a>
+
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
+
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        Need help? Contact us at ${process.env.SUPPORT_EMAIL}
+      </p>
+
+    </div>
+  `;
+}
+
+export function abandonedCheckoutEmail1Template(
+  customerName: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
+
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2 style="margin-top:32px;font-size:28px;">
+        Your Order Is Waiting For You
+      </h2>
+
+      <p>
+        Hi ${customerName},
+      </p>
+
+      <p>
+        We have saved your order so you can complete your purchase whenever you're ready.
+      </p>
+
+      <p>
+        Some items may become unavailable if stock runs out.
+      </p>
+
+      <a
+        href="${orderUrl}"
+        style="
+          display:inline-block;
+          margin-top:24px;
+          padding:14px 22px;
+          background:#111;
+          color:white;
+          text-decoration:none;
+          border-radius:12px;
+          font-weight:600;
+        "
+      >
+        Complete Your Order
+      </a>
+
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
+
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        Need help? Contact us at ${process.env.SUPPORT_EMAIL}
+      </p>
+
+    </div>
+  `;
+}
+
+export function abandonedCheckoutEmail2Template(
+  customerName: string,
+  orderUrl: string,
+) {
+  return `
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
+
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2 style="margin-top:32px;font-size:28px;">
+        Still Thinking About It?
+      </h2>
+
+      <p>
+        Hi ${customerName},
+      </p>
+
+      <p>
+        We noticed you recently started an order but didn't complete your purchase.
+      </p>
+
+      <p>
+        While that reservation has now expired, many of the products may still be available.
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
+        Discover new arrivals, exclusive brands and limited stock pieces before they are gone.
       </div>
 
       <a
@@ -515,86 +825,28 @@ export function refundCompletedTemplate(
           color:white;
           text-decoration:none;
           border-radius:12px;
+          font-weight:600;
         "
       >
-        View Order
+        Return to Store
       </a>
 
-    </div>
-  `;
-}
-
-export function abandonedCheckoutEmail1Template(
-  customerName: string,
-  orderUrl: string,
-) {
-  return `
-    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
-
-      <h1>Tu pedido sigue esperándote 🛒</h1>
-
-      <p>Hola ${customerName},</p>
-
-      <p>
-        Hemos guardado tu pedido para que puedas completarlo cuando quieras.
-      </p>
-
-      <p>
-        Algunos productos pueden agotarse pronto.
-      </p>
-
-      <a
-        href="${orderUrl}"
+      <hr
         style="
-          display:inline-block;
-          margin-top:24px;
-          padding:14px 22px;
-          background:#111;
-          color:white;
-          text-decoration:none;
-          border-radius:12px;
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
         "
-      >
-        Completar pedido
-      </a>
+      />
 
-    </div>
-  `;
-}
-
-export function abandonedCheckoutEmail2Template(
-  customerName: string,
-  orderUrl: string,
-) {
-  return `
-    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
-
-      <h1>No olvides tu pedido</h1>
-
-      <p>Hola ${customerName},</p>
-
-      <p>
-        Tu pedido sigue disponible y todavía puedes finalizar la compra.
-      </p>
-
-      <p>
-        Si estabas esperando el momento adecuado, este es un buen recordatorio.
-      </p>
-
-      <a
-        href="${orderUrl}"
+      <p
         style="
-          display:inline-block;
-          margin-top:24px;
-          padding:14px 22px;
-          background:#111;
-          color:white;
-          text-decoration:none;
-          border-radius:12px;
+          color:#666;
+          font-size:14px;
         "
       >
-        Continuar pago
-      </a>
+        Need help? Contact us at ${process.env.SUPPORT_EMAIL}
+      </p>
 
     </div>
   `;
@@ -605,19 +857,41 @@ export function abandonedCheckoutEmail3Template(
   orderUrl: string,
 ) {
   return `
-    <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
-      <h1>Última oportunidad</h1>
+      <div style="background:#111;padding:28px;border-radius:16px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:28px;">
+          Camarguette Store
+        </h1>
+      </div>
 
-      <p>Hola ${customerName},</p>
+      <h2 style="margin-top:32px;font-size:28px;">
+        Last Chance To Discover Something Special
+      </h2>
 
       <p>
-        Tu pedido pendiente será cancelado automáticamente si no se completa.
+        Hi ${customerName},
       </p>
 
       <p>
-        Si todavía quieres los productos, finaliza el pago ahora.
+        A few days ago you showed interest in our collection.
       </p>
+
+      <p>
+        The order you started has expired, but many unique pieces may still be available.
+      </p>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
+        Explore independent brands, limited releases and carefully selected products before stock changes again.
+      </div>
 
       <a
         href="${orderUrl}"
@@ -629,10 +903,28 @@ export function abandonedCheckoutEmail3Template(
           color:white;
           text-decoration:none;
           border-radius:12px;
+          font-weight:600;
         "
       >
-        Finalizar pedido
+        Shop Now
       </a>
+
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
+
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        Need help? Contact us at ${process.env.SUPPORT_EMAIL}
+      </p>
 
     </div>
   `;

@@ -21,7 +21,7 @@ export async function sendRefundApprovedEmail(
 
   await sendEmail({
     to: order.email,
-    subject: "Tu devolución ha sido aprobada",
+    subject: "Return Request Approved",
     html: refundApprovedTemplate(
       order.fullName,
       orderUrl,
@@ -68,7 +68,7 @@ export async function sendRefundCompletedEmail(
 
   await sendEmail({
     to: order.email,
-    subject: "Reembolso procesado",
+    subject: "Refund Processed",
     html: refundCompletedTemplate(
       order.fullName,
       amount,

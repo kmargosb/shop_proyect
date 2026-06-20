@@ -51,7 +51,7 @@ export default function RefundModal({
         }));
 
       if (items.length === 0) {
-        toast.error("Selecciona productos");
+        toast.error("Please select at least one product.");
         return;
       }
 
@@ -73,13 +73,13 @@ export default function RefundModal({
         throw new Error();
       }
 
-      toast.success("Refund procesado");
+      toast.success("Return request submitted.");
 
       await onSuccess();
 
       onClose();
     } catch {
-      toast.error("Error procesando refund");
+      toast.error("Unable to process return request.");
     } finally {
       setLoading(false);
     }

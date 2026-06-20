@@ -55,7 +55,7 @@ export const ShippingService = {
       data: {
         orderId,
         type: "ORDER_SHIPPED",
-        message: `Order shipped via ${carrier}`,
+        message: `Order shipped by ${carrier}`,
       },
     });
 

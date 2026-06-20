@@ -55,7 +55,7 @@ export async function sendOrderConfirmationEmail(orderId: string) {
 
   await sendEmail({
     to: order.email,
-    subject: "Pedido confirmado",
+    subject: "Order Confirmed",
     html,
     attachments: [
       {
@@ -94,7 +94,7 @@ export async function sendShipmentEmail(orderId: string) {
   await sendEmail({
     to: order.email,
 
-    subject: "Tu pedido fue enviado",
+    subject: "Your Order Has Shipped",
 
     html,
   });
@@ -128,7 +128,7 @@ export async function sendHelpRequestEmail(
 
   await sendEmail({
     to: process.env.SUPPORT_EMAIL as string,
-    subject: `Support request #${order.id.slice(0, 8)}`,
+    subject: `New Support Request • Order #${order.id.slice(0, 8)}`,
     html,
   });
 
@@ -159,7 +159,7 @@ export async function sendCustomerReplyEmail(
   await sendEmail({
     to: order.email,
 
-    subject: `Respuesta sobre tu pedido #${order.id.slice(0, 8)}`,
+    subject: `Message About Your Order #${order.id.slice(0, 8)}`,
 
     html,
   });
@@ -182,22 +182,34 @@ export async function sendRefundRequestEmail(orderId: string, reason: string) {
     subject: `Refund request #${order.id.slice(0, 8)}`,
 
     html: `
-      <div style="font-family:Arial,sans-serif;padding:24px">
-        <h2>Nueva solicitud de devolución</h2>
+  <div style="font-family:Arial,sans-serif;padding:24px">
+    <h2>New Return Request</h2>
 
-        <p><strong>Pedido:</strong> ${order.id}</p>
+    <p>
+      <strong>Order:</strong>
+      ${order.id}
+    </p>
 
-        <p><strong>Cliente:</strong> ${order.fullName}</p>
+    <p>
+      <strong>Customer:</strong>
+      ${order.fullName}
+    </p>
 
-        <p><strong>Email:</strong> ${order.email}</p>
+    <p>
+      <strong>Email:</strong>
+      ${order.email}
+    </p>
 
-        <p><strong>Motivo:</strong> ${reason}</p>
+    <p>
+      <strong>Reason:</strong>
+      ${reason}
+    </p>
 
-        <a href="${process.env.ADMIN_PANEL_URL}/orders/${order.id}">
-           Abrir Dashboard
-        </a>
-      </div>
-    `,
+    <a href="${process.env.ADMIN_PANEL_URL}/orders/${order.id}">
+      Open Dashboard
+    </a>
+  </div>
+`,
   });
 
   console.log("✅ Refund request email sent");

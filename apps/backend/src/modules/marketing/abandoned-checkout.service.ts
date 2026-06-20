@@ -12,7 +12,11 @@ export const AbandonedCheckoutService = {
     const orders = await prisma.order.findMany({
       where: {
         status: {
-          in: [OrderStatus.PENDING, OrderStatus.PAYMENT_PROCESSING],
+          in: [
+            OrderStatus.PENDING,
+            OrderStatus.PAYMENT_PROCESSING,
+            OrderStatus.CANCELLED,
+          ],
         },
       },
     });
@@ -23,10 +27,15 @@ export const AbandonedCheckoutService = {
       const ageMinutes = (now - order.createdAt.getTime()) / (1000 * 60);
 
       /* =============================
-         EMAIL 1 → 1 hour
+         EMAIL 1 → 10 min
       ============================= */
 
-      if (ageMinutes > 10 && order.abandonedEmailStage === 0) {
+      if (
+        ageMinutes > 10 &&
+        order.abandonedEmailStage === 0 &&
+        (order.status === OrderStatus.PENDING ||
+          order.status === OrderStatus.PAYMENT_PROCESSING)
+      ) {
         const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}?email=${order.email}`;
         await sendEmail({
           to: order.email,
@@ -46,11 +55,15 @@ export const AbandonedCheckoutService = {
          EMAIL 2 → 24 hours
       ============================= */
 
-      if (ageMinutes > 1440 && order.abandonedEmailStage === 1) {
-        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
+      if (
+        ageMinutes > 1440 &&
+        order.abandonedEmailStage === 1 &&
+        order.status === OrderStatus.CANCELLED
+      ) {
+        const orderUrl = `${process.env.FRONTEND_URL}/shop`;
         await sendEmail({
           to: order.email,
-          subject: "Your cart is still waiting 🛍",
+          subject: "Still Thinking About It?",
           html: abandonedCheckoutEmail2Template(order.fullName, orderUrl),
         });
 
@@ -66,11 +79,15 @@ export const AbandonedCheckoutService = {
          EMAIL 3 → 48 hours
       ============================= */
 
-      if (ageMinutes > 2880 && order.abandonedEmailStage === 2) {
-        const orderUrl = `${process.env.FRONTEND_URL}/orders/${order.id}/pay`;
+      if (
+        ageMinutes > 2880 &&
+        order.abandonedEmailStage === 2 &&
+        order.status === OrderStatus.CANCELLED
+      ) {
+        const orderUrl = `${process.env.FRONTEND_URL}/shop`;
         await sendEmail({
           to: order.email,
-          subject: "Last chance to complete your order",
+          subject: "Last Chance To Discover Something Special",
           html: abandonedCheckoutEmail3Template(order.fullName, orderUrl),
         });
 

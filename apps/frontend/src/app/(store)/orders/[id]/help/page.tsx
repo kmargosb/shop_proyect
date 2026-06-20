@@ -168,7 +168,9 @@ export default function OrderHelpPage() {
       }
 
       if (refundComment.trim().length < 20) {
-        setRefundError("Please provide at least 20 characters describing the issue.");
+        setRefundError(
+          "Please provide at least 20 characters describing the issue.",
+        );
 
         return;
       }
@@ -632,8 +634,8 @@ export default function OrderHelpPage() {
                 Photographic evidence *
               </label>
               <p className="mb-3 text-xs text-neutral-500">
-                Please provide clear photos and accurate information so we can
-                review your request faster.
+                PPlease provide clear photos and accurate information so we can
+                review your return request as quickly as possible.
               </p>
 
               <label
@@ -689,12 +691,7 @@ export default function OrderHelpPage() {
                   <p className="mb-3 text-xs text-neutral-500">
                     {refundImages.length}/5 selected images
                   </p>
-
                   <div className="mt-4">
-                    <p className="mb-3 text-xs text-neutral-500">
-                      {refundImages.length}/5 imágenes
-                    </p>
-
                     <div className="grid grid-cols-5 gap-2">
                       {Array.from({ length: 5 }).map((_, slotIndex) => {
                         const preview = refundPreviews[slotIndex];
@@ -786,7 +783,9 @@ export default function OrderHelpPage() {
             )}
 
             <p className="mt-6 text-xs text-neutral-500">
-              Returns can be requested within 21 days of delivery. Please ensure all information and photos are accurate before submitting your request.
+              Returns can be requested within 21 days of delivery. Please ensure
+              all information and photos are accurate before submitting your
+              request.
             </p>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
@@ -802,7 +801,8 @@ export default function OrderHelpPage() {
                 disabled={
                   processingRefund ||
                   submittingRefund ||
-                  refundComment.trim().length < 20
+                  refundComment.trim().length < 20 ||
+                  refundImages.length === 0
                 }
                 className="w-full rounded-2xl bg-white py-3 text-black disabled:opacity-50 disabled:cursor-not-allowed"
               >
