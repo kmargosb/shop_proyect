@@ -199,6 +199,32 @@ export const createAddressController = asyncHandler(
       },
     });
 
+    /* ===============================
+   AUTO FILL USER PROFILE
+================================= */
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        name: true,
+        phone: true,
+      },
+    });
+
+    if (user && (!user.name || !user.phone)) {
+      await prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          ...(user.name ? {} : { name: fullName?.trim() || null }),
+          ...(user.phone ? {} : { phone: phone?.trim() || null }),
+        },
+      });
+    }
+
     res.status(201).json(address);
   },
 );
@@ -398,7 +424,7 @@ export const updateProfileController = asyncHandler(
       });
     }
 
-    const { name } = req.body;
+    const { name, phone } = req.body;
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -406,11 +432,13 @@ export const updateProfileController = asyncHandler(
       },
       data: {
         name: name?.trim() || null,
+        phone: phone?.trim() || null,
       },
       select: {
         id: true,
         email: true,
         name: true,
+        phone: true,
       },
     });
 

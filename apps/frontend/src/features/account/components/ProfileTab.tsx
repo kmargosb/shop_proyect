@@ -12,6 +12,9 @@ type Props = {
 
 export default function ProfileTab({ user, orders }: Props) {
   const [displayName, setDisplayName] = useState(user?.name || "");
+
+  const [phone, setPhone] = useState(user?.phone || "");
+
   const [saving, setSaving] = useState(false);
 
   const totalOrders = orders.length;
@@ -28,6 +31,7 @@ export default function ProfileTab({ user, orders }: Props) {
         method: "PATCH",
         body: JSON.stringify({
           name: displayName,
+          phone,
         }),
       });
 
@@ -50,41 +54,42 @@ export default function ProfileTab({ user, orders }: Props) {
 
       <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Profile</h2>
 
-  <div>
-    <h2 className="text-2xl font-bold">
-      Profile
-    </h2>
+            <p className="mt-2 text-sm text-neutral-500">
+              Account information and saved addresses.
+            </p>
+          </div>
 
-    <p className="mt-2 text-sm text-neutral-500">
-      Account information and saved addresses.
-    </p>
-  </div>
+          <div className="w-full lg:w-auto lg:min-w-[320px]">
+            <p className="mb-2 text-xs text-neutral-500">Display Name</p>
 
-  <div className="w-full lg:w-auto lg:min-w-[320px]">
-    <p className="mb-2 text-xs text-neutral-500">
-      Display Name
-    </p>
+            <div className="flex gap-2">
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your name"
+                className="flex-1 rounded-xl border border-white/10 bg-transparent px-4 py-2 text-sm"
+              />
 
-    <div className="flex gap-2">
-      <input
-        value={displayName}
-        onChange={(e) => setDisplayName(e.target.value)}
-        placeholder="Your name"
-        className="flex-1 rounded-xl border border-white/10 bg-transparent px-4 py-2 text-sm"
-      />
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone Number"
+                className="mt-3 w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 text-sm"
+              />
 
-      <button
-        onClick={saveProfile}
-        disabled={saving}
-        className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black whitespace-nowrap"
-      >
-        {saving ? "Saving..." : "Save"}
-      </button>
-    </div>
-  </div>
-
-</div>
+              <button
+                onClick={saveProfile}
+                disabled={saving}
+                className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black whitespace-nowrap"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr_1fr]">
           <div className="rounded-2xl border border-white/10 p-4">
@@ -111,7 +116,6 @@ export default function ProfileTab({ user, orders }: Props) {
             </p>
           </div>
         </div>
-        
       </div>
 
       {/* ORDER STATS */}
