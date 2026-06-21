@@ -7,6 +7,7 @@ import { apiFetch } from "@/shared/lib/api";
 
 export default function LoginPage() {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [mode, setMode] = useState<"login" | "register">("login");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,21 +30,27 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await apiFetch("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+    const res = await apiFetch(
+      mode === "login" ? "/auth/login" : "/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      },
+    );
 
     setLoading(false);
 
     if (!res) {
-      setError("Error de conexión");
+      setError("Connection error");
       return;
     }
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data?.error || "Credenciales inválidas");
+      setError(data?.error || "Invalid credentials");
       return;
     }
 
@@ -56,10 +63,20 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-6">
       <div className="w-full max-w-md space-y-8 text-center">
-        <h1 className="text-3xl font-semibold">Sign In</h1>
+        <h1 className="text-3xl font-semibold">
+          {showEmailLogin
+            ? mode === "login"
+              ? "Sign In"
+              : "Create Account"
+            : "Sign In"}
+        </h1>
 
         <p className="text-neutral-400 text-sm">
-          Sign in to your account or continue with Google
+          {showEmailLogin
+            ? mode === "login"
+              ? "Access your account"
+              : "Create your account"
+            : "Sign in to your account or continue with Google"}
         </p>
 
         {/* GOOGLE LOGIN */}
@@ -85,6 +102,7 @@ export default function LoginPage() {
         )}
 
         {/* FORM EMAIL */}
+
         {showEmailLogin && (
           <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
             <input
@@ -105,14 +123,16 @@ export default function LoginPage() {
               required
             />
 
-            <div className="flex justify-end">
-              <a
-                href="/login/forgot-password"
-                className="text-xs text-neutral-400 hover:text-white"
-              >
-                Forgot your password?
-              </a>
-            </div>
+            {mode === "login" && (
+              <div className="flex justify-end">
+                <a
+                  href="/login/forgot-password"
+                  className="text-xs text-neutral-400 hover:text-white"
+                >
+                  Forgot your password?
+                </a>
+              </div>
+            )}
 
             {error && (
               <p className="text-red-400 text-sm text-center">{error}</p>
@@ -123,8 +143,46 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-white text-black py-3 rounded-xl text-sm font-medium"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading
+                ? mode === "login"
+                  ? "Signing in..."
+                  : "Creating account..."
+                : mode === "login"
+                  ? "Sign In"
+                  : "Create Account"}
             </button>
+
+            <div className="text-center text-sm">
+              {mode === "login" ? (
+                <>
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("register");
+                      setError("");
+                    }}
+                    className="text-white underline"
+                  >
+                    Create Account
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("login");
+                      setError("");
+                    }}
+                    className="text-white underline"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </div>
 
             <button
               type="button"

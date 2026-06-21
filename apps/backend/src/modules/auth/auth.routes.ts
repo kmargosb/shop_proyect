@@ -6,6 +6,7 @@ import {
   login,
   logout,
   refresh,
+  register,
   logoutAll,
   resetPassword,
   forgotPassword,
@@ -16,6 +17,7 @@ import {
 const router = Router();
 
 router.post("/login", loginRateLimiter, login);
+router.post("/register", register);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/logout", logout);

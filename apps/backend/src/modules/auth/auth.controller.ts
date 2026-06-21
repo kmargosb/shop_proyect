@@ -102,6 +102,85 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   res.json({ user: result.user });
 });
 
+export const register = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password, name } = req.body;
+
+  if (!email || !password || password.length < 8) {
+    return res.status(400).json({
+      error: "Invalid registration data",
+    });
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    return res.status(400).json({
+      error: "An account already exists with this email",
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      name: name || null,
+      provider: "LOCAL",
+    },
+  });
+
+  await prisma.order.updateMany({
+    where: {
+      userId: null,
+      email,
+    },
+    data: {
+      userId: user.id,
+    },
+  });
+
+  const payload = {
+    id: user.id,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  };
+
+  const accessToken = generateAccessToken(payload);
+
+  const refreshToken = generateRefreshToken(payload);
+
+  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+  await prisma.refreshToken.create({
+    data: {
+      token: hashedRefreshToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  res.cookie("accessToken", accessToken, {
+    ...cookieOptions,
+    maxAge: 2 * 60 * 60 * 1000,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+  });
+});
+
 /* ============================
    LOGOUT
 ============================ */
@@ -151,7 +230,6 @@ export const logoutAll = asyncHandler(
   },
 );
 
-
 /* ============================
    CHANGE PASSWORD
 ============================ */
@@ -160,44 +238,55 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
-export const changePassword = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const userId = req.user?.id;
+export const changePassword = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
 
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-  const { currentPassword, newPassword } = req.body as { currentPassword?: unknown; newPassword?: unknown };
+    const { currentPassword, newPassword } = req.body as {
+      currentPassword?: unknown;
+      newPassword?: unknown;
+    };
 
-  if (!isString(currentPassword) || !isString(newPassword) || newPassword.length < 8) {
-    return res.status(400).json({ error: "Invalid password" });
-  }
+    if (
+      !isString(currentPassword) ||
+      !isString(newPassword) ||
+      newPassword.length < 8
+    ) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
 
-  if (!user?.password) {
-    return res.status(400).json({ error: "This account does not have a local password" });
-  }
+    if (!user?.password) {
+      return res
+        .status(400)
+        .json({ error: "This account does not have a local password" });
+    }
 
-  const validPassword = await bcrypt.compare(currentPassword, user.password);
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
 
-  if (!validPassword) {
-    return res.status(400).json({ error: "Current password is incorrect" });
-  }
+    if (!validPassword) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { password: hashedPassword, tokenVersion: { increment: 1 } },
-  });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword, tokenVersion: { increment: 1 } },
+    });
 
-  await prisma.refreshToken.deleteMany({ where: { userId } });
+    await prisma.refreshToken.deleteMany({ where: { userId } });
 
-  res.clearCookie("accessToken", cookieOptions);
-  res.clearCookie("refreshToken", cookieOptions);
-  res.json({ message: "Password updated successfully" });
-});
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
+    res.json({ message: "Password updated successfully" });
+  },
+);
 
 export const forgotPassword = asyncHandler(
   async (req: Request, res: Response) => {
@@ -233,17 +322,11 @@ export const forgotPassword = asyncHandler(
       data: {
         token,
         userId: user.id,
-        expiresAt: new Date(
-          Date.now() + 60 * 60 * 1000,
-        ), // 1 hora
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hora
       },
     });
 
-    await sendPasswordResetEmail(
-      user.email,
-      user.name || user.email,
-      token,
-    );
+    await sendPasswordResetEmail(user.email, user.name || user.email, token);
 
     res.json({
       message:
@@ -256,34 +339,25 @@ export const resetPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const { token, password } = req.body;
 
-    if (
-      !token ||
-      !password ||
-      password.length < 8
-    ) {
+    if (!token || !password || password.length < 8) {
       return res.status(400).json({
         error: "Invalid password",
       });
     }
 
-    const resetToken =
-      await prisma.passwordResetToken.findUnique({
-        where: {
-          token,
-        },
-      });
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: {
+        token,
+      },
+    });
 
-    if (
-      !resetToken ||
-      resetToken.expiresAt < new Date()
-    ) {
+    if (!resetToken || resetToken.expiresAt < new Date()) {
       return res.status(400).json({
         error: "Invalid or expired token",
       });
     }
 
-    const hashedPassword =
-      await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     await prisma.user.update({
       where: {
@@ -310,8 +384,7 @@ export const resetPassword = asyncHandler(
     });
 
     res.json({
-      message:
-        "Password reset successfully",
+      message: "Password reset successfully",
     });
   },
 );
@@ -381,8 +454,8 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   }
 
   await prisma.refreshToken.deleteMany({
-  where: { id: matchedToken.id },
-});
+    where: { id: matchedToken.id },
+  });
 
   const newRefreshToken = generateRefreshToken({
     id: decoded.id,
@@ -407,14 +480,14 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   });
 
   res.cookie("accessToken", newAccessToken, {
-  ...cookieOptions,
-  maxAge: 2 * 60 * 60 * 1000,
-});
+    ...cookieOptions,
+    maxAge: 2 * 60 * 60 * 1000,
+  });
 
-res.cookie("refreshToken", newRefreshToken, {
-  ...cookieOptions,
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-});
+  res.cookie("refreshToken", newRefreshToken, {
+    ...cookieOptions,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
 
   res.json({
     message: "Tokens refreshed successfully",
@@ -482,7 +555,7 @@ export const googleAuthController = asyncHandler(
 
     res.cookie("refreshToken", refreshToken, {
       ...cookieOptions,
-       maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     /* =========================
