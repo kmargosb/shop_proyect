@@ -92,6 +92,53 @@ export default function SettingsTab() {
             {marketingEmails ? "Enabled" : "Disabled"}
           </button>
         </div>
+        <div className="rounded-2xl border border-red-500/20 p-5">
+          <p className="font-medium text-white">Deactivate Account</p>
+
+          <p className="mt-1 text-sm text-neutral-500">
+            Deactivate your account and sign out from all devices. You can
+            reactivate it anytime by signing in again.
+          </p>
+
+          <button
+            onClick={async () => {
+              const confirmed = window.confirm(
+                "Are you sure you want to deactivate your account?",
+              );
+
+              if (!confirmed) return;
+
+              const secondConfirm = window.confirm(
+                "You can reactivate your account later by signing in again. Continue?",
+              );
+
+              if (!secondConfirm) return;
+
+              try {
+                const res = await apiFetch("/auth/deactivate-account", {
+                  method: "POST",
+                });
+
+                if (!res || !res.ok) {
+                  throw new Error();
+                }
+
+                localStorage.removeItem("orderEmail");
+                localStorage.removeItem("orderEmailOrderId");
+                localStorage.removeItem("checkoutData");
+
+                toast.success("Account deactivated successfully.");
+
+                window.location.href = "/";
+              } catch {
+                toast.error("Unable to deactivate account.");
+              }
+            }}
+            className="mt-5 rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white cursor-pointer"
+          >
+            Deactivate Account
+          </button>
+        </div>
       </div>
     </div>
   );

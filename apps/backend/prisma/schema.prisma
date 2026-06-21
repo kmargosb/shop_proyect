@@ -13,18 +13,24 @@ model User {
   password      String?
   name          String?
   role          Role           @default(USER)
+
+  isActive      Boolean        @default(true)
+
   lockUntil     DateTime?
   loginAttempts Int            @default(0)
   tokenVersion  Int            @default(0)
+
   createdAt     DateTime       @default(now())
   provider      String?
-  marketingEmails Boolean @default(true)
+
+  marketingEmails Boolean      @default(true)
+
   addresses     Address[]
   carts         Cart[]
   orders        Order[]
-  refreshTokens      RefreshToken[]
+  refreshTokens RefreshToken[]
   passwordResetTokens PasswordResetToken[]
-  wishlistItems      WishlistItem[]
+  wishlistItems WishlistItem[]
 }
 
 model Brand {

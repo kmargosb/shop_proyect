@@ -1,3 +1,4 @@
+import { sendPasswordResetEmail } from "@/modules/email/sendOrderEmail";
 import { Request, Response } from "express";
 import { loginWithGoogle } from "./google.service";
 import { asyncHandler } from "@/common/utils/asyncHandler";
@@ -7,12 +8,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
 import * as authService from "./auth.service";
+import crypto from "crypto";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/common/utils/generateToken";
-import crypto from "crypto";
-import { sendPasswordResetEmail } from "@/modules/email/sendOrderEmail";
+
 
 /**
  * 🔐 Opciones de cookie CONSISTENTES
@@ -227,6 +228,44 @@ export const logoutAll = asyncHandler(
     res.clearCookie("refreshToken", cookieOptions);
 
     res.json({ message: "Signed out from all devices" });
+  },
+);
+
+export const deactivateAccount = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        isActive: false,
+        marketingEmails: false,
+        tokenVersion: {
+          increment: 1,
+        },
+      },
+    });
+
+    await prisma.refreshToken.deleteMany({
+      where: {
+        userId,
+      },
+    });
+
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
+
+    res.json({
+      success: true,
+    });
   },
 );
 

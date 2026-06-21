@@ -70,6 +70,21 @@ export async function loginUser(email: string, password: string) {
   }
 
   /* =========================
+   REACTIVATE ACCOUNT
+========================= */
+
+if (!user.isActive) {
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isActive: true,
+    },
+  });
+
+  user.isActive = true;
+}
+
+  /* =========================
      LOGIN CORRECTO → RESET
   ========================== */
 

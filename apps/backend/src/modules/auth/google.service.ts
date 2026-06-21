@@ -40,6 +40,21 @@ if (!user) {
   });
 }
 
+
+/* =========================
+   REACTIVATE ACCOUNT
+========================= */
+
+if (!user.isActive) {
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isActive: true,
+    },
+  });
+
+  user.isActive = true;
+}
 /* =========================
    LINK GUEST ORDERS
 ========================= */
