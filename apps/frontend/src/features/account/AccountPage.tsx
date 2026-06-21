@@ -108,7 +108,7 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <p className="text-neutral-400">Cargando tu cuenta...</p>
+        <p className="text-neutral-400">Loading your account...</p>
       </div>
     );
   }
@@ -148,7 +148,7 @@ export default function AccountPage() {
             className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-neutral-950/90 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-white/10"
           >
             <Menu size={18} />
-            Menú cuenta
+            Account Menu
           </button>
         </div>
         <section className="h-full overflow-y-auto pr-1 pb-10">

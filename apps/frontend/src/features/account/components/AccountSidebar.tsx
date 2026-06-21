@@ -15,17 +15,17 @@ import { apiFetch } from "@/shared/lib/api";
 const menuItems = [
   {
     key: "orders",
-    label: "Pedidos",
+    label: "Orders",
     icon: Package,
   },
   {
     key: "profile",
-    label: "Perfil",
+    label: "Profile",
     icon: User,
   },
   {
     key: "addresses",
-    label: "Direcciones",
+    label: "Addresses",
     icon: MapPin,
   },
   {
@@ -35,12 +35,12 @@ const menuItems = [
   },
   {
     key: "security",
-    label: "Seguridad",
+    label: "Security",
     icon: Shield,
   },
   {
     key: "settings",
-    label: "Configuración",
+    label: "Settings",
     icon: Settings,
   },
 ];
@@ -70,14 +70,14 @@ export default function AccountSidebar({
   "
     >
       <div className="border-b border-white/10 pb-5">
-        <p className="text-sm text-neutral-500">Cuenta</p>
+        <p className="text-sm text-neutral-500">Account</p>
 
         <h1 className="mt-2 text-2xl font-bold">
-          Hola, {user?.email?.split("@")[0]}
+          Welcome, {user?.email?.split("@")[0]}
         </h1>
 
         <p className="mt-2 text-sm text-neutral-500">
-          Gestiona pedidos, direcciones y preferencias.
+          Manage your orders, addresses and preferences.
         </p>
       </div>
 
@@ -120,7 +120,7 @@ export default function AccountSidebar({
           className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm text-red-400 transition hover:bg-red-500/10"
         >
           <LogOut size={18} />
-          Cerrar sesión
+          Sign Out
         </button>
       </div>
     </aside>
