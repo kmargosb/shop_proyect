@@ -7,6 +7,8 @@ import { toast } from "sonner";
 export default function SettingsTab() {
   const [marketingEmails, setMarketingEmails] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -101,45 +103,72 @@ export default function SettingsTab() {
           </p>
 
           <button
-            onClick={async () => {
-              const confirmed = window.confirm(
-                "Are you sure you want to deactivate your account?",
-              );
-
-              if (!confirmed) return;
-
-              const secondConfirm = window.confirm(
-                "You can reactivate your account later by signing in again. Continue?",
-              );
-
-              if (!secondConfirm) return;
-
-              try {
-                const res = await apiFetch("/auth/deactivate-account", {
-                  method: "POST",
-                });
-
-                if (!res || !res.ok) {
-                  throw new Error();
-                }
-
-                localStorage.removeItem("orderEmail");
-                localStorage.removeItem("orderEmailOrderId");
-                localStorage.removeItem("checkoutData");
-
-                toast.success("Account deactivated successfully.");
-
-                window.location.href = "/";
-              } catch {
-                toast.error("Unable to deactivate account.");
-              }
-            }}
+            onClick={() => setShowDeactivateModal(true)}
             className="mt-5 rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white cursor-pointer"
           >
             Deactivate Account
           </button>
         </div>
       </div>
+      {showDeactivateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">
+            <h3 className="text-xl font-semibold text-white">
+              Deactivate Account
+            </h3>
+
+            <p className="mt-3 text-sm text-neutral-400">
+              Your account will be deactivated and signed out on all devices.
+            </p>
+
+            <p className="mt-2 text-sm text-neutral-400">
+              You can reactivate your account anytime by signing in again.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowDeactivateModal(false)}
+                disabled={deactivating}
+                className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm text-white"
+              >
+                Cancel
+              </button>
+
+              <button
+                disabled={deactivating}
+                onClick={async () => {
+                  try {
+                    setDeactivating(true);
+
+                    const res = await apiFetch("/auth/deactivate-account", {
+                      method: "POST",
+                    });
+
+                    if (!res || !res.ok) {
+                      throw new Error();
+                    }
+
+                    localStorage.removeItem("orderEmail");
+                    localStorage.removeItem("orderEmailOrderId");
+                    localStorage.removeItem("checkoutData");
+
+                    toast.success("Account deactivated successfully.");
+
+                    window.location.href = "/";
+                  } catch {
+                    toast.error("Unable to deactivate account.");
+                  } finally {
+                    setDeactivating(false);
+                  }
+                }}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white"
+              >
+                {deactivating ? "Deactivating..." : "Deactivate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
