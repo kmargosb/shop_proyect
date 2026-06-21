@@ -89,6 +89,7 @@ export default function Page() {
 
         if (res?.ok) {
           const data = await res.json();
+          
 
           setOrder(data);
         }
@@ -937,6 +938,7 @@ export default function Page() {
                   }
 
                   const data = await res.json();
+                  console.log("RETRY PAYMENT", data);
 
                   router.push(
                     `/orders/${order.id}/pay?clientSecret=${data.clientSecret}`,

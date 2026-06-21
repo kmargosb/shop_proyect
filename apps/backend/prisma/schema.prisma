@@ -32,6 +32,7 @@ model User {
   refreshTokens RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   wishlistItems WishlistItem[]
+  analyticsEvents AnalyticsEvent[]
 }
 
 model Brand {
@@ -58,6 +59,7 @@ model Product {
   images      ProductImage[]
   variants    ProductVariant[]
   wishlistItems WishlistItem[]
+  analyticsEvents AnalyticsEvent[]
 
   @@index([brandId])
 }
@@ -403,6 +405,23 @@ model OrderChangeRequest {
   createdAt      DateTime                 @default(now())
   reviewedAt     DateTime?
   Order          Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+
+  userId    String?
+  productId String?
+
+  event     String
+
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 }
 
 

@@ -6,14 +6,8 @@ import {
 
 const router = Router();
 
-router.post(
-  "/create-intent",
-  createPaymentIntent,
-);
+router.post("/create-intent", createPaymentIntent);
 
-router.post(
-  "/retry/:orderId",
-  retryPaymentController,
-);
+router.post("/retry/:orderId", retryPaymentController);
 
 export default router;

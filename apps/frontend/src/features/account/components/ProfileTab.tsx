@@ -61,36 +61,7 @@ export default function ProfileTab({ user, orders }: Props) {
               Account information and saved addresses.
             </p>
           </div>
-
-          <div className="w-full lg:w-auto lg:min-w-[320px]">
-            <p className="mb-2 text-xs text-neutral-500">Display Name</p>
-
-            <div className="flex gap-2">
-              <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name"
-                className="flex-1 rounded-xl border border-white/10 bg-transparent px-4 py-2 text-sm"
-              />
-
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Phone Number"
-                className="mt-3 w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 text-sm"
-              />
-
-              <button
-                onClick={saveProfile}
-                disabled={saving}
-                className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black whitespace-nowrap"
-              >
-                {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
         </div>
-
         <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr_1fr]">
           <div className="rounded-2xl border border-white/10 p-4">
             <p className="text-xs text-neutral-500">Email</p>
@@ -114,6 +85,33 @@ export default function ProfileTab({ user, orders }: Props) {
                 ? new Date(user.createdAt).toLocaleDateString()
                 : "-"}
             </p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-2xl border border-white/10 p-5">
+          <h3 className="text-sm font-medium">Personal Information</h3>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Display Name"
+              className="rounded-xl border border-white/10 bg-transparent px-4 py-3 text-sm"
+            />
+
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone Number"
+              className="rounded-xl border border-white/10 bg-transparent px-4 py-3 text-sm"
+            />
+
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="rounded-xl bg-white px-6 py-3 text-sm font-medium text-black whitespace-nowrap"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
           </div>
         </div>
       </div>

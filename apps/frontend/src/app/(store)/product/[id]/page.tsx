@@ -17,6 +17,7 @@ export default function ProductPage() {
   const router = useRouter();
   const { addItem } = useCart();
   const [product, setProduct] = useState<any>(null);
+  const [viewTracked, setViewTracked] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("");
@@ -80,6 +81,24 @@ export default function ProductPage() {
 
   useEffect(() => {
     loadProduct();
+  }, [id]);
+
+  useEffect(() => {
+    if (!product || viewTracked) return;
+
+    setViewTracked(true);
+
+    apiFetch("/analytics/track", {
+      method: "POST",
+      body: JSON.stringify({
+        event: "PRODUCT_VIEW",
+        productId: product.id,
+      }),
+    });
+  }, [product, viewTracked]);
+
+  useEffect(() => {
+    setViewTracked(false);
   }, [id]);
 
   useEffect(() => {
@@ -179,13 +198,9 @@ export default function ProductPage() {
   if (outOfStock) {
     stockBadge = <span className="text-red-500 font-medium">Sold Out</span>;
   } else if (availableStock <= 5) {
-    stockBadge = (
-      <span className="text-amber-400 font-medium">Low stock</span>
-    );
+    stockBadge = <span className="text-amber-400 font-medium">Low stock</span>;
   } else {
-    stockBadge = (
-      <span className="text-emerald-500 font-medium">In Stock</span>
-    );
+    stockBadge = <span className="text-emerald-500 font-medium">In Stock</span>;
   }
 
   /* ===============================
@@ -201,6 +216,18 @@ export default function ProductPage() {
 
       await addItem(product.id, selectedVariant.id, quantity);
 
+      await apiFetch("/analytics/track", {
+        method: "POST",
+        body: JSON.stringify({
+          event: "ADD_TO_CART",
+          productId: product.id,
+          metadata: {
+            variantId: selectedVariant.id,
+            quantity,
+          },
+        }),
+      });
+
       toast.success("Producto añadido al carrito");
     } catch (error: any) {
       toast.error(error?.message || "No hay suficiente stock");
@@ -215,6 +242,19 @@ export default function ProductPage() {
       }
 
       await addItem(product.id, selectedVariant.id, quantity, false);
+
+      await apiFetch("/analytics/track", {
+        method: "POST",
+        body: JSON.stringify({
+          event: "ADD_TO_CART",
+          productId: product.id,
+          metadata: {
+            variantId: selectedVariant.id,
+            quantity,
+            buyNow: true,
+          },
+        }),
+      });
 
       toast.success("Producto añadido al carrito");
 
@@ -282,9 +322,7 @@ export default function ProductPage() {
           )}
 
           <div className="flex items-center gap-3">
-  <h1 className="text-3xl font-bold">
-    {product.name}
-  </h1>
+            <h1 className="text-3xl font-bold">{product.name}</h1>
 
             <button
               onClick={() => toggleWishlist(product.id)}
