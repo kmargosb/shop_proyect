@@ -11,6 +11,7 @@ import {
   updateAddressController,
   getPreferencesController,
   updatePreferencesController,
+  updateProfileController,
 } from "./customer.controller";
 
 const router = Router();
@@ -28,6 +29,8 @@ router.put("/me/addresses/:id", protect, updateAddressController);
 router.delete("/me/addresses/:id", protect, deleteAddressController);
 
 router.patch("/me/addresses/:id/favorite", protect, setDefaultAddressController);
+
+router.patch("/me/profile", protect, updateProfileController);
 
 router.get("/me/preferences", protect, getPreferencesController);
 

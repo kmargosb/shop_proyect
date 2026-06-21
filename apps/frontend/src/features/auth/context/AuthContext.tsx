@@ -9,6 +9,9 @@ type User = {
   id: string;
   email: string;
   role: "ADMIN" | "CUSTOMER";
+  name?: string | null;
+  provider?: string | null;
+  createdAt?: string;
 };
 
 type AuthContextType = {

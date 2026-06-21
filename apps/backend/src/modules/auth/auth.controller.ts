@@ -14,7 +14,6 @@ import {
   generateRefreshToken,
 } from "@/common/utils/generateToken";
 
-
 /**
  * 🔐 Opciones de cookie CONSISTENTES
  *
@@ -75,6 +74,9 @@ export const me = asyncHandler(async (req: AuthRequest, res: Response) => {
       id: true,
       email: true,
       role: true,
+      name: true,
+      provider: true,
+      createdAt: true,
     },
   });
 

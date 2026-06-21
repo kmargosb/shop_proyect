@@ -3,7 +3,6 @@
 import {
   Heart,
   LogOut,
-  MapPin,
   Package,
   Settings,
   Shield,
@@ -14,19 +13,14 @@ import { apiFetch } from "@/shared/lib/api";
 
 const menuItems = [
   {
-    key: "orders",
-    label: "Orders",
-    icon: Package,
-  },
-  {
     key: "profile",
     label: "Profile",
     icon: User,
   },
   {
-    key: "addresses",
-    label: "Addresses",
-    icon: MapPin,
+    key: "orders",
+    label: "Orders",
+    icon: Package,
   },
   {
     key: "wishlist",
@@ -73,7 +67,7 @@ export default function AccountSidebar({
         <p className="text-sm text-neutral-500">Account</p>
 
         <h1 className="mt-2 text-2xl font-bold">
-          Welcome, {user?.email?.split("@")[0]}
+          Welcome, {user?.name || user?.email?.split("@")[0]}
         </h1>
 
         <p className="mt-2 text-sm text-neutral-500">

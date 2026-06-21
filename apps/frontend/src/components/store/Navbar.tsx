@@ -110,7 +110,7 @@ export default function Navbar() {
                 onClick={() => setOpenDropdown((prev) => !prev)}
                 className="text-sm text-black transition hover:opacity-70"
               >
-                Hello, {user?.email?.split("@")[0]}
+                Hello, {user?.name || user?.email?.split("@")[0]}
               </button>
 
               {/* DROPDOWN */}
@@ -131,7 +131,7 @@ export default function Navbar() {
                   </p>
 
                   <p className="mt-2 text-lg font-semibold text-black">
-                    {user?.email?.split("@")[0]}
+                    {user?.name || user?.email?.split("@")[0]}
                   </p>
 
                   <p className="mt-1 text-sm text-neutral-500">{user?.email}</p>

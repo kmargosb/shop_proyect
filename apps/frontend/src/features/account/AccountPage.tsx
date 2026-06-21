@@ -10,7 +10,6 @@ import { socket } from "@/shared/lib/socket";
 import AccountSidebar from "./components/AccountSidebar";
 import OrdersTab from "./components/OrdersTab";
 import ProfileTab from "./components/ProfileTab";
-import AddressesTab from "./components/AddressesTab";
 import WishlistTab from "./components/WishlistTab";
 import SecurityTab from "./components/SecurityTab";
 import SettingsTab from "./components/SettingsTab";
@@ -154,9 +153,7 @@ export default function AccountPage() {
         <section className="h-full overflow-y-auto pr-1 pb-10">
           {activeTab === "orders" && <OrdersTab orders={orders} />}
 
-          {activeTab === "profile" && <ProfileTab user={user} />}
-
-          {activeTab === "addresses" && <AddressesTab />}
+          {activeTab === "profile" && (<ProfileTab user={user} orders={orders} />)}
 
           {activeTab === "wishlist" && <WishlistTab />}
 

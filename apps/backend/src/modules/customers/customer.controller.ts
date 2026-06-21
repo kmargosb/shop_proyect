@@ -19,7 +19,7 @@ export const getCustomersController = asyncHandler(
     });
 
     res.json(result);
-  }
+  },
 );
 
 /* =========================================================
@@ -53,7 +53,7 @@ export const getCustomerOrdersController = asyncHandler(
 
     const totalSpent = orders.reduce(
       (sum, order) => sum + order.totalAmount,
-      0
+      0,
     );
 
     res.json({
@@ -62,7 +62,7 @@ export const getCustomerOrdersController = asyncHandler(
       totalSpent,
       orders,
     });
-  }
+  },
 );
 
 /* =========================================================
@@ -108,7 +108,7 @@ export const getCustomerAnalyticsController = asyncHandler(
       averageOrderValue,
       lastPurchase,
     });
-  }
+  },
 );
 
 /* =========================================================
@@ -134,7 +134,7 @@ export const getMyAddressesController = asyncHandler(
     });
 
     res.json(addresses);
-  }
+  },
 );
 
 /* =========================================================
@@ -151,8 +151,7 @@ export const createAddressController = asyncHandler(
       });
     }
 
-    const normalize = (str?: string) =>
-      str?.trim().toLowerCase();
+    const normalize = (str?: string) => str?.trim().toLowerCase();
 
     const {
       fullName,
@@ -191,12 +190,10 @@ export const createAddressController = asyncHandler(
         userId,
         fullName,
         phone,
-        addressLine1:
-          normalize(addressLine1) || "",
+        addressLine1: normalize(addressLine1) || "",
         addressLine2: addressLine2 || "",
         city: normalize(city) || "",
-        postalCode:
-          normalize(postalCode) || "",
+        postalCode: normalize(postalCode) || "",
         country,
         isDefault: existingCount === 0,
       },
@@ -211,10 +208,7 @@ export const createAddressController = asyncHandler(
 ========================================================= */
 
 export const updateAddressController = asyncHandler(
-  async (
-    req: AuthRequest & { params: { id: string } },
-    res: Response,
-  ) => {
+  async (req: AuthRequest & { params: { id: string } }, res: Response) => {
     const userId = req.user?.id;
 
     const { id } = req.params;
@@ -238,8 +232,7 @@ export const updateAddressController = asyncHandler(
       });
     }
 
-    const normalize = (str?: string) =>
-      str?.trim().toLowerCase();
+    const normalize = (str?: string) => str?.trim().toLowerCase();
 
     const updated = await prisma.address.update({
       where: { id },
@@ -247,14 +240,10 @@ export const updateAddressController = asyncHandler(
       data: {
         fullName: req.body.fullName,
         phone: req.body.phone,
-        addressLine1:
-          normalize(req.body.addressLine1) || "",
-        addressLine2:
-          req.body.addressLine2 || "",
-        city:
-          normalize(req.body.city) || "",
-        postalCode:
-          normalize(req.body.postalCode) || "",
+        addressLine1: normalize(req.body.addressLine1) || "",
+        addressLine2: req.body.addressLine2 || "",
+        city: normalize(req.body.city) || "",
+        postalCode: normalize(req.body.postalCode) || "",
         country: req.body.country,
       },
     });
@@ -284,7 +273,7 @@ export const deleteAddressController = asyncHandler(
     });
 
     res.json({ success: true });
-  }
+  },
 );
 
 /* =========================================================
@@ -341,7 +330,7 @@ export const setDefaultAddressController = asyncHandler(
     });
 
     res.json({ success: true });
-  }
+  },
 );
 
 /* =========================================================
@@ -396,5 +385,35 @@ export const updatePreferencesController = asyncHandler(
     });
 
     res.json(user);
+  },
+);
+
+export const updateProfileController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const { name } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        name: name?.trim() || null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    res.json(updatedUser);
   },
 );
