@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import AddressAutocomplete from "@/features/checkout/components/AddressAutocomplete";
 import { COUNTRIES } from "@/shared/constants/countries";
-import {
-  MapPin,
-  Pencil,
-  Plus,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react";
+import { MapPin, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { apiFetch } from "@/shared/lib/api";
 
 type Address = {
@@ -69,9 +62,7 @@ export default function AddressesTab() {
   /* ================= INPUT ================= */
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setForm((prev) => ({
       ...prev,
@@ -130,16 +121,14 @@ export default function AddressesTab() {
 
       await loadAddresses();
     } catch {
-      alert("Error guardando dirección");
+      alert("Unable to save address.");
     }
   };
 
   /* ================= DELETE ================= */
 
   const deleteAddress = async (id: string) => {
-    const confirmed = confirm(
-      "¿Eliminar esta dirección?",
-    );
+    const confirmed = confirm("Delete this address?");
 
     if (!confirmed) return;
 
@@ -153,12 +142,9 @@ export default function AddressesTab() {
   /* ================= FAVORITE ================= */
 
   const setFavorite = async (id: string) => {
-    await apiFetch(
-      `/customers/me/addresses/${id}/favorite`,
-      {
-        method: "PATCH",
-      },
-    );
+    await apiFetch(`/customers/me/addresses/${id}/favorite`, {
+      method: "PATCH",
+    });
 
     loadAddresses();
   };
@@ -166,9 +152,7 @@ export default function AddressesTab() {
   if (loading) {
     return (
       <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
-        <p className="text-neutral-400">
-          Cargando direcciones...
-        </p>
+        <p className="text-neutral-400">Loading addresses...</p>
       </div>
     );
   }
@@ -180,12 +164,10 @@ export default function AddressesTab() {
 
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">
-              Direcciones
-            </h2>
+            <h2 className="text-2xl font-bold text-white">Addresses</h2>
 
             <p className="mt-2 text-sm text-neutral-500">
-              Gestiona tus direcciones de envío.
+              Manage your shipping addresses.
             </p>
           </div>
 
@@ -194,7 +176,7 @@ export default function AddressesTab() {
             className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
             <Plus size={16} />
-            Nueva dirección
+            Add Address
           </button>
         </div>
 
@@ -202,13 +184,10 @@ export default function AddressesTab() {
 
         {addresses.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-white/10 p-10 text-center">
-            <MapPin
-              size={40}
-              className="mx-auto text-neutral-600"
-            />
+            <MapPin size={40} className="mx-auto text-neutral-600" />
 
             <p className="mt-4 text-neutral-400">
-              No tienes direcciones guardadas.
+              You don't have any saved addresses yet.
             </p>
           </div>
         ) : (
@@ -231,7 +210,7 @@ export default function AddressesTab() {
 
                   {address.isDefault && (
                     <div className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-black">
-                      Principal
+                      Default
                     </div>
                   )}
                 </div>
@@ -239,9 +218,7 @@ export default function AddressesTab() {
                 <div className="mt-5 space-y-1 text-sm text-neutral-300">
                   <p>{address.addressLine1}</p>
 
-                  {address.addressLine2 && (
-                    <p>{address.addressLine2}</p>
-                  )}
+                  {address.addressLine2 && <p>{address.addressLine2}</p>}
 
                   <p>
                     {address.city}, {address.postalCode}
@@ -254,9 +231,7 @@ export default function AddressesTab() {
 
                 <div className="mt-6 flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() =>
-                      setFavorite(address.id)
-                    }
+                    onClick={() => setFavorite(address.id)}
                     className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
                       address.isDefault
                         ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
@@ -265,9 +240,7 @@ export default function AddressesTab() {
                   >
                     <Star size={15} />
 
-                    {address.isDefault
-                      ? "Principal"
-                      : "Favorita"}
+                    {address.isDefault ? "Default" : "Set Default"}
                   </button>
 
                   <button
@@ -275,17 +248,15 @@ export default function AddressesTab() {
                     className="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:bg-white/10"
                   >
                     <Pencil size={15} />
-                    Editar
+                    Edit
                   </button>
 
                   <button
-                    onClick={() =>
-                      deleteAddress(address.id)
-                    }
+                    onClick={() => deleteAddress(address.id)}
                     className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
                   >
                     <Trash2 size={15} />
-                    Eliminar
+                    Delete
                   </button>
                 </div>
               </div>
@@ -304,13 +275,11 @@ export default function AddressesTab() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-white">
-                  {editing
-                    ? "Editar dirección"
-                    : "Nueva dirección"}
+                  {editing ? "Edit Address" : "Add Address"}
                 </h3>
 
                 <p className="mt-1 text-sm text-neutral-500">
-                  Guarda una dirección para futuros pedidos.
+                  Save an address for future orders.
                 </p>
               </div>
 
@@ -331,7 +300,7 @@ export default function AddressesTab() {
                 name="fullName"
                 value={form.fullName}
                 onChange={handleChange}
-                placeholder="Nombre completo"
+                placeholder="Full Name"
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
               />
 
@@ -341,7 +310,7 @@ export default function AddressesTab() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="Teléfono"
+                placeholder="Phone Number"
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
               />
 
@@ -357,11 +326,9 @@ export default function AddressesTab() {
                 }) =>
                   setForm((prev) => ({
                     ...prev,
-                    addressLine1:
-                      data.addressLine1 || "",
+                    addressLine1: data.addressLine1 || "",
                     city: data.city || "",
-                    postalCode:
-                      data.postalCode || "",
+                    postalCode: data.postalCode || "",
                     country: data.country || "ES",
                   }))
                 }
@@ -373,7 +340,7 @@ export default function AddressesTab() {
                 name="addressLine2"
                 value={form.addressLine2}
                 onChange={handleChange}
-                placeholder="Piso / puerta"
+                placeholder="Apartment, Suite, etc."
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
               />
 
@@ -384,7 +351,7 @@ export default function AddressesTab() {
                   name="city"
                   value={form.city || ""}
                   onChange={handleChange}
-                  placeholder="Ciudad"
+                  placeholder="City"
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
                 />
 
@@ -392,7 +359,7 @@ export default function AddressesTab() {
                   name="postalCode"
                   value={form.postalCode || ""}
                   onChange={handleChange}
-                  placeholder="Código postal"
+                  placeholder="Zip Code"
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
                 />
               </div>
@@ -424,16 +391,14 @@ export default function AddressesTab() {
                 onClick={() => setOpenModal(false)}
                 className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-neutral-300 transition hover:bg-white/10"
               >
-                Cancelar
+                Cancel
               </button>
 
               <button
                 onClick={saveAddress}
                 className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
               >
-                {editing
-                  ? "Guardar cambios"
-                  : "Crear dirección"}
+                {editing ? "Save Changes" : "Create Address"}
               </button>
             </div>
           </div>

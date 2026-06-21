@@ -51,18 +51,6 @@ export default function WishlistTab() {
     }
   };
 
-  const removeItem = async (productId: string) => {
-    try {
-      await apiFetch(`/wishlist/${productId}`, {
-        method: "DELETE",
-      });
-
-      setItems((prev) => prev.filter((item) => item.productId !== productId));
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   useEffect(() => {
     loadWishlist();
   }, []);
@@ -74,7 +62,7 @@ export default function WishlistTab() {
           <h2 className="text-2xl font-bold text-white">Wishlist</h2>
 
           <p className="mt-2 text-sm text-neutral-500">
-            Tus productos favoritos guardados.
+            Your saved favorite products.
           </p>
         </div>
 
@@ -89,26 +77,25 @@ export default function WishlistTab() {
 
       {loading ? (
         <div className="mt-8 text-center text-neutral-500">
-          Cargando wishlist...
+          Loading wishlist...
         </div>
       ) : items.length === 0 ? (
         <div className="mt-8 rounded-3xl border border-dashed border-white/10 p-10 text-center">
           <Heart size={40} className="mx-auto text-neutral-700" />
 
           <h3 className="mt-4 text-lg font-medium text-white">
-            Tu wishlist está vacía
+            Your wishlist is empty
           </h3>
 
           <p className="mt-2 text-sm text-neutral-500">
-            Guarda tus productos favoritos para encontrarlos rápidamente más
-            tarde.
+            Save your favorite products and access them quickly anytime.
           </p>
 
           <Link
             href="/shop"
             className="mt-6 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
-            Explorar productos
+            Explore Products
           </Link>
         </div>
       ) : (

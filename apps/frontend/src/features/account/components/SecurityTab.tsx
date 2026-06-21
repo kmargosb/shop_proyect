@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/shared/lib/api";
+import { toast } from "sonner";
 
 export default function SecurityTab() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -13,12 +14,12 @@ export default function SecurityTab() {
 
   const handlePasswordChange = async () => {
     if (newPassword.length < 8) {
-      alert("Password must contain at least 8 characters.");
+      toast.error("Password must contain at least 8 characters.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match.");
+      toast.error("Passwords do not match.");
       return;
     }
 
@@ -33,21 +34,41 @@ export default function SecurityTab() {
         }),
       });
 
-      if (!res || !res.ok) {
-        throw new Error();
+      if (!res) {
+        throw new Error("Unable to update password.");
       }
 
-      alert("Password updated successfully. Please sign in again.");
+      if (!res.ok) {
+        const data = await res.json();
+
+        throw new Error(data?.error || "Unable to update password.");
+      }
+
+      toast.success("Password updated successfully.");
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
 
       window.location.href = "/login";
-    } catch {
-      alert("Unable to update password.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to update password.",
+      );
     } finally {
       setLoadingPassword(false);
     }
   };
 
   const handleLogoutAll = async () => {
+    const confirmed = window.confirm(
+      "This will sign you out from all devices. Continue?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setLoadingLogoutAll(true);
 
     try {

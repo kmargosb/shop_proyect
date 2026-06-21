@@ -9,15 +9,15 @@ type Props = {
   orders: Order[];
 };
 const statusLabels: Record<string, string> = {
-  PENDING: "Pendiente",
-  PAYMENT_PROCESSING: "Procesando",
-  PAID: "Pagado",
-  SHIPPED: "Enviado",
-  DELIVERED: "Entregado",
-  CANCELLED: "Cancelado",
-  FAILED: "Fallido",
-  PARTIALLY_REFUNDED: "Reembolso parcial",
-  REFUNDED: "Reembolsado",
+  PENDING: "Pending",
+  PAYMENT_PROCESSING: "Processing",
+  PAID: "Paid",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  FAILED: "Failed",
+  PARTIALLY_REFUNDED: "Partially Refunded",
+  REFUNDED: "Refunded",
 };
 
 export default function OrdersTab({ orders }: Props) {
@@ -39,19 +39,19 @@ export default function OrdersTab({ orders }: Props) {
         <h2 className="text-2xl font-bold">My Orders</h2>
 
         <p className="mt-2 text-sm text-neutral-500">
-          Complete order and payment history.
+          View and track all your orders.
         </p>
       </div>
 
       {orders.length === 0 ? (
         <div className="rounded-2xl border border-white/10 p-10 text-center">
-          <p className="text-neutral-400">You have no orders yet</p>
+          <p className="text-neutral-400">You haven't placed any orders yet.</p>
 
           <Link
             href="/shop"
             className="mt-4 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
           >
-            Go to the store
+            Continue Shopping
           </Link>
         </div>
       ) : (
@@ -126,7 +126,7 @@ export default function OrdersTab({ orders }: Props) {
                       )}
 
                       <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
-                        Pedido
+                        Order
                       </p>
 
                       <h3 className="mt-1 text-xl font-semibold text-white">
@@ -153,7 +153,7 @@ export default function OrdersTab({ orders }: Props) {
 
                         {order.items.length > 2 && (
                           <p className="text-xs text-neutral-500">
-                            +{order.items.length - 2} productos más
+                            +{order.items.length - 2} more items
                           </p>
                         )}
                       </div>
@@ -167,7 +167,7 @@ export default function OrdersTab({ orders }: Props) {
 
                         <span>
                           {totalProducts}{" "}
-                          {totalProducts === 1 ? "producto" : "productos"}
+                          {totalProducts === 1 ? "item" : "items"}
                         </span>
                       </div>
                     </div>
@@ -207,7 +207,7 @@ export default function OrdersTab({ orders }: Props) {
 
                   <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
                     <p className="text-xs text-neutral-600">
-                      Gracias por tu compra
+                      Thank you for your purchase
                     </p>
 
                     <Link
@@ -219,7 +219,7 @@ export default function OrdersTab({ orders }: Props) {
             group-hover:translate-x-1
           "
                     >
-                      Ver detalles →
+                      View Details →
                     </Link>
                   </div>
                 </div>
