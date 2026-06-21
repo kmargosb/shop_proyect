@@ -18,6 +18,7 @@ model User {
   tokenVersion  Int            @default(0)
   createdAt     DateTime       @default(now())
   provider      String?
+  marketingEmails Boolean @default(true)
   addresses     Address[]
   carts         Cart[]
   orders        Order[]

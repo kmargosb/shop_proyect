@@ -1,14 +1,16 @@
 import { Router } from "express";
 import { protect, adminOnly } from "@/common/middleware/auth.middleware";
 import {
-   getCustomerOrdersController,
-   getCustomerAnalyticsController,
-   getCustomersController,
-   getMyAddressesController,
-   deleteAddressController,
+  getCustomerOrdersController,
+  getCustomerAnalyticsController,
+  getCustomersController,
+  getMyAddressesController,
+  deleteAddressController,
   setDefaultAddressController,
   createAddressController,
-updateAddressController
+  updateAddressController,
+  getPreferencesController,
+  updatePreferencesController,
 } from "./customer.controller";
 
 const router = Router();
@@ -26,6 +28,10 @@ router.put("/me/addresses/:id", protect, updateAddressController);
 router.delete("/me/addresses/:id", protect, deleteAddressController);
 
 router.patch("/me/addresses/:id/favorite", protect, setDefaultAddressController);
+
+router.get("/me/preferences", protect, getPreferencesController);
+
+router.patch("/me/preferences", protect, updatePreferencesController);
 
 router.get("/:email/orders", protect, adminOnly, getCustomerOrdersController);
 

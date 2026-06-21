@@ -343,3 +343,58 @@ export const setDefaultAddressController = asyncHandler(
     res.json({ success: true });
   }
 );
+
+/* =========================================================
+   USER: GET PREFERENCES
+========================================================= */
+
+export const getPreferencesController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        marketingEmails: true,
+      },
+    });
+
+    res.json(user);
+  },
+);
+
+/* =========================================================
+   USER: UPDATE PREFERENCES
+========================================================= */
+
+export const updatePreferencesController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const { marketingEmails } = req.body;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        marketingEmails: Boolean(marketingEmails),
+      },
+      select: {
+        marketingEmails: true,
+      },
+    });
+
+    res.json(user);
+  },
+);
