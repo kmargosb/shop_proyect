@@ -1,12 +1,13 @@
-import { asyncHandler } from "@/common/utils/asyncHandler";
-import * as productService from "./product.service";
+import { asyncHandler } from '@/common/utils/asyncHandler';
+import * as productService from './product.service';
 
 /* ===============================
    GET ALL
 =============================== */
 
-export const getProducts = asyncHandler(async (_req, res) => {
-  const products = await productService.getProducts();
+export const getProducts = asyncHandler(async (req, res) => {
+  const products = await productService.getProducts(req.query.status as string);
+
   res.json(products);
 });
 
@@ -39,7 +40,7 @@ export const getProduct = asyncHandler(async (req, res) => {
   const product = await productService.getProductById(id);
 
   if (!product) {
-    return res.status(404).json({ error: "Product not found" });
+    return res.status(404).json({ error: 'Product not found' });
   }
 
   res.json(product);
@@ -73,11 +74,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const updateProduct = asyncHandler(async (req, res) => {
   const files = (req.files as Express.Multer.File[]) || [];
 
-  const updated = await productService.updateProduct(
-    req.params.id as string,
-    req.body,
-    files,
-  );
+  const updated = await productService.updateProduct(req.params.id as string, req.body, files);
 
   res.json(updated);
 });
@@ -88,5 +85,13 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
 export const deleteProduct = asyncHandler(async (req, res) => {
   await productService.deleteProduct(req.params.id as string);
-  res.json({ message: "Producto eliminado correctamente" });
+  res.json({ message: 'Producto eliminado correctamente' });
+});
+
+/*--RESTORE--*/
+
+export const restoreProduct = asyncHandler(async (req, res) => {
+  const product = await productService.restoreProduct(req.params.id as string);
+
+  res.json(product);
 });

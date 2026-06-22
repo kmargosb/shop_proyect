@@ -88,9 +88,11 @@ function buildProductFilters(query: any) {
    QUERIES
 =============================== */
 
-export async function getProducts() {
+export async function getProducts(status?: string) {
+  const where =
+    status === 'archived' ? { isActive: false } : status === 'all' ? {} : { isActive: true };
   const products = await prisma.product.findMany({
-    where: { isActive: true },
+    where,
 
     include: {
       images: true,
@@ -505,5 +507,20 @@ export async function deleteProduct(id: string) {
         variants: true,
       },
     });
+  });
+}
+
+export async function restoreProduct(id: string) {
+  return prisma.product.update({
+    where: { id },
+
+    data: {
+      isActive: true,
+    },
+
+    include: {
+      images: true,
+      variants: true,
+    },
   });
 }

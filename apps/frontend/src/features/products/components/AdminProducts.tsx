@@ -34,6 +34,7 @@ export default function AdminProducts() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>('all');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
+  const [productScope, setProductScope] = useState<'active' | 'archived' | 'all'>('active');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [page, setPage] = useState(1);
@@ -45,7 +46,7 @@ export default function AdminProducts() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const res = await apiFetch('/products');
+      const res = await apiFetch(`/products?status=${productScope}`);
       if (!res || !res.ok) throw new Error('Products request failed');
       const data: unknown = await res.json();
       setProducts(Array.isArray(data) ? data.filter(isProductLike) : []);
@@ -58,7 +59,7 @@ export default function AdminProducts() {
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [productScope]);
 
   useEffect(() => {
     setPage(1);
@@ -73,6 +74,24 @@ export default function AdminProducts() {
       loadProducts();
     } catch {
       toast.error('Error eliminando producto');
+    }
+  };
+
+  const restoreProduct = async (id: string) => {
+    try {
+      const res = await apiFetch(`/products/${id}/restore`, {
+        method: 'PATCH',
+      });
+
+      if (!res || !res.ok) {
+        throw new Error('Restore product failed');
+      }
+
+      toast.success('Producto restaurado');
+
+      loadProducts();
+    } catch {
+      toast.error('Error restaurando producto');
     }
   };
 
@@ -181,7 +200,18 @@ export default function AdminProducts() {
           </div>
 
           {/* FILTERS */}
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <FilterSelect
+              label="Productos"
+              value={productScope}
+              onChange={(value) => setProductScope(value as 'active' | 'archived' | 'all')}
+              options={[
+                ['active', 'Activos'],
+                ['archived', 'Archivados'],
+                ['all', 'Todos'],
+              ]}
+            />
+
             <FilterSelect
               label="Estado"
               value={statusFilter}
@@ -189,7 +219,7 @@ export default function AdminProducts() {
               options={[
                 ['all', 'Todos'],
                 ['active', 'Activos'],
-                ['draft', 'Draft'],
+                ['draft', 'Archivado'],
                 ['out-of-stock', 'Sin stock'],
               ]}
             />
@@ -221,6 +251,7 @@ export default function AdminProducts() {
             product={product}
             onEdit={setEditingProduct}
             onDelete={setProductToDelete}
+            onRestore={restoreProduct}
           />
         ))}
       </div>
@@ -279,16 +310,25 @@ export default function AdminProducts() {
                   <td className="p-4 text-neutral-400">{formatDate(product.createdAt)}</td>
                   <td className="p-4">
                     <div className="flex justify-end gap-2">
-                      <IconButton label="Editar" onClick={() => setEditingProduct(product)}>
-                        <Pencil size={15} />
-                      </IconButton>
-                      <IconButton
-                        label="Archivar"
-                        onClick={() => setProductToDelete(product)}
-                        danger
-                      >
-                        <Trash2 size={15} />
-                      </IconButton>
+                      {product.isActive ? (
+                        <>
+                          <IconButton label="Editar" onClick={() => setEditingProduct(product)}>
+                            <Pencil size={15} />
+                          </IconButton>
+
+                          <IconButton
+                            label="Archivar"
+                            onClick={() => setProductToDelete(product)}
+                            danger
+                          >
+                            <Archive size={15} />
+                          </IconButton>
+                        </>
+                      ) : (
+                        <IconButton label="Restaurar" onClick={() => restoreProduct(product.id)}>
+                          <Archive size={15} />
+                        </IconButton>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -420,10 +460,12 @@ function ProductMobileCard({
   product,
   onEdit,
   onDelete,
+  onRestore,
 }: {
   product: Product;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onRestore: (id: string) => void;
 }) {
   return (
     <article className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20">
@@ -437,18 +479,30 @@ function ProductMobileCard({
         <Metric label="Ventas" value={getSales(product)} />
       </div>
       <div className="mt-4 flex gap-2">
-        <button
-          onClick={() => onEdit(product)}
-          className="flex-1 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-black"
-        >
-          Editar
-        </button>
-        <button
-          onClick={() => onDelete(product)}
-          className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200"
-        >
-          Eliminar
-        </button>
+        {product.isActive ? (
+          <>
+            <button
+              onClick={() => onEdit(product)}
+              className="flex-1 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-black"
+            >
+              Editar
+            </button>
+
+            <button
+              onClick={() => onDelete(product)}
+              className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-200"
+            >
+              Archivar
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => onRestore(product.id)}
+            className="flex-1 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200"
+          >
+            Restaurar
+          </button>
+        )}
       </div>
     </article>
   );
@@ -549,7 +603,7 @@ function StockBadge({ stock }: { stock: number }) {
 function StatusBadge({ status }: { status: ProductStatus }) {
   const config = {
     active: ['Activo', 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'],
-    draft: ['Draft', 'border-neutral-400/20 bg-neutral-400/10 text-neutral-200'],
+    draft: ['Archivado', 'border-neutral-400/20 bg-neutral-400/10 text-neutral-200'],
     'out-of-stock': ['Sin stock', 'border-rose-400/20 bg-rose-400/10 text-rose-200'],
   }[status];
   return (
