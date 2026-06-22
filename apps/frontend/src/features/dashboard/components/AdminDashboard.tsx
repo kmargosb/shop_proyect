@@ -32,6 +32,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import ConversionFunnel from "./ConversionFunnel";
 import TopProductsAnalytics from "../components/TopProductsAnalytics";
+import AnalyticsInsights from "./AnalyticsInsights";
 
 /* ================= TYPES ================= */
 
@@ -114,6 +115,7 @@ export default function AdminDashboard() {
     purchaseRate: 0,
   });
   const [topProducts, setTopProducts] = useState([]);
+  const [insights, setInsights] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   /* ================= LOAD ================= */
@@ -121,12 +123,13 @@ export default function AdminDashboard() {
     setIsRefreshing(true);
 
     try {
-      const [m, c, a, f, p] = await Promise.all([
+      const [m, c, a, f, p, i] = await Promise.all([
         apiFetch("/dashboard/metrics"),
         apiFetch("/dashboard/sales-by-country"),
         apiFetch("/orders/activity-feed"),
         apiFetch("/analytics/funnel"),
         apiFetch("/analytics/top-products"),
+        apiFetch("/analytics/insights"),
       ]);
 
       if (m?.ok) setMetrics(await m.json());
@@ -145,6 +148,9 @@ export default function AdminDashboard() {
       }
       if (p?.ok) {
         setTopProducts(await p.json());
+      }
+      if (i?.ok) {
+        setInsights(await i.json());
       }
     } catch (e) {
       console.error("Dashboard load error:", e);
@@ -455,9 +461,12 @@ export default function AdminDashboard() {
       </section>
 
       <div className="space-y-6">
-        <ConversionFunnel funnel={funnel} />
-        <TopProductsAnalytics products={topProducts} />
-      </div>
+  <AnalyticsInsights insights={insights} />
+
+  <ConversionFunnel funnel={funnel} />
+
+  <TopProductsAnalytics products={topProducts} />
+</div>
 
       {/* ================= CHART ================= */}
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">

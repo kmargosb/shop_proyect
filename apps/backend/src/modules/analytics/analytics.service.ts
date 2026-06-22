@@ -101,3 +101,99 @@ export async function getTopProductsAnalytics() {
     })
     .sort((a, b) => b.views - a.views);
 }
+
+export async function getAnalyticsInsights() {
+  const funnel = await getFunnelAnalytics();
+
+  const products = await getTopProductsAnalytics();
+
+  console.log("FUNNEL:", funnel);
+console.log("PRODUCTS:", products);
+
+  const insights: {
+    type: "success" | "warning" | "info";
+    title: string;
+    message: string;
+  }[] = [];
+
+  /* =========================
+     TOP PRODUCT
+  ========================= */
+
+  const bestProduct = products[0];
+
+  if (bestProduct) {
+    insights.push({
+      type: "success",
+      title: "Producto destacado",
+      message: `${bestProduct.name} lidera el rendimiento actual con una conversión del ${bestProduct.conversionRate}%.`,
+    });
+  }
+
+  /* =========================
+     VISITS -> CART
+  ========================= */
+
+  if (funnel.addToCartRate < 10) {
+    insights.push({
+      type: "warning",
+      title: "Oportunidad detectada",
+      message:
+        "Muchos visitantes ven productos, pero pocos los añaden al carrito. Revisa imágenes, precios y descripciones.",
+    });
+  }
+
+  /* =========================
+     CART -> CHECKOUT
+  ========================= */
+
+  else if (funnel.checkoutRate < 40) {
+    insights.push({
+      type: "warning",
+      title: "Oportunidad detectada",
+      message:
+        "Existe una caída importante entre carrito y checkout. Simplificar el proceso de compra podría mejorar las conversiones.",
+    });
+  }
+
+  /* =========================
+     CHECKOUT -> PURCHASE
+  ========================= */
+
+  else if (funnel.purchaseRate < 50) {
+    insights.push({
+      type: "warning",
+      title: "Oportunidad detectada",
+      message:
+        "Los usuarios llegan al checkout pero muchos no completan el pago. Revisa métodos de pago y experiencia de compra.",
+    });
+  }
+
+  /* =========================
+     HEALTHY FUNNEL
+  ========================= */
+
+  else {
+    insights.push({
+      type: "success",
+      title: "Embudo saludable",
+      message:
+        "El recorrido de compra muestra un comportamiento estable y sin pérdidas significativas.",
+    });
+  }
+
+  /* =========================
+     PURCHASES
+  ========================= */
+
+  if (funnel.purchases > 0) {
+    insights.push({
+      type: "info",
+      title: "Actividad reciente",
+      message: `Se han registrado ${funnel.purchases} compras completadas.`,
+    });
+  }
+
+  console.log("INSIGHTS:", insights);
+  return insights;
+}

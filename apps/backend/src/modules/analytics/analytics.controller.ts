@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { asyncHandler } from "@/common/utils/asyncHandler";
 import { AuthRequest } from "@/common/middleware/auth.middleware";
-import { trackEvent, getFunnelAnalytics, getTopProductsAnalytics } from "./analytics.service";
+import { trackEvent, getFunnelAnalytics, getTopProductsAnalytics, getAnalyticsInsights } from "./analytics.service";
 
 
 export const trackAnalyticsEventController = asyncHandler(
@@ -31,6 +31,13 @@ export const getFunnelAnalyticsController =
   export const getTopProductsAnalyticsController =
   asyncHandler(async (_req, res) => {
     const data = await getTopProductsAnalytics();
+
+    res.json(data);
+  });
+
+  export const getAnalyticsInsightsController =
+  asyncHandler(async (_req, res) => {
+    const data = await getAnalyticsInsights();
 
     res.json(data);
   });
