@@ -1,14 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
-import ShipmentStatusCard from "@/features/orders/components/ShipmentStatusCard";
-import { socket } from "@/shared/lib/socket";
-import type {
-  DashboardUpdatePayload,
-  OrderUpdatedPayload,
-} from "@/shared/lib/socket";
-import { toast } from "sonner";
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import ShipmentStatusCard from '@/features/orders/components/ShipmentStatusCard';
+import { socket } from '@/shared/lib/socket';
+import type { DashboardUpdatePayload, OrderUpdatedPayload } from '@/shared/lib/socket';
+import { toast } from 'sonner';
 
 import {
   CheckCircle2,
@@ -18,10 +15,10 @@ import {
   RefreshCcw,
   Truck,
   XCircle,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { apiFetch, publicFetch } from "@/shared/lib/api";
-import { Button } from "@/shared/ui/button";
+import { apiFetch, publicFetch } from '@/shared/lib/api';
+import { Button } from '@/shared/ui/button';
 
 type OrderEvent = {
   id: string;
@@ -31,12 +28,12 @@ type OrderEvent = {
 };
 
 const cancellationReasons: Record<string, string> = {
-  WRONG_PRODUCT: "Wrong Product",
-  WRONG_SIZE: "Wrong Size",
-  WRONG_COLOR: "Wrong Color",
-  CHANGED_MIND: "Changed Mind",
-  ACCIDENTAL_ORDER: "Accidental Order",
-  OTHER: "Other",
+  WRONG_PRODUCT: 'Wrong Product',
+  WRONG_SIZE: 'Wrong Size',
+  WRONG_COLOR: 'Wrong Color',
+  CHANGED_MIND: 'Changed Mind',
+  ACCIDENTAL_ORDER: 'Accidental Order',
+  OTHER: 'Other',
 };
 
 export default function Page() {
@@ -49,11 +46,11 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelReason, setCancelReason] = useState("CUSTOMER_REQUEST");
+  const [cancelReason, setCancelReason] = useState('CUSTOMER_REQUEST');
   const [showSentModal, setShowSentModal] = useState(false);
   const [selectedRefund, setSelectedRefund] = useState<any>(null);
-  const [carrier, setCarrier] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [carrier, setCarrier] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
   const [sendingRefund, setSendingRefund] = useState(false);
 
   useEffect(() => {
@@ -61,11 +58,11 @@ export default function Page() {
 
     const loadOrder = async () => {
       try {
-        const queryEmail = searchParams.get("email");
+        const queryEmail = searchParams.get('email');
 
-        const storedOrderId = localStorage.getItem("orderEmailOrderId");
+        const storedOrderId = localStorage.getItem('orderEmailOrderId');
 
-        const storedEmail = localStorage.getItem("orderEmail");
+        const storedEmail = localStorage.getItem('orderEmail');
 
         const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
@@ -89,7 +86,6 @@ export default function Page() {
 
         if (res?.ok) {
           const data = await res.json();
-          
 
           setOrder(data);
         }
@@ -110,26 +106,24 @@ export default function Page() {
      REALTIME UPDATES
   ========================= */
 
-    const refreshOrder = (
-      payload?: DashboardUpdatePayload | OrderUpdatedPayload,
-    ) => {
+    const refreshOrder = (payload?: DashboardUpdatePayload | OrderUpdatedPayload) => {
       if (!payload?.orderId || payload.orderId === id) {
         void loadOrder();
       }
     };
 
     // socket.on("dashboard:update", refreshOrder);
-    socket.on("orderUpdated", refreshOrder);
+    socket.on('orderUpdated', refreshOrder);
 
     return () => {
       // socket.off("dashboard:update", refreshOrder);
-      socket.off("orderUpdated", refreshOrder);
+      socket.off('orderUpdated', refreshOrder);
     };
   }, [id, searchParams]);
 
   useEffect(() => {
     timelineBottomRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: 'smooth',
     });
   }, [order?.events]);
 
@@ -147,40 +141,44 @@ export default function Page() {
 
   if (!order) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white">
-        No se pudo cargar el pedido
+      <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">Order not found</h1>
+
+          <p className="mt-4 text-neutral-400">
+            This order does not exist or you do not have access to it.
+          </p>
+
+          <a href="/shop" className="mt-8 inline-flex rounded-2xl bg-white px-6 py-3 text-black">
+            Continue shopping
+          </a>
+        </div>
       </div>
     );
   }
 
-  const adjustments =
-    order?.refunds?.filter((r: any) => r.type === "ORDER_ADJUSTMENT") || [];
+  const adjustments = order?.refunds?.filter((r: any) => r.type === 'ORDER_ADJUSTMENT') || [];
 
-  const returns =
-    order?.refunds?.filter((r: any) => r.type !== "ORDER_ADJUSTMENT") || [];
+  const returns = order?.refunds?.filter((r: any) => r.type !== 'ORDER_ADJUSTMENT') || [];
 
   const canDownloadInvoice =
     order.invoice &&
-    ["PAID", "SHIPPED", "DELIVERED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(
-      order.status,
-    );
+    ['PAID', 'SHIPPED', 'DELIVERED', 'PARTIALLY_REFUNDED', 'REFUNDED'].includes(order.status);
 
-  const isPaid =
-    order.status !== "PENDING" && order.status !== "PAYMENT_PROCESSING";
+  const isPaid = order.status !== 'PENDING' && order.status !== 'PAYMENT_PROCESSING';
 
-  const canContinuePayment =
-    order.status === "PENDING" || order.status === "PAYMENT_PROCESSING";
+  const canContinuePayment = order.status === 'PENDING' || order.status === 'PAYMENT_PROCESSING';
 
   const markRefundSent = async () => {
     if (!selectedRefund) return;
 
     if (!carrier.trim()) {
-      toast.error("Introduce la empresa de transporte");
+      toast.error('Enter the shipping carrier');
       return;
     }
 
     if (!trackingNumber.trim()) {
-      toast.error("Introduce el código de seguimiento");
+      toast.error('Enter the tracking number');
       return;
     }
 
@@ -188,9 +186,9 @@ export default function Page() {
       setSendingRefund(true);
 
       await apiFetch(`/refunds/${selectedRefund.id}/sent`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           carrier,
@@ -200,15 +198,15 @@ export default function Page() {
 
       setShowSentModal(false);
 
-      setCarrier("");
-      setTrackingNumber("");
+      setCarrier('');
+      setTrackingNumber('');
       setSelectedRefund(null);
 
-      const queryEmail = searchParams.get("email");
+      const queryEmail = searchParams.get('email');
 
-      const storedOrderId = localStorage.getItem("orderEmailOrderId");
+      const storedOrderId = localStorage.getItem('orderEmailOrderId');
 
-      const storedEmail = localStorage.getItem("orderEmail");
+      const storedEmail = localStorage.getItem('orderEmail');
 
       const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
@@ -230,34 +228,34 @@ export default function Page() {
         }
       }
 
-      toast.success("Información enviada");
+      toast.success('Information submitted');
     } catch (error) {
       console.error(error);
 
-      toast.error("Error al actualizar la devolución");
+      toast.error('Failed to update return');
     } finally {
       setSendingRefund(false);
     }
   };
 
   const handleDownloadInvoice = () => {
-    const queryEmail = searchParams.get("email");
+    const queryEmail = searchParams.get('email');
 
-    const storedOrderId = localStorage.getItem("orderEmailOrderId");
+    const storedOrderId = localStorage.getItem('orderEmailOrderId');
 
-    const storedEmail = localStorage.getItem("orderEmail");
+    const storedEmail = localStorage.getItem('orderEmail');
 
     const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
     if (!email) {
-      alert("No se encontró el email del pedido");
+      alert('Order email not found');
 
       return;
     }
 
     window.open(
       `${process.env.NEXT_PUBLIC_API_URL}/orders/public/${id}/invoice?email=${email}`,
-      "_blank",
+      '_blank',
     );
   };
   const handleCancelOrder = async () => {
@@ -265,7 +263,7 @@ export default function Page() {
       setCancelling(true);
 
       const res = await apiFetch(`/orders/${order.id}/cancel`, {
-        method: "POST",
+        method: 'POST',
 
         body: JSON.stringify({
           reason: cancelReason,
@@ -288,7 +286,7 @@ export default function Page() {
     } catch (error) {
       console.error(error);
 
-      alert("No se pudo cancelar el pedido");
+      alert('Unable to cancel order');
     } finally {
       setCancelling(false);
     }
@@ -302,25 +300,23 @@ export default function Page() {
         <div className="overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-neutral-900 to-black p-8 shadow-2xl shadow-black/50">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.25em] text-neutral-400">
+              <div className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs tracking-[0.25em] text-neutral-400 uppercase">
                 Order
               </div>
 
               <h1 className="text-4xl font-semibold tracking-tight">
-                {isPaid ? "Payment completed" : "Order created"}
+                {isPaid ? 'Payment completed' : 'Order created'}
               </h1>
 
-              <p className="mt-3 text-neutral-400">
-                Order # {order.id.slice(0, 8)}
-              </p>
+              <p className="mt-3 text-neutral-400">Order # {order.id.slice(0, 8)}</p>
             </div>
 
             <div>
               <span
                 className={`inline-flex items-center rounded-full border px-5 py-3 text-sm font-medium ${
                   isPaid
-                    ? "border-green-500/20 bg-green-500/10 text-green-400"
-                    : "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+                    ? 'border-green-500/20 bg-green-500/10 text-green-400'
+                    : 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300'
                 }`}
               >
                 {order.status}
@@ -334,20 +330,20 @@ export default function Page() {
         {(() => {
           const steps = [
             {
-              key: "PENDING",
-              label: "Order",
+              key: 'PENDING',
+              label: 'Order',
             },
             {
-              key: "PAID",
-              label: "Paid",
+              key: 'PAID',
+              label: 'Paid',
             },
             {
-              key: "SHIPPED",
-              label: "Shiped",
+              key: 'SHIPPED',
+              label: 'Shipped',
             },
             {
-              key: "DELIVERED",
-              label: "Delivered",
+              key: 'DELIVERED',
+              label: 'Delivered',
             },
           ];
 
@@ -361,13 +357,13 @@ export default function Page() {
             }
 
             switch (order.status) {
-              case "PENDING":
-              case "PAYMENT_PROCESSING":
+              case 'PENDING':
+              case 'PAYMENT_PROCESSING':
                 return 0;
 
-              case "PAID":
-              case "PARTIALLY_REFUNDED":
-              case "REFUNDED":
+              case 'PAID':
+              case 'PARTIALLY_REFUNDED':
+              case 'REFUNDED':
                 return 1;
 
               default:
@@ -381,9 +377,7 @@ export default function Page() {
                 <h2 className="text-lg font-semibold">Order status</h2>
 
                 <div className="mt-2 space-y-1">
-                  <p className="text-sm text-neutral-500">
-                    Track the progress of your order
-                  </p>
+                  <p className="text-sm text-neutral-500">Track the progress of your order</p>
 
                   {order.shipment && (
                     <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
@@ -399,8 +393,7 @@ export default function Page() {
 
                       {order.shipment.shippedAt && (
                         <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1">
-                          Sent:{" "}
-                          {new Date(order.shipment.shippedAt).toLocaleString()}
+                          Sent: {new Date(order.shipment.shippedAt).toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -415,26 +408,16 @@ export default function Page() {
                   const lineActive = index < currentStep;
 
                   return (
-                    <div
-                      key={step.key}
-                      className="relative flex flex-1 justify-center"
-                    >
+                    <div key={step.key} className="relative flex flex-1 justify-center">
                       <div className="flex flex-col items-center">
                         {/* DOT */}
 
                         <div
-                          className={`
-                    relative z-10
-                    flex h-8 w-8 items-center justify-center
-                    rounded-full border text-xs font-semibold
-                    transition-all duration-500
-
-                    ${
-                      active
-                        ? "border-white bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-                        : "border-white/10 bg-white/[0.03] text-neutral-500"
-                    }
-                  `}
+                          className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-all duration-500 ${
+                            active
+                              ? 'border-white bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.2)]'
+                              : 'border-white/10 bg-white/[0.03] text-neutral-500'
+                          } `}
                         >
                           {index + 1}
                         </div>
@@ -442,10 +425,7 @@ export default function Page() {
                         {/* LABEL */}
 
                         <p
-                          className={`
-                                      mt-2 text-[10px] font-medium uppercase text-center leading-tight
-                                      ${active ? "text-white" : "text-neutral-500"}
-                          `}
+                          className={`mt-2 text-center text-[10px] leading-tight font-medium uppercase ${active ? 'text-white' : 'text-neutral-500'} `}
                         >
                           {step.label}
                         </p>
@@ -454,14 +434,9 @@ export default function Page() {
                       {/* LINE */}
 
                       {index !== steps.length - 1 && (
-                        <div className="absolute left-1/2 top-4 ml-6 h-px w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="absolute top-4 left-1/2 ml-6 h-px w-full overflow-hidden rounded-full bg-white/10">
                           <div
-                            className={`
-                      absolute left-0 top-0 h-full
-                      transition-all duration-700
-
-                      ${lineActive ? "w-full bg-white" : "w-0 bg-white"}
-                    `}
+                            className={`absolute top-0 left-0 h-full transition-all duration-700 ${lineActive ? 'w-full bg-white' : 'w-0 bg-white'} `}
                           />
                         </div>
                       )}
@@ -493,17 +468,13 @@ export default function Page() {
                     0,
                   );
 
-                  return `${totalProducts} ${
-                    totalProducts === 1 ? "producto" : "productos"
-                  }`;
+                  return `${totalProducts} ${totalProducts === 1 ? 'product' : 'products'}`;
                 })()}
               </span>
             </div>
 
             <div className="mt-5 border-t border-white/10 pt-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
-                Delivery in
-              </p>
+              <p className="text-xs tracking-[0.2em] text-neutral-600 uppercase">Delivery in</p>
 
               <p className="text-sm text-neutral-400">{order.addressLine1}</p>
 
@@ -520,17 +491,13 @@ export default function Page() {
           <div className="space-y-4">
             {order.items.map((item: any) => {
               const refundedQuantity =
-                item.refundItems?.reduce(
-                  (sum: number, ri: any) => sum + ri.quantity,
-                  0,
-                ) || 0;
+                item.refundItems?.reduce((sum: number, ri: any) => sum + ri.quantity, 0) || 0;
 
               const remainingQuantity = item.quantity - refundedQuantity;
 
               const isFullyRefunded = remainingQuantity <= 0;
 
-              const isPartiallyRefunded =
-                refundedQuantity > 0 && remainingQuantity > 0;
+              const isPartiallyRefunded = refundedQuantity > 0 && remainingQuantity > 0;
 
               const image =
                 item.product?.images?.find((img: any) => img.isPrimary)?.url ??
@@ -541,21 +508,7 @@ export default function Page() {
               return (
                 <div
                   key={item.id}
-                  className="
-            group
-            overflow-hidden
-            rounded-3xl
-            border border-white/5
-            bg-gradient-to-b
-            from-white/[0.03]
-            to-white/[0.015]
-            p-5
-            transition-all duration-300
-
-            hover:border-white/10
-            hover:bg-white/[0.04]
-            hover:shadow-[0_0_40px_rgba(255,255,255,0.03)]
-          "
+                  className="group overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.03] to-white/[0.015] p-5 transition-all duration-300 hover:border-white/10 hover:bg-white/[0.04] hover:shadow-[0_0_40px_rgba(255,255,255,0.03)]"
                 >
                   <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                     {/* LEFT */}
@@ -563,32 +516,16 @@ export default function Page() {
                     <div className="flex min-w-0 flex-1 items-center gap-4">
                       {/* IMAGE */}
 
-                      <div
-                        className="
-                  relative
-                  flex h-24 w-24 shrink-0
-                  items-center justify-center
-                  overflow-hidden
-                  rounded-2xl
-                  border border-white/10
-                  bg-white/[0.03]
-                "
-                      >
+                      <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
                         {image ? (
                           <img
                             src={image}
                             alt={item.product?.name || item.productName}
-                            className="
-                      h-full w-full object-cover
-                      transition duration-500
-                      group-hover:scale-105
-                    "
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 text-sm font-semibold text-neutral-500">
-                            {(item.product?.name || item.productName)
-                              ?.slice(0, 2)
-                              ?.toUpperCase()}
+                            {(item.product?.name || item.productName)?.slice(0, 2)?.toUpperCase()}
                           </div>
                         )}
                       </div>
@@ -603,16 +540,14 @@ export default function Page() {
                         {(item.color || item.size) && (
                           <p className="mt-1 text-sm text-neutral-400">
                             {item.color}
-                            {item.color && item.size ? " · " : ""}
+                            {item.color && item.size ? ' · ' : ''}
                             {item.size}
                           </p>
                         )}
 
-                        <p className="mt-2 text-sm text-neutral-500">
-                          Quantity: {item.quantity}
-                        </p>
+                        <p className="mt-2 text-sm text-neutral-500">Quantity: {item.quantity}</p>
 
-                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-neutral-600">
+                        <p className="mt-1 text-xs tracking-[0.2em] text-neutral-600 uppercase">
                           Premium product
                         </p>
                       </div>
@@ -679,18 +614,15 @@ export default function Page() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold">Order status</h2>
 
-              <p className="mt-2 text-sm text-neutral-500">
-                Real-time order tracking
-              </p>
+              <p className="mt-2 text-sm text-neutral-500">Real-time order tracking</p>
             </div>
 
-            <div className="relative max-h-[420px] space-y-3 overflow-y-auto premium-scrollbar pr-1">
+            <div className="premium-scrollbar relative max-h-[420px] space-y-3 overflow-y-auto pr-1">
               {order.events.map((event: OrderEvent, index: number) => {
                 const config = getTimelineConfig(event.type);
-                const isCustomerMessage =
-                  event.message?.startsWith("CUSTOMER_MESSAGE:");
+                const isCustomerMessage = event.message?.startsWith('CUSTOMER_MESSAGE:');
 
-                const isAdminReply = event.message?.startsWith("ADMIN_REPLY:");
+                const isAdminReply = event.message?.startsWith('ADMIN_REPLY:');
 
                 return (
                   <div
@@ -700,13 +632,13 @@ export default function Page() {
                     {/* CONNECTOR */}
 
                     {index !== order.events.length - 1 && (
-                      <div className="absolute left-[13px] top-8 h-6 w-px bg-gradient-to-b from-white/20 to-transparent" />
+                      <div className="absolute top-8 left-[13px] h-6 w-px bg-gradient-to-b from-white/20 to-transparent" />
                     )}
 
                     {/* ICON */}
 
                     <div
-                      className={`relative z-10 flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-full border ${config.className}`}
+                      className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border md:h-11 md:w-11 ${config.className}`}
                     >
                       <config.icon size={13} />
                     </div>
@@ -717,9 +649,9 @@ export default function Page() {
                       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                         <p className="text-xs font-semibold">
                           {isCustomerMessage
-                            ? "MESSAGE SENT"
+                            ? 'MESSAGE SENT'
                             : isAdminReply
-                              ? "Respuesta de soporte"
+                              ? 'SUPPORT REPLY'
                               : config.label}
                         </p>
 
@@ -731,36 +663,21 @@ export default function Page() {
                       {event.message && (
                         <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
                           {event.message
-                            .replace("CUSTOMER_MESSAGE:", "")
-                            .replace("ADMIN_REPLY:", "")
-                            .replace(
-                              "WRONG_PRODUCT",
-                              cancellationReasons.WRONG_PRODUCT,
-                            )
-                            .replace(
-                              "WRONG_SIZE",
-                              cancellationReasons.WRONG_SIZE,
-                            )
-                            .replace(
-                              "WRONG_COLOR",
-                              cancellationReasons.WRONG_COLOR,
-                            )
-                            .replace(
-                              "CHANGED_MIND",
-                              cancellationReasons.CHANGED_MIND,
-                            )
-                            .replace(
-                              "ACCIDENTAL_ORDER",
-                              cancellationReasons.ACCIDENTAL_ORDER,
-                            )
-                            .replace("OTHER", cancellationReasons.OTHER)}
+                            .replace('CUSTOMER_MESSAGE:', '')
+                            .replace('ADMIN_REPLY:', '')
+                            .replace('WRONG_PRODUCT', cancellationReasons.WRONG_PRODUCT)
+                            .replace('WRONG_SIZE', cancellationReasons.WRONG_SIZE)
+                            .replace('WRONG_COLOR', cancellationReasons.WRONG_COLOR)
+                            .replace('CHANGED_MIND', cancellationReasons.CHANGED_MIND)
+                            .replace('ACCIDENTAL_ORDER', cancellationReasons.ACCIDENTAL_ORDER)
+                            .replace('OTHER', cancellationReasons.OTHER)}
                         </p>
                       )}
                     </div>
                   </div>
                 );
               })}
-              <div className="pointer-events-none absolute bottom-0 left-0  w-full bg-gradient-to-t from-neutral-950 " />
+              <div className="pointer-events-none absolute bottom-0 left-0 w-full bg-gradient-to-t from-neutral-950" />
               <div ref={timelineBottomRef} />
             </div>
           </div>
@@ -770,12 +687,10 @@ export default function Page() {
 
         {adjustments.length > 0 && (
           <div className="rounded-[28px] border border-emerald-500/20 bg-emerald-500/5 p-6">
-            <h2 className="text-xl font-semibold text-emerald-300">
-              Ajustes del pedido
-            </h2>
+            <h2 className="text-xl font-semibold text-emerald-300">Order adjustments</h2>
 
             <p className="mt-2 text-sm text-emerald-200/70">
-              Se realizaron cambios en tu pedido antes del envío.
+              Changes were made to your order before shipment.
             </p>
 
             <div className="mt-5 space-y-3">
@@ -784,17 +699,13 @@ export default function Page() {
                   key={refund.id}
                   className="rounded-2xl border border-emerald-500/20 bg-black/30 p-4"
                 >
-                  <p className="font-medium text-white">
-                    Reembolso automático emitido
-                  </p>
+                  <p className="font-medium text-white">Automatic refund issued</p>
 
                   <p className="mt-1 text-2xl font-bold text-emerald-300">
                     €{(refund.amount / 100).toFixed(2)}
                   </p>
 
-                  <p className="mt-2 text-sm text-neutral-400">
-                    No es necesario devolver ningún producto.
-                  </p>
+                  <p className="mt-2 text-sm text-neutral-400">No return is required.</p>
                 </div>
               ))}
             </div>
@@ -804,38 +715,20 @@ export default function Page() {
         {returns.length > 0 && (
           <div className="rounded-[28px] border border-white/10 bg-neutral-950 p-6">
             <div className="mb-6">
-              <h2 className="text-xl font-semibold">Devoluciones</h2>
+              <h2 className="text-xl font-semibold">Returns</h2>
 
-              <p className="mt-2 text-sm text-neutral-500">
-                Estado de tus solicitudes de devolución
-              </p>
+              <p className="mt-2 text-sm text-neutral-500">Status of your return requests</p>
             </div>
 
             <div className="space-y-4">
               {returns.map((refund: any) => (
                 <div
                   key={refund.id}
-                  className="
-                          group
-                          overflow-hidden
-                          rounded-3xl
-                          border border-white/10
-                          bg-gradient-to-b
-                          from-white/[0.04]
-                          to-white/[0.015]
-                          p-5
-                          transition-all
-                          duration-300
-
-                          hover:border-white/20
-                          hover:shadow-[0_0_40px_rgba(255,255,255,0.04)]
-                          "
+                  className="group overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.015] p-5 transition-all duration-300 hover:border-white/20 hover:shadow-[0_0_40px_rgba(255,255,255,0.04)]"
                 >
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
-                        Devolución
-                      </p>
+                      <p className="text-xs tracking-[0.2em] text-neutral-500 uppercase">Returns</p>
 
                       <p className="font-semibold text-white">
                         #{refund.id.slice(0, 8).toUpperCase()}
@@ -847,52 +740,35 @@ export default function Page() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      Solicitud #{refund.id.slice(0, 8)}
-                    </span>
+                    <span className="text-sm font-medium">Request #{refund.id.slice(0, 8)}</span>
 
                     <span className="text-xs text-neutral-400">
                       {getRefundStatusLabel(refund.status)}
                     </span>
                   </div>
 
-                  {refund.note && (
-                    <p className="mt-3 text-sm text-neutral-500">
-                      {refund.note}
-                    </p>
-                  )}
-                  {refund.status === "REJECTED" && refund.rejectionReason && (
+                  {refund.note && <p className="mt-3 text-sm text-neutral-500">{refund.note}</p>}
+                  {refund.status === 'REJECTED' && refund.rejectionReason && (
                     <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-                      <p className="text-sm font-semibold text-red-300">
-                        Solicitud rechazada
-                      </p>
+                      <p className="text-sm font-semibold text-red-300">Request rejected</p>
 
-                      <p className="mt-2 text-sm text-red-100">
-                        {refund.rejectionReason}
-                      </p>
+                      <p className="mt-2 text-sm text-red-100">{refund.rejectionReason}</p>
                     </div>
                   )}
 
-                  {refund.status === "CUSTOMER_SENT" && (
+                  {refund.status === 'CUSTOMER_SENT' && (
                     <div className="mt-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
-                      <p className="text-sm text-blue-300">
-                        Transportista: {refund.carrier}
-                      </p>
+                      <p className="text-sm text-blue-300">Carrier: {refund.carrier}</p>
 
-                      <p className="text-sm text-blue-300">
-                        Seguimiento: {refund.trackingNumber}
-                      </p>
+                      <p className="text-sm text-blue-300">Tracking: {refund.trackingNumber}</p>
 
                       <p className="mt-2 text-xs text-neutral-500">
-                        Enviado el{" "}
-                        {new Date(refund.customerSentAt).toLocaleString(
-                          "es-ES",
-                        )}
+                        Sent on {new Date(refund.customerSentAt).toLocaleString('es-ES')}
                       </p>
                     </div>
                   )}
 
-                  {refund.status === "APPROVED" && (
+                  {refund.status === 'APPROVED' && (
                     <button
                       onClick={() => {
                         setSelectedRefund(refund);
@@ -900,7 +776,7 @@ export default function Page() {
                       }}
                       className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
                     >
-                      He enviado el paquete
+                      I have shipped the package
                     </button>
                   )}
                 </div>
@@ -913,10 +789,7 @@ export default function Page() {
 
         <div className="flex flex-col gap-4 md:flex-row">
           {canDownloadInvoice && (
-            <Button
-              className="h-12 w-full rounded-2xl"
-              onClick={handleDownloadInvoice}
-            >
+            <Button className="h-12 w-full rounded-2xl" onClick={handleDownloadInvoice}>
               Download invoice
             </Button>
           )}
@@ -926,43 +799,37 @@ export default function Page() {
               className="h-12 w-full rounded-2xl bg-yellow-500 text-black hover:bg-yellow-400"
               onClick={async () => {
                 try {
-                  const res = await apiFetch(
-                    `/api/payments/retry/${order.id}`,
-                    {
-                      method: "POST",
-                    },
-                  );
+                  const res = await apiFetch(`/api/payments/retry/${order.id}`, {
+                    method: 'POST',
+                  });
 
                   if (!res || !res.ok) {
                     throw new Error();
                   }
 
                   const data = await res.json();
-                  console.log("RETRY PAYMENT", data);
+                  console.log('RETRY PAYMENT', data);
 
-                  router.push(
-                    `/orders/${order.id}/pay?clientSecret=${data.clientSecret}`,
-                  );
+                  router.push(`/orders/${order.id}/pay?clientSecret=${data.clientSecret}`);
                 } catch {
-                  alert("No se pudo continuar el pago");
+                  alert('Unable to continue payment');
                 }
               }}
             >
-              Continuar pago
+              Continue payment
             </Button>
           )}
 
           <Button
             className="h-12 w-full rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-300"
             onClick={() => {
-              const queryEmail = searchParams.get("email");
+              const queryEmail = searchParams.get('email');
 
-              const storedOrderId = localStorage.getItem("orderEmailOrderId");
+              const storedOrderId = localStorage.getItem('orderEmailOrderId');
 
-              const storedEmail = localStorage.getItem("orderEmail");
+              const storedEmail = localStorage.getItem('orderEmail');
 
-              const email =
-                queryEmail || (storedOrderId === id ? storedEmail : null);
+              const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
               const url = email
                 ? `/orders/${order.id}/help?email=${encodeURIComponent(email)}`
@@ -971,12 +838,12 @@ export default function Page() {
               router.push(url);
             }}
           >
-            ¿Need Help?
+            Need Help?
           </Button>
 
           <Button
             className="h-12 w-full rounded-2xl bg-white text-black hover:bg-neutral-200"
-            onClick={() => router.push("/shop")}
+            onClick={() => router.push('/shop')}
           >
             Continue shopping
           </Button>
@@ -987,14 +854,11 @@ export default function Page() {
               <h2 className="text-2xl font-semibold">Cancel Order</h2>
 
               <p className="mt-3 text-sm text-neutral-400">
-                This action will refund the money and restore the reserved
-                stock.
+                This action will issue a refund and restore reserved stock.
               </p>
 
               <div className="mt-6">
-                <label className="mb-2 block text-sm text-neutral-400">
-                  Reason
-                </label>
+                <label className="mb-2 block text-sm text-neutral-400">Reason</label>
 
                 <select
                   value={cancelReason}
@@ -1006,9 +870,7 @@ export default function Page() {
                   <option value="WRONG_COLOR">Wrong Color</option>
                   <option value="CHANGED_MIND">Changed Mind</option>
                   <option value="ACCIDENTAL_ORDER">Accidental Order</option>
-                  <option value="Wrong shipping address">
-                    Wrong Shipping Address
-                  </option>
+                  <option value="Wrong shipping address">Wrong Shipping Address</option>
                   <option value="OTHER">Other</option>
                 </select>
               </div>
@@ -1031,7 +893,7 @@ export default function Page() {
                     await handleCancelOrder();
                   }}
                 >
-                  {cancelling ? "Cancelling..." : "Confirm cancellation"}
+                  {cancelling ? 'Cancelling...' : 'Confirm cancellation'}
                 </Button>
               </div>
             </div>
@@ -1043,8 +905,7 @@ export default function Page() {
               <h2 className="text-xl font-semibold">I have sent the package</h2>
 
               <p className="mt-2 text-sm text-neutral-500">
-                Enter the shipping company (Correos, MRW, SEUR, DHL, etc.) and
-                the tracking number.
+                Enter the shipping company (Correos, MRW, SEUR, DHL, etc.) and the tracking number.
               </p>
               <span className="text-xs">
                 Keep the shipping receipt until the return is processed.
@@ -1077,12 +938,8 @@ export default function Page() {
                   Cancel
                 </Button>
 
-                <Button
-                  className="w-full"
-                  disabled={sendingRefund}
-                  onClick={markRefundSent}
-                >
-                  {sendingRefund ? "Enviando..." : "Confirmar"}
+                <Button className="w-full" disabled={sendingRefund} onClick={markRefundSent}>
+                  {sendingRefund ? 'Sending...' : 'Confirm'}
                 </Button>
               </div>
             </div>
@@ -1095,111 +952,111 @@ export default function Page() {
 
 function getTimelineConfig(type: string) {
   switch (type) {
-    case "ORDER_CREATED":
+    case 'ORDER_CREATED':
       return {
-        label: "ORDER CREATED",
+        label: 'ORDER CREATED',
         icon: Package,
-        className: "border-blue-500/20 bg-blue-500/10 text-blue-400",
+        className: 'border-blue-500/20 bg-blue-500/10 text-blue-400',
       };
 
-    case "PAYMENT_SUCCEEDED":
+    case 'PAYMENT_SUCCEEDED':
       return {
-        label: "PAYMENT SUCCEEDED",
+        label: 'PAYMENT SUCCEEDED',
         icon: CheckCircle2,
-        className: "border-green-500/20 bg-green-500/10 text-green-400",
+        className: 'border-green-500/20 bg-green-500/10 text-green-400',
       };
 
-    case "PAYMENT_FAILED":
+    case 'PAYMENT_FAILED':
       return {
-        label: "PAYMENT FAILED",
+        label: 'PAYMENT FAILED',
         icon: XCircle,
-        className: "border-red-500/20 bg-red-500/10 text-red-400",
+        className: 'border-red-500/20 bg-red-500/10 text-red-400',
       };
 
-    case "PAYMENT_PROCESSING":
+    case 'PAYMENT_PROCESSING':
       return {
-        label: "PAYMENT PROCESSING",
+        label: 'PAYMENT PROCESSING',
         icon: CreditCard,
-        className: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
+        className: 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300',
       };
 
-    case "ORDER_SHIPPED":
+    case 'ORDER_SHIPPED':
       return {
-        label: "ORDER SHIPPED",
+        label: 'ORDER SHIPPED',
         icon: Truck,
-        className: "border-purple-500/20 bg-purple-500/10 text-purple-400",
+        className: 'border-purple-500/20 bg-purple-500/10 text-purple-400',
       };
 
-    case "ORDER_DELIVERED":
+    case 'ORDER_DELIVERED':
       return {
-        label: "ORDER DELIVERED",
+        label: 'ORDER DELIVERED',
         icon: CheckCircle2,
-        className: "border-green-500/20 bg-green-500/10 text-green-400",
+        className: 'border-green-500/20 bg-green-500/10 text-green-400',
       };
 
-    case "REFUND_CREATED":
+    case 'REFUND_CREATED':
       return {
-        label: "REFUND CREATED",
+        label: 'REFUND CREATED',
         icon: RefreshCcw,
-        className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
+        className: 'border-orange-500/20 bg-orange-500/10 text-orange-400',
       };
 
-    case "REFUND_COMPLETED":
+    case 'REFUND_COMPLETED':
       return {
-        label: "REFUND COMPLETED",
+        label: 'REFUND COMPLETED',
         icon: RefreshCcw,
-        className: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
+        className: 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400',
       };
 
-    case "ORDER_UPDATED":
+    case 'ORDER_UPDATED':
       return {
-        label: "ORDER UPDATED",
+        label: 'ORDER UPDATED',
         icon: RefreshCcw,
-        className: "border-orange-500/20 bg-orange-500/10 text-orange-400",
+        className: 'border-orange-500/20 bg-orange-500/10 text-orange-400',
       };
 
-    case "ORDER_ADJUSTED":
+    case 'ORDER_ADJUSTED':
       return {
-        label: "ORDER ADJUSTED",
+        label: 'ORDER ADJUSTED',
         icon: RefreshCcw,
-        className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+        className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400',
       };
 
-    case "ORDER_CANCELLED":
+    case 'ORDER_CANCELLED':
       return {
-        label: "ORDER CANCELLED",
+        label: 'ORDER CANCELLED',
         icon: XCircle,
-        className: "border-red-500/20 bg-red-500/10 text-red-400",
+        className: 'border-red-500/20 bg-red-500/10 text-red-400',
       };
 
     default:
       return {
-        label: "UPDATE",
+        label: 'UPDATE',
         icon: Clock3,
-        className: "border-white/10 bg-white/5 text-white",
+        className: 'border-white/10 bg-white/5 text-white',
       };
   }
 }
 
 function getRefundStatusLabel(status: string) {
   switch (status) {
-    case "PENDING_REVIEW":
-      return "Pendiente de revisión";
+    case 'PENDING_REVIEW':
+      return 'Pending review';
 
-    case "APPROVED":
-      return "Aprobada";
+    case 'APPROVED':
+      return 'Approved';
 
-    case "CUSTOMER_SENT":
-      return "Paquete enviado";
+    case 'CUSTOMER_SENT':
+      return 'Package shipped';
 
-    case "RECEIVED":
-      return "Paquete recibido";
+    case 'RECEIVED':
+      return 'Package received';
 
-    case "SUCCEEDED":
-      return "Reembolso completado";
+    case 'SUCCEEDED':
+      return 'Refund completed';
 
-    case "REJECTED":
-      return "Solicitud rechazada";
+    case 'REJECTED':
+      return 'Request rejected';
 
     default:
       return status;

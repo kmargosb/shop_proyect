@@ -1,8 +1,16 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Founder',
+  description:
+    'Meet the founder behind Camarguette and learn about the vision, design philosophy and technical craftsmanship behind the brand.',
+};
+
 export default function FounderPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-24 text-white">
       <div className="mx-auto max-w-4xl">
-        <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs uppercase tracking-[0.3em] text-neutral-400">
+        <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs tracking-[0.3em] text-neutral-400 uppercase">
           Founder
         </div>
 
@@ -11,9 +19,8 @@ export default function FounderPage() {
         </h1>
 
         <p className="mt-8 max-w-2xl text-lg leading-relaxed text-neutral-400">
-          Fullstack developer focused on building premium digital experiences,
-          modern ecommerce platforms and scalable systems with a minimalist
-          approach.
+          Fullstack developer focused on building premium digital experiences, modern ecommerce
+          platforms and scalable systems with a minimalist approach.
         </p>
 
         <div className="mt-16 grid gap-6 md:grid-cols-3">
@@ -37,9 +44,7 @@ export default function FounderPage() {
         </div>
 
         <div className="mt-20 border-t border-white/10 pt-10">
-          <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">
-            Contact
-          </p>
+          <p className="text-sm tracking-[0.3em] text-neutral-500 uppercase">Contact</p>
 
           <p className="mt-4 text-lg text-neutral-300">
             Available for selected freelance and ecommerce projects.

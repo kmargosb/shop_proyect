@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import RelatedProducts from "@/features/products/components/RelatedProducts";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/shared/ui/button";
-import { useCart } from "@/features/cart/CartContext";
-import { apiFetch } from "@/shared/lib/api";
-import { socket } from "@/shared/lib/socket";
-import { Heart } from "lucide-react";
-import { useWishlist } from "@/features/wishlist/WishListContext";
+import Image from 'next/image';
+import RelatedProducts from '@/features/products/components/RelatedProducts';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Button } from '@/shared/ui/button';
+import { useCart } from '@/features/cart/CartContext';
+import { apiFetch } from '@/shared/lib/api';
+import { socket } from '@/shared/lib/socket';
+import { Heart } from 'lucide-react';
+import { useWishlist } from '@/features/wishlist/WishListContext';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -20,8 +20,8 @@ export default function ProductPage() {
   const [viewTracked, setViewTracked] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [loading, setLoading] = useState(true);
   const { isWishlisted, toggleWishlist } = useWishlist();
 
@@ -42,25 +42,24 @@ export default function ProductPage() {
     setProduct(data);
 
     if (data.variants?.length) {
-      const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
+      const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
       const COLOR_ORDER = [
-        "WHITE",
-        "BLACK",
-        "CREAM",
-        "BEIGE",
-        "GREY",
-        "GRAY",
-        "BROWN",
-        "GREEN",
-        "BLUE",
-        "RED",
+        'WHITE',
+        'BLACK',
+        'CREAM',
+        'BEIGE',
+        'GREY',
+        'GRAY',
+        'BROWN',
+        'GREEN',
+        'BLUE',
+        'RED',
       ];
 
       const sortedVariants = [...data.variants].sort((a: any, b: any) => {
         const colorDiff =
-          COLOR_ORDER.indexOf(a.color?.toUpperCase()) -
-          COLOR_ORDER.indexOf(b.color?.toUpperCase());
+          COLOR_ORDER.indexOf(a.color?.toUpperCase()) - COLOR_ORDER.indexOf(b.color?.toUpperCase());
 
         if (colorDiff !== 0) return colorDiff;
 
@@ -68,9 +67,8 @@ export default function ProductPage() {
       });
 
       const firstAvailableVariant =
-        sortedVariants.find(
-          (variant: any) => variant.stock - variant.reservedStock > 0,
-        ) ?? sortedVariants[0];
+        sortedVariants.find((variant: any) => variant.stock - variant.reservedStock > 0) ??
+        sortedVariants[0];
 
       setSelectedSize(firstAvailableVariant.size);
       setSelectedColor(firstAvailableVariant.color);
@@ -88,10 +86,10 @@ export default function ProductPage() {
 
     setViewTracked(true);
 
-    apiFetch("/analytics/track", {
-      method: "POST",
+    apiFetch('/analytics/track', {
+      method: 'POST',
       body: JSON.stringify({
-        event: "PRODUCT_VIEW",
+        event: 'PRODUCT_VIEW',
         productId: product.id,
       }),
     });
@@ -108,25 +106,27 @@ export default function ProductPage() {
       }
     };
 
-    socket.on("productUpdated", handleProductUpdated);
+    socket.on('productUpdated', handleProductUpdated);
 
     return () => {
-      socket.off("productUpdated", handleProductUpdated);
+      socket.off('productUpdated', handleProductUpdated);
     };
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-        Cargando producto...
-      </div>
-    );
+    return <div className="mx-auto max-w-7xl px-6 py-20 text-center">Loading product...</div>;
   }
 
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-        Producto no encontrado
+      <div className="flex min-h-[70vh] items-center justify-center px-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">Product not found</h1>
+
+          <p className="mt-4 text-neutral-400">
+            The product you're looking for does not exist or is no longer available.
+          </p>
+        </div>
       </div>
     );
   }
@@ -139,53 +139,51 @@ export default function ProductPage() {
     (a: any, b: any) => Number(b.isPrimary) - Number(a.isPrimary),
   );
 
-  const mainImage = images[selectedImage]?.url ?? "/placeholder-product.png";
+  const mainImage = images[selectedImage]?.url ?? '/placeholder-product.png';
 
   const variants = product.variants ?? [];
 
-  const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
+  const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-  const sizes = Array.from(
-    new Set<string>(variants.map((v: any) => String(v.size))),
-  ).sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
+  const sizes = Array.from(new Set<string>(variants.map((v: any) => String(v.size)))).sort(
+    (a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b),
+  );
 
   const COLOR_ORDER = [
-    "WHITE",
-    "BLACK",
-    "CREAM",
-    "BEIGE",
-    "GREY",
-    "GRAY",
-    "BROWN",
-    "GREEN",
-    "BLUE",
-    "RED",
+    'WHITE',
+    'BLACK',
+    'CREAM',
+    'BEIGE',
+    'GREY',
+    'GRAY',
+    'BROWN',
+    'GREEN',
+    'BLUE',
+    'RED',
   ];
 
-  const colors = Array.from(
-    new Set<string>(variants.map((v: any) => String(v.color))),
-  ).sort((a, b) => {
-    const ai = COLOR_ORDER.indexOf(a.toUpperCase());
-    const bi = COLOR_ORDER.indexOf(b.toUpperCase());
+  const colors = Array.from(new Set<string>(variants.map((v: any) => String(v.color)))).sort(
+    (a, b) => {
+      const ai = COLOR_ORDER.indexOf(a.toUpperCase());
+      const bi = COLOR_ORDER.indexOf(b.toUpperCase());
 
-    if (ai === -1 && bi === -1) {
-      return a.localeCompare(b);
-    }
+      if (ai === -1 && bi === -1) {
+        return a.localeCompare(b);
+      }
 
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
 
-    return ai - bi;
-  });
+      return ai - bi;
+    },
+  );
 
   const selectedVariant =
     variants.find(
-      (variant: any) =>
-        variant.size === selectedSize && variant.color === selectedColor,
+      (variant: any) => variant.size === selectedSize && variant.color === selectedColor,
     ) ?? null;
 
-  const availableStock =
-    (selectedVariant?.stock ?? 0) - (selectedVariant?.reservedStock ?? 0);
+  const availableStock = (selectedVariant?.stock ?? 0) - (selectedVariant?.reservedStock ?? 0);
 
   const outOfStock = availableStock <= 0;
 
@@ -196,11 +194,11 @@ export default function ProductPage() {
   let stockBadge = null;
 
   if (outOfStock) {
-    stockBadge = <span className="text-red-500 font-medium">Sold Out</span>;
+    stockBadge = <span className="font-medium text-red-500">Sold Out</span>;
   } else if (availableStock <= 5) {
-    stockBadge = <span className="text-amber-400 font-medium">Low stock</span>;
+    stockBadge = <span className="font-medium text-amber-400">Low stock</span>;
   } else {
-    stockBadge = <span className="text-emerald-500 font-medium">In Stock</span>;
+    stockBadge = <span className="font-medium text-emerald-500">In Stock</span>;
   }
 
   /* ===============================
@@ -210,16 +208,16 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     try {
       if (!selectedVariant) {
-        toast.error("Selecciona una talla y color");
+        toast.error('Please select a size and color');
         return;
       }
 
       await addItem(product.id, selectedVariant.id, quantity);
 
-      await apiFetch("/analytics/track", {
-        method: "POST",
+      await apiFetch('/analytics/track', {
+        method: 'POST',
         body: JSON.stringify({
-          event: "ADD_TO_CART",
+          event: 'ADD_TO_CART',
           productId: product.id,
           metadata: {
             variantId: selectedVariant.id,
@@ -228,25 +226,25 @@ export default function ProductPage() {
         }),
       });
 
-      toast.success("Producto añadido al carrito");
+      toast.success('Added to cart');
     } catch (error: any) {
-      toast.error(error?.message || "No hay suficiente stock");
+      toast.error(error?.message || 'Not enough stock available');
     }
   };
 
   const handleBuyNow = async () => {
     try {
       if (!selectedVariant) {
-        toast.error("Selecciona una talla y color");
+        toast.error('Please select a size and color');
         return;
       }
 
       await addItem(product.id, selectedVariant.id, quantity, false);
 
-      await apiFetch("/analytics/track", {
-        method: "POST",
+      await apiFetch('/analytics/track', {
+        method: 'POST',
         body: JSON.stringify({
-          event: "ADD_TO_CART",
+          event: 'ADD_TO_CART',
           productId: product.id,
           metadata: {
             variantId: selectedVariant.id,
@@ -256,11 +254,11 @@ export default function ProductPage() {
         }),
       });
 
-      toast.success("Producto añadido al carrito");
+      toast.success('Added to cart');
 
-      router.push("/checkout");
+      router.push('/checkout');
     } catch (error: any) {
-      toast.error(error?.message || "No hay suficiente stock");
+      toast.error(error?.message || 'Not enough stock available');
     }
   };
 
@@ -269,41 +267,28 @@ export default function ProductPage() {
   =============================== */
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-16 space-y-24">
-      <main className="grid md:grid-cols-2 gap-14">
+    <div className="mx-auto max-w-7xl space-y-24 px-6 py-16">
+      <main className="grid gap-14 md:grid-cols-2">
         {/* ===============================
          IMAGE GALLERY
       =============================== */}
 
         <div className="space-y-4">
-          <div className="relative aspect-square bg-neutral-900 rounded-xl overflow-hidden">
-            <Image
-              src={mainImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-900">
+            <Image src={mainImage} alt={product.name} fill className="object-cover" />
           </div>
 
           {images.length > 1 && (
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex flex-wrap gap-3">
               {images.map((img: any, index: number) => (
                 <button
                   key={img.id}
                   onClick={() => setSelectedImage(index)}
-                  className={`relative w-20 h-20 rounded-md overflow-hidden border
-                ${
-                  selectedImage === index
-                    ? "border-white"
-                    : "border-neutral-700"
-                } cursor-pointer`}
+                  className={`relative h-20 w-20 overflow-hidden rounded-md border ${
+                    selectedImage === index ? 'border-white' : 'border-neutral-700'
+                  } cursor-pointer`}
                 >
-                  <Image
-                    src={img.url}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={img.url} alt={product.name} fill className="object-cover" />
                 </button>
               ))}
             </div>
@@ -316,7 +301,7 @@ export default function ProductPage() {
 
         <div className="space-y-6">
           {product.brand?.name && (
-            <p className="text-m uppercase tracking-[0.3em] text-neutral-500">
+            <p className="text-m tracking-[0.3em] text-neutral-500 uppercase">
               {product.brand.name}
             </p>
           )}
@@ -326,31 +311,25 @@ export default function ProductPage() {
 
             <button
               onClick={() => toggleWishlist(product.id)}
-              title={isWishlisted(product.id) ? "Saved" : "Save for later"}
+              title={isWishlisted(product.id) ? 'Saved' : 'Save for later'}
               className="rounded-full p-2 transition hover:bg-white/5"
             >
               <Heart
                 size={22}
                 className={
-                  isWishlisted(product.id)
-                    ? "fill-rose-500 text-rose-500"
-                    : "text-neutral-500"
+                  isWishlisted(product.id) ? 'fill-rose-500 text-rose-500' : 'text-neutral-500'
                 }
               />
             </button>
           </div>
 
-          <p className="text-2xl font-semibold">
-            €{(product.price / 100).toFixed(2)}
-          </p>
+          <p className="text-2xl font-semibold">€{(product.price / 100).toFixed(2)}</p>
 
           {stockBadge}
 
           <div className="space-y-6">
             <div>
-              <p className="mb-3 text-xs uppercase tracking-[0.25em] text-neutral-500">
-                Size
-              </p>
+              <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">Size</p>
 
               <div className="flex flex-wrap gap-2">
                 {sizes.map((size) => (
@@ -360,12 +339,11 @@ export default function ProductPage() {
                       setSelectedSize(size);
                       setQuantity(1);
                     }}
-                    className={`h-11 min-w-[52px] rounded-xl border px-4 cursor-pointer transition-all duration-200
-          ${
-            selectedSize === size
-              ? "border-white bg-neutral-900 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]"
-              : "border-neutral-700 hover:border-neutral-500 text-neutral-700"
-          }`}
+                    className={`h-11 min-w-[52px] cursor-pointer rounded-xl border px-4 transition-all duration-200 ${
+                      selectedSize === size
+                        ? 'border-white bg-neutral-900 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]'
+                        : 'border-neutral-700 text-neutral-700 hover:border-neutral-500'
+                    }`}
                   >
                     {size}
                   </button>
@@ -374,27 +352,24 @@ export default function ProductPage() {
             </div>
 
             <div>
-              <p className="mb-3 text-xs uppercase tracking-[0.25em] text-neutral-500">
-                Color
-              </p>
+              <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">Color</p>
 
               <div className="flex flex-wrap gap-5">
                 {colors.map((color) => {
                   const colorMap: Record<string, string> = {
-                    WHITE: "bg-white border border-neutral-500",
-                    BLACK: "bg-black",
-                    CREAM: "bg-yellow-50",
-                    BEIGE: "bg-stone-200",
-                    GREY: "bg-neutral-500",
-                    GRAY: "bg-neutral-500",
-                    BROWN: "bg-amber-800",
-                    GREEN: "bg-green-700",
-                    BLUE: "bg-blue-700",
-                    RED: "bg-red-700",
+                    WHITE: 'bg-white border border-neutral-500',
+                    BLACK: 'bg-black',
+                    CREAM: 'bg-yellow-50',
+                    BEIGE: 'bg-stone-200',
+                    GREY: 'bg-neutral-500',
+                    GRAY: 'bg-neutral-500',
+                    BROWN: 'bg-amber-800',
+                    GREEN: 'bg-green-700',
+                    BLUE: 'bg-blue-700',
+                    RED: 'bg-red-700',
                   };
 
-                  const swatch =
-                    colorMap[color.toUpperCase()] ?? "bg-neutral-400";
+                  const swatch = colorMap[color.toUpperCase()] ?? 'bg-neutral-400';
 
                   const active = selectedColor === color;
 
@@ -409,47 +384,30 @@ export default function ProductPage() {
                         const variantsForColor = variants
                           .filter((v: any) => v.color === color)
                           .sort((a: any, b: any) => {
-                            const SIZE_ORDER = [
-                              "XS",
-                              "S",
-                              "M",
-                              "L",
-                              "XL",
-                              "XXL",
-                            ];
+                            const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-                            return (
-                              SIZE_ORDER.indexOf(a.size) -
-                              SIZE_ORDER.indexOf(b.size)
-                            );
+                            return SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size);
                           });
 
                         const firstAvailable =
-                          variantsForColor.find(
-                            (v: any) => v.stock - v.reservedStock > 0,
-                          ) ?? variantsForColor[0];
+                          variantsForColor.find((v: any) => v.stock - v.reservedStock > 0) ??
+                          variantsForColor[0];
 
                         if (firstAvailable) {
                           setSelectedSize(firstAvailable.size);
                         }
                       }}
-                      className="flex flex-col items-center gap-2 cursor-pointer"
+                      className="flex cursor-pointer flex-col items-center gap-2"
                     >
                       <span
-                        className={`
-                          flex items-center justify-center
-                          h-8 w-8 rounded-full
-                          transition-all duration-200
-                          ${active ? "border-black scale-140" : "border-neutral-400"}`}
+                        className={`flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 ${active ? 'scale-140 border-black' : 'border-neutral-400'}`}
                       >
                         <span className={`h-5 w-5 rounded-full ${swatch}`} />
                       </span>
 
                       <span
-                        className={`text-xs uppercase tracking-wide ${
-                          active
-                            ? "text-black font-semibold"
-                            : "text-neutral-400"
+                        className={`text-xs tracking-wide uppercase ${
+                          active ? 'font-semibold text-black' : 'text-neutral-400'
                         }`}
                       >
                         {color}
@@ -462,9 +420,7 @@ export default function ProductPage() {
           </div>
 
           {product.description && (
-            <p className="text-neutral-400 leading-relaxed">
-              {product.description}
-            </p>
+            <p className="leading-relaxed text-neutral-400">{product.description}</p>
           )}
 
           {/* ===============================
@@ -474,11 +430,11 @@ export default function ProductPage() {
           <div className="flex items-center gap-4">
             <span className="text-sm text-neutral-400">Quantity</span>
 
-            <div className="flex items-center border border-neutral-700 rounded-md">
+            <div className="flex items-center rounded-md border border-neutral-700">
               <button
                 disabled={outOfStock}
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-1 hover:bg-neutral-800 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer px-3 py-1 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 -
               </button>
@@ -487,10 +443,8 @@ export default function ProductPage() {
 
               <button
                 disabled={outOfStock}
-                onClick={() =>
-                  setQuantity((q) => Math.min(availableStock, q + 1))
-                }
-                className="px-3 py-1 hover:bg-neutral-800 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
+                className="cursor-pointer px-3 py-1 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 +
               </button>
@@ -505,15 +459,7 @@ export default function ProductPage() {
             <Button
               onClick={handleAddToCart}
               disabled={outOfStock}
-              className="
-    bg-white text-black
-    hover:bg-neutral-200
-    shadow-sm hover:shadow-md
-    transition-all
-    cursor-pointer
-    disabled:bg-neutral-700
-    disabled:text-neutral-400
-  "
+              className="cursor-pointer bg-white text-black shadow-sm transition-all hover:bg-neutral-200 hover:shadow-md disabled:bg-neutral-700 disabled:text-neutral-400"
             >
               Add to cart
             </Button>
@@ -522,11 +468,7 @@ export default function ProductPage() {
               onClick={handleBuyNow}
               disabled={outOfStock}
               variant="outline"
-              className="
-    cursor-pointer
-    shadow-sm hover:shadow-md
-    transition-all
-  "
+              className="cursor-pointer shadow-sm transition-all hover:shadow-md"
             >
               Buy now
             </Button>

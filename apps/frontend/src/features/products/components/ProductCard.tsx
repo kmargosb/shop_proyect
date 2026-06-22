@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Heart } from "lucide-react";
-import { useWishlist } from "@/features/wishlist/WishListContext";
-import type { Product } from "@/types/product";
+import Image from 'next/image';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Heart } from 'lucide-react';
+import { useWishlist } from '@/features/wishlist/WishListContext';
+import type { Product } from '@/types/product';
 
 type Props = {
   product: Product;
@@ -17,17 +17,14 @@ export default function ProductCard({ product }: Props) {
   const wishlisted = isWishlisted(product.id);
 
   const availableStock =
-    product.variants?.reduce(
-      (total, variant) => total + (variant.stock ?? 0),
-      0,
-    ) ?? 0;
+    product.variants?.reduce((total, variant) => total + (variant.stock ?? 0), 0) ?? 0;
 
   const outOfStock = availableStock <= 0;
 
   const primaryImage =
     product.images?.find((img) => img.isPrimary)?.url ??
     product.images?.[0]?.url ??
-    "/placeholder-product.png";
+    '/placeholder-product.png';
 
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
 
@@ -35,8 +32,8 @@ export default function ProductCard({ product }: Props) {
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
-      className={`group bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 transition-all ${
-        outOfStock ? "opacity-60" : "hover:border-neutral-600"
+      className={`group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 transition-all ${
+        outOfStock ? 'opacity-60' : 'hover:border-neutral-600'
       }`}
     >
       {/* IMAGE */}
@@ -49,13 +46,11 @@ export default function ProductCard({ product }: Props) {
 
               toggleWishlist(product.id);
             }}
-            className="absolute right-3 top-3 z-20 rounded-full bg-black/60 p-2 backdrop-blur"
+            className="absolute top-3 right-3 z-20 rounded-full bg-black/60 p-2 backdrop-blur"
           >
             <Heart
               size={18}
-              className={
-                wishlisted ? "fill-rose-500 text-rose-500" : "text-white"
-              }
+              className={wishlisted ? 'fill-rose-500 text-rose-500' : 'text-white'}
             />
           </button>
           <motion.div
@@ -81,38 +76,34 @@ export default function ProductCard({ product }: Props) {
               src={hoverImage}
               alt={product.name}
               fill
-              className="object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             />
           </motion.div>
         </div>
       </Link>
 
       {/* INFO */}
-      <div className="p-3 md:p-4 space-y-2 md:space-y-3">
+      <div className="space-y-2 p-3 md:space-y-3 md:p-4">
         <div className="space-y-1">
           {product.brand?.name && (
-            <p className="text-[10px] md:text-[11px] uppercase tracking-[0.15em] text-neutral-500">
+            <p className="text-[10px] tracking-[0.15em] text-neutral-500 uppercase md:text-[11px]">
               {product.brand.name}
             </p>
           )}
 
           <Link
             href={`/product/${product.id}`}
-            className="block text-xs md:text-sm font-medium text-white leading-tight line-clamp-2 min-h-[32px] md:min-h-[40px]"
+            className="line-clamp-2 block min-h-[32px] text-xs leading-tight font-medium text-white md:min-h-[40px] md:text-sm"
           >
             {product.name}
           </Link>
         </div>
 
         <div className="space-y-1">
-          <p className="text-white md:text-lg font-semibold">
-            €{(product.price / 100).toFixed(2)}
-          </p>
+          <p className="font-semibold text-white md:text-lg">€{(product.price / 100).toFixed(2)}</p>
 
           {!outOfStock && availableStock <= 5 && (
-            <p className="text-xs text-amber-400">
-              Solo quedan {availableStock}
-            </p>
+            <p className="text-xs text-amber-400">Only {availableStock} left</p>
           )}
         </div>
 
@@ -121,7 +112,7 @@ export default function ProductCard({ product }: Props) {
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: outOfStock ? 1 : 1.02 }}
             transition={{ duration: 0.15 }}
-            className="w-full bg-white text-black py-1.5 rounded-md font-medium text-xs text-center hover:bg-neutral-200"
+            className="w-full rounded-md bg-white py-1.5 text-center text-xs font-medium text-black hover:bg-neutral-200"
           >
             View product
           </motion.div>

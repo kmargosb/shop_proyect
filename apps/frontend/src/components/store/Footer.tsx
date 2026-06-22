@@ -1,40 +1,44 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 const footerLinks = {
   shop: [
     {
-      label: "All products",
-      href: "/shop",
+      label: 'All products',
+      href: '/shop',
     },
     {
-      label: "Brands",
-      href: "/brands",
+      label: 'Brands',
+      href: '/brands',
     },
   ],
 
   support: [
     {
-      label: "Contact",
-      href: "/contact",
+      label: 'Contact',
+      href: '/contact',
     },
     {
-      label: "Shipping",
-      href: "/shipping",
+      label: 'Shipping',
+      href: '/shipping',
     },
     {
-      label: "Returns",
-      href: "/returns",
+      label: 'Returns',
+      href: '/returns',
     },
   ],
 
   legal: [
     {
-      label: "Privacy Policy",
-      href: "/privacy",
+      label: 'Privacy Policy',
+      href: '/privacy',
     },
     {
-      label: "Terms of Service",
-      href: "/terms",
+      label: 'Terms of Service',
+      href: '/terms',
+    },
+    {
+      label: 'Cookies',
+      href: '/cookies',
     },
   ],
 };
@@ -49,25 +53,19 @@ export default function Footer() {
           {/* BRAND */}
 
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">
-              Camarguette
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight text-white">Camarguette</h2>
 
             <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-neutral-400">
-              Minimal products, premium experience and
-              digital craftsmanship.
+              Minimal products, premium experience and digital craftsmanship.
             </p>
 
             {/* FOUNDER */}
 
             <div className="mt-8 border-t border-white/10 pt-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                Founder
-              </p>
+              <p className="text-sm tracking-[0.3em] text-neutral-400 uppercase">Founder</p>
 
               <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-neutral-300">
-                Designed & developed by Nelson Camargo —
-                Building premium digital experiences.
+                Designed & developed by Nelson Camargo — Building premium digital experiences.
               </p>
 
               <Link
@@ -93,21 +91,16 @@ export default function Footer() {
 
           {/* LINKS */}
 
-          <div className="grid grid-cols-2 gap-x-10 gap-y-10 md:grid-cols-3 md:col-span-3">
+          <div className="grid grid-cols-2 gap-x-10 gap-y-10 md:col-span-3 md:grid-cols-3">
             {/* SHOP */}
 
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-white">
-                Shop
-              </h3>
+              <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">Shop</h3>
 
               <ul className="mt-5 space-y-3 text-[15px]">
                 {footerLinks.shop.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="transition hover:text-white"
-                    >
+                    <Link href={link.href} className="transition hover:text-white">
                       {link.label}
                     </Link>
                   </li>
@@ -118,17 +111,14 @@ export default function Footer() {
             {/* SUPPORT */}
 
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-white">
+              <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">
                 Support
               </h3>
 
               <ul className="mt-5 space-y-3 text-[15px]">
                 {footerLinks.support.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="transition hover:text-white"
-                    >
+                    <Link href={link.href} className="transition hover:text-white">
                       {link.label}
                     </Link>
                   </li>
@@ -139,17 +129,14 @@ export default function Footer() {
             {/* LEGAL */}
 
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-white">
+              <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">
                 Legal
               </h3>
 
               <ul className="mt-5 space-y-3 text-[15px]">
                 {footerLinks.legal.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="transition hover:text-white"
-                    >
+                    <Link href={link.href} className="transition hover:text-white">
                       {link.label}
                     </Link>
                   </li>
@@ -163,15 +150,9 @@ export default function Footer() {
 
         <div className="mt-14 border-t border-white/10 pt-6">
           <div className="flex flex-col gap-3 text-sm text-neutral-500 md:flex-row md:items-center md:justify-between">
-            <p>
-              © {new Date().getFullYear()} Camarguette.
-              All rights reserved.
-            </p>
+            <p>© {new Date().getFullYear()} Camarguette. All rights reserved.</p>
 
-            <p>
-              Crafted with Next.js, TypeScript, Prisma &
-              Stripe.
-            </p>
+            <p>Designed in Madrid. Built with attention to detail.</p>
           </div>
         </div>
       </div>

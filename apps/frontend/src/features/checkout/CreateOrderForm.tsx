@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useCart } from "@/features/cart/CartContext";
-import { useAuth } from "@/features/auth/context/AuthContext";
-import { apiFetch } from "@/shared/lib/api";
-import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { COUNTRIES } from "@/shared/constants/countries";
-import LoginInline from "@/features/auth/components/LoginInline";
-import AddressAutocomplete from "./components/AddressAutocomplete";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '@/features/cart/CartContext';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { apiFetch } from '@/shared/lib/api';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
+import { COUNTRIES } from '@/shared/constants/countries';
+import LoginInline from '@/features/auth/components/LoginInline';
+import AddressAutocomplete from './components/AddressAutocomplete';
+import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
 
@@ -39,58 +39,50 @@ type CheckoutResponse = {
 };
 
 export default function CreateOrderForm() {
-  const {
-    items,
-    clearCart,
-    totalPrice,
-    increaseQuantity,
-    decreaseQuantity,
-    removeItem,
-  } = useCart();
+  const { items, clearCart, totalPrice, increaseQuantity, decreaseQuantity, removeItem } =
+    useCart();
   const { refreshUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null,
-  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [isLogged, setIsLogged] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    postalCode: "",
-    country: "ES",
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    postalCode: '',
+    country: 'ES',
   });
 
   /* ================= AUTOFILL ================= */
 
   useEffect(() => {
-    const saved = localStorage.getItem("checkoutData");
+    const saved = localStorage.getItem('checkoutData');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
 
         setForm({
-          firstName: parsed.firstName ?? "",
-          lastName: parsed.lastName ?? "",
-          email: parsed.email ?? "",
-          phone: parsed.phone ?? "",
-          addressLine1: parsed.addressLine1 ?? "",
-          addressLine2: parsed.addressLine2 ?? "",
-          city: parsed.city ?? "",
-          postalCode: parsed.postalCode ?? "",
-          country: parsed.country ?? "ES",
+          firstName: parsed.firstName ?? '',
+          lastName: parsed.lastName ?? '',
+          email: parsed.email ?? '',
+          phone: parsed.phone ?? '',
+          addressLine1: parsed.addressLine1 ?? '',
+          addressLine2: parsed.addressLine2 ?? '',
+          city: parsed.city ?? '',
+          postalCode: parsed.postalCode ?? '',
+          country: parsed.country ?? 'ES',
         });
       } catch {
-        localStorage.removeItem("checkoutData");
+        localStorage.removeItem('checkoutData');
       }
     }
   }, []);
@@ -99,7 +91,7 @@ export default function CreateOrderForm() {
 
   const loadAddresses = async () => {
     try {
-      const meRes = await apiFetch("/auth/me");
+      const meRes = await apiFetch('/auth/me');
 
       if (!meRes || !meRes.ok) {
         setIsLogged(false);
@@ -110,7 +102,7 @@ export default function CreateOrderForm() {
 
       const meData = await meRes.json();
 
-      const res = await apiFetch("/customers/me/addresses");
+      const res = await apiFetch('/customers/me/addresses');
       if (!res || !res.ok) return;
 
       const data: Address[] = await res.json();
@@ -121,20 +113,18 @@ export default function CreateOrderForm() {
 
         setSelectedAddressId(first.id);
 
-        const [firstName = "", ...lastParts] = (first.fullName ?? "").split(
-          " ",
-        );
+        const [firstName = '', ...lastParts] = (first.fullName ?? '').split(' ');
 
         setForm((prev) => ({
           ...prev,
           email: meData.user?.email || prev.email,
 
           firstName,
-          lastName: lastParts.join(" "),
+          lastName: lastParts.join(' '),
 
           phone: first.phone,
           addressLine1: first.addressLine1,
-          addressLine2: first.addressLine2 || "",
+          addressLine2: first.addressLine2 || '',
           city: first.city,
           postalCode: first.postalCode,
           country: first.country,
@@ -157,14 +147,12 @@ export default function CreateOrderForm() {
   /* ================= AUTO SAVE ================= */
 
   useEffect(() => {
-    localStorage.setItem("checkoutData", JSON.stringify(form));
+    localStorage.setItem('checkoutData', JSON.stringify(form));
   }, [form]);
 
   /* ================= INPUT ================= */
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     setForm((prev) => ({
@@ -186,7 +174,7 @@ export default function CreateOrderForm() {
 
   const deleteAddress = async (id: string) => {
     await apiFetch(`/customers/me/addresses/${id}`, {
-      method: "DELETE",
+      method: 'DELETE',
     });
 
     setAddresses((prev) => prev.filter((a) => a.id !== id));
@@ -194,7 +182,7 @@ export default function CreateOrderForm() {
 
   const setFavorite = async (id: string) => {
     await apiFetch(`/customers/me/addresses/${id}/favorite`, {
-      method: "PATCH",
+      method: 'PATCH',
     });
 
     loadAddresses();
@@ -217,19 +205,19 @@ export default function CreateOrderForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isValid) return alert("Completa todos los campos");
+    if (!isValid) return alert('Please complete all required fields');
 
     setLoading(true);
 
     try {
-      const cartId = localStorage.getItem("cartId");
+      const cartId = localStorage.getItem('cartId');
       if (!cartId) throw new Error();
 
       const res = await apiFetch(`/cart/${cartId}/checkout`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           cartId,
-          method: "CARD",
+          method: 'CARD',
 
           fullName: `${form.firstName} ${form.lastName}`.trim(),
 
@@ -244,26 +232,26 @@ export default function CreateOrderForm() {
       });
 
       if (!res) {
-        throw new Error("Error de conexión");
+        throw new Error('Connection error');
       }
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
 
-        throw new Error(data?.error || "Error al procesar checkout");
+        throw new Error(data?.error || 'Unable to process checkout');
       }
 
       const data: CheckoutResponse = await res.json();
 
-      localStorage.setItem("orderEmail", form.email);
+      localStorage.setItem('orderEmail', form.email);
 
-      localStorage.setItem("orderEmailOrderId", data.orderId);
+      localStorage.setItem('orderEmailOrderId', data.orderId);
 
       window.location.href = `/orders/${data.orderId}/pay?clientSecret=${encodeURIComponent(
         data.payment.clientSecret,
       )}&email=${encodeURIComponent(form.email)}`;
     } catch (error: any) {
-      toast.error(error?.message || "Error al procesar checkout");
+      toast.error(error?.message || 'Unable to process checkout');
     } finally {
       setLoading(false);
     }
@@ -275,7 +263,7 @@ export default function CreateOrderForm() {
       <div className="space-y-6">
         {/* LOGIN APPLE STYLE */}
         {!isLogged && (
-          <div className="bg-neutral-900 rounded-xl overflow-hidden">
+          <div className="overflow-hidden rounded-xl bg-neutral-900">
             <motion.div layout className="p-4">
               <AnimatePresence mode="wait">
                 {!showLogin ? (
@@ -290,12 +278,12 @@ export default function CreateOrderForm() {
                     }}
                   >
                     <p className="text-sm text-neutral-400">
-                      ¿Tienes cuenta?{" "}
+                      Already have an account?{' '}
                       <button
                         onClick={() => setShowLogin(true)}
-                        className="underline hover:text-white transition"
+                        className="underline transition hover:text-white"
                       >
-                        Inicia sesión
+                        Sign in
                       </button>
                     </p>
                   </motion.div>
@@ -321,9 +309,9 @@ export default function CreateOrderForm() {
 
                     <button
                       onClick={() => setShowLogin(false)}
-                      className="mt-4 text-xs text-neutral-400 hover:text-white transition"
+                      className="mt-4 text-xs text-neutral-400 transition hover:text-white"
                     >
-                      ← Volver
+                      ← Back
                     </button>
                   </motion.div>
                 )}
@@ -334,7 +322,7 @@ export default function CreateOrderForm() {
 
         {/* ADDRESSES */}
         {addresses.length > 0 && (
-          <div className="bg-neutral-900 p-4 rounded-xl space-y-3">
+          <div className="space-y-3 rounded-xl bg-neutral-900 p-4">
             <h3 className="text-sm text-neutral-400">Saved addresses</h3>
 
             {addresses.map((addr) => {
@@ -353,39 +341,34 @@ export default function CreateOrderForm() {
                   onClick={() => {
                     setSelectedAddressId(addr.id);
 
-                    const [firstName = "", ...lastParts] = (
-                      addr.fullName ?? ""
-                    ).split(" ");
+                    const [firstName = '', ...lastParts] = (addr.fullName ?? '').split(' ');
 
                     setForm((prev) => ({
                       ...prev,
 
                       firstName,
-                      lastName: lastParts.join(" "),
+                      lastName: lastParts.join(' '),
 
-                      phone: addr.phone ?? "",
-                      addressLine1: addr.addressLine1 ?? "",
-                      addressLine2: addr.addressLine2 ?? "",
-                      city: addr.city ?? "",
-                      postalCode: addr.postalCode ?? "",
-                      country: addr.country ?? "ES",
+                      phone: addr.phone ?? '',
+                      addressLine1: addr.addressLine1 ?? '',
+                      addressLine2: addr.addressLine2 ?? '',
+                      city: addr.city ?? '',
+                      postalCode: addr.postalCode ?? '',
+                      country: addr.country ?? 'ES',
                     }));
                   }}
-                  className={`relative pl-10 pr-4 p-4 rounded-xl border cursor-pointer
-                  ${
+                  className={`relative cursor-pointer rounded-xl border p-4 pr-4 pl-10 ${
                     selected
-                      ? "border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]"
-                      : "border-white/10 hover:border-white/30"
+                      ? 'border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+                      : 'border-white/10 hover:border-white/30'
                   }`}
                 >
                   <motion.div
                     layout
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border"
+                    className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 rounded-full border"
                     animate={{
-                      backgroundColor: selected
-                        ? "#ffffff"
-                        : "rgba(255,255,255,0)",
-                      borderColor: selected ? "#fff" : "rgba(255,255,255,0.4)",
+                      backgroundColor: selected ? '#ffffff' : 'rgba(255,255,255,0)',
+                      borderColor: selected ? '#fff' : 'rgba(255,255,255,0.4)',
                     }}
                   />
 
@@ -399,7 +382,7 @@ export default function CreateOrderForm() {
                           setFavorite(addr.id);
                         }}
                       >
-                        {addr.isDefault ? "⭐" : "☆"}
+                        {addr.isDefault ? '⭐' : '☆'}
                       </button>
 
                       <button
@@ -413,9 +396,7 @@ export default function CreateOrderForm() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-neutral-400 mt-1">
-                    {addr.addressLine1}
-                  </p>
+                  <p className="mt-1 text-xs text-neutral-400">{addr.addressLine1}</p>
                 </motion.div>
               );
             })}
@@ -454,10 +435,7 @@ export default function CreateOrderForm() {
             placeholder="Phone number"
           />
 
-          <AddressAutocomplete
-            value={form.addressLine1}
-            onChange={handleAddressChange}
-          />
+          <AddressAutocomplete value={form.addressLine1} onChange={handleAddressChange} />
 
           <Input
             name="addressLine2"
@@ -465,12 +443,7 @@ export default function CreateOrderForm() {
             onChange={handleChange}
             placeholder="Door / Apartment number"
           />
-          <Input
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-            placeholder="City"
-          />
+          <Input name="city" value={form.city} onChange={handleChange} placeholder="City" />
           <Input
             name="postalCode"
             value={form.postalCode}
@@ -482,7 +455,7 @@ export default function CreateOrderForm() {
             name="country"
             value={form.country}
             onChange={handleChange}
-            className="w-full p-3 bg-neutral-900 border border-neutral-700 rounded-lg"
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3"
           >
             {COUNTRIES.map((c) => (
               <option key={c.code} value={c.code}>
@@ -494,33 +467,26 @@ export default function CreateOrderForm() {
       </div>
 
       {/* RIGHT */}
-      <div className="rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6 space-y-6">
+      <div className="space-y-6 rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Resumen</h2>
+          <h2 className="text-lg font-semibold">Order Summary</h2>
           <span className="text-xs text-neutral-400">
-            {items.length} {items.length === 1 ? "item" : "items"}
+            {items.length} {items.length === 1 ? 'item' : 'items'}
           </span>
         </div>
 
         {/* ITEMS */}
         <div className="space-y-4">
           {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-start justify-between gap-3"
-            >
+            <div key={item.id} className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 {/* IMAGE  */}
-                <div className="w-16 h-16 rounded-lg overflow-hidden bg-neutral-800">
+                <div className="h-16 w-16 overflow-hidden rounded-lg bg-neutral-800">
                   {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-500">
+                    <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-500">
                       IMG
                     </div>
                   )}
@@ -533,16 +499,16 @@ export default function CreateOrderForm() {
                   {(item.size || item.color) && (
                     <span className="mt-1 text-xs text-neutral-400">
                       {item.size && `Size ${item.size}`}
-                      {item.size && item.color && " · "}
+                      {item.size && item.color && ' · '}
                       {item.color}
                     </span>
                   )}
 
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="mt-2 flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => decreaseQuantity(item.id)}
-                      className="w-6 h-6 rounded border border-neutral-700 hover:border-white transition"
+                      className="h-6 w-6 rounded border border-neutral-700 transition hover:border-white"
                     >
                       -
                     </button>
@@ -554,7 +520,7 @@ export default function CreateOrderForm() {
                     <button
                       type="button"
                       onClick={() => increaseQuantity(item.id)}
-                      className="w-6 h-6 rounded border border-neutral-700 hover:border-white transition"
+                      className="h-6 w-6 rounded border border-neutral-700 transition hover:border-white"
                     >
                       +
                     </button>
@@ -562,7 +528,7 @@ export default function CreateOrderForm() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.id)}
-                      className="ml-2 text-xs text-neutral-500 hover:text-red-400 transition"
+                      className="ml-2 text-xs text-neutral-500 transition hover:text-red-400"
                     >
                       Remove
                     </button>
@@ -600,26 +566,25 @@ export default function CreateOrderForm() {
         </div>
 
         {/* TOTAL */}
-        <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+        <div className="flex items-center justify-between border-t border-white/10 pt-4">
           <span className="text-base font-semibold">Total</span>
-          <span className="text-xl font-bold">
-            €{(totalPrice / 100).toFixed(2)}
-          </span>
+          <span className="text-xl font-bold">€{(totalPrice / 100).toFixed(2)}</span>
         </div>
 
         <Button
           type="submit"
           form="checkout-form"
           disabled={!isValid || loading}
-          className="h-12 w-full rounded-xl !bg-white !text-black font-semibold border border-white/20 shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
+          className="h-12 w-full rounded-xl border border-white/20 !bg-white font-semibold !text-black shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
         >
-          {loading ? "Processing..." : `Pay €${(totalPrice / 100).toFixed(2)}`}
+          {loading ? 'Processing...' : `Pay €${(totalPrice / 100).toFixed(2)}`}
         </Button>
 
         {/* TRUST / UX BOOST */}
-        <div className="mt-20 text-xs text-neutral-500 space-y-1">
+        <div className="mt-20 space-y-1 text-xs text-neutral-500">
           <p>🔒 Secure SSL encrypted payment</p>
           <p>💳 Processed by Stripe</p>
+          <p>🚚 Fast shipping across Europe</p>
         </div>
       </div>
     </div>

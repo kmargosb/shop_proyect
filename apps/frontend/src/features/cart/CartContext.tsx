@@ -1,16 +1,10 @@
-"use client";
+'use client';
 
-import { apiFetch } from "@/shared/lib/api";
-import { socket } from "@/shared/lib/socket";
-import {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useEffect,
-} from "react";
+import { apiFetch } from '@/shared/lib/api';
+import { socket } from '@/shared/lib/socket';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-const CART_KEY = "cartId";
+const CART_KEY = 'cartId';
 
 /* ================= TYPES ================= */
 
@@ -60,15 +54,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const mapItems = (cart: any): CartItem[] =>
     (cart.items ?? [])
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      )
+      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
       .map((item: any) => ({
         id: item.id,
         productId: item.productId,
         variantId: item.variantId,
-        name: item.product?.name ?? "Producto",
+        name: item.product?.name ?? 'Producto',
         price: item.price,
         quantity: item.quantity,
         image:
@@ -82,7 +73,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /* ================= CREATE CART ================= */
 
   const createCart = async (): Promise<string | null> => {
-    const res = await apiFetch("/cart", { method: "POST" });
+    const res = await apiFetch('/cart', { method: 'POST' });
 
     if (!res || !res.ok) return null;
 
@@ -158,26 +149,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       await fetchCart(cartId);
     };
 
-    socket.on("productUpdated", handleProductUpdated);
+    socket.on('productUpdated', handleProductUpdated);
 
     return () => {
-      socket.off("productUpdated", handleProductUpdated);
+      socket.off('productUpdated', handleProductUpdated);
     };
   }, []);
 
   /* ================= ADD ITEM ================= */
 
-  const addItem = async (
-    productId: string,
-    variantId: string,
-    quantity = 1,
-    openDrawer = true,
-  ) => {
+  const addItem = async (productId: string, variantId: string, quantity = 1, openDrawer = true) => {
     const cartId = await ensureCart();
     if (!cartId) return;
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         productId,
         variantId,
@@ -186,13 +172,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res) {
-      throw new Error("Error de conexión");
+      throw new Error('Connection error');
     }
 
     if (!res.ok) {
       const data = await res.json().catch(() => null);
 
-      throw new Error(data?.error || "No se pudo añadir al carrito");
+      throw new Error(data?.error || 'No se pudo añadir al carrito');
     }
 
     const cart = await res.json();
@@ -210,7 +196,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((i) => i.id !== itemId));
 
     await apiFetch(`/cart/items/${itemId}`, {
-      method: "DELETE",
+      method: 'DELETE',
     });
   };
 
@@ -224,7 +210,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!cartId) return;
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         productId: item.productId,
         variantId: item.variantId,
@@ -253,7 +239,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         productId: item.productId,
         variantId: item.variantId,
@@ -276,10 +262,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   /* ================= TOTALS ================= */
 
-  const totalItems = items.reduce(
-    (acc: number, item: CartItem) => acc + item.quantity,
-    0,
-  );
+  const totalItems = items.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
 
   const totalPrice = items.reduce(
     (acc: number, item: CartItem) => acc + item.price * item.quantity,
@@ -312,7 +295,7 @@ export function useCart() {
   const context = useContext(CartContext);
 
   if (!context) {
-    throw new Error("useCart must be used inside CartProvider");
+    throw new Error('useCart must be used inside CartProvider');
   }
 
   return context;

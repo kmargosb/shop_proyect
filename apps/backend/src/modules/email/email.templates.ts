@@ -1,4 +1,4 @@
-const adminUrl = process.env.ADMIN_PANEL_URL || "http://localhost:3000";
+const adminUrl = process.env.ADMIN_PANEL_URL || 'http://localhost:3000';
 
 export function orderConfirmationTemplate(
   customerName: string,
@@ -241,12 +241,12 @@ export function helpRequestTemplate(
 
         <p>
           <strong>Order Phone</strong><br>
-          ${orderPhone || "-"}
+          ${orderPhone || '-'}
         </p>
 
         <p>
           <strong>Contact Phone #2</strong><br>
-          ${contactPhone || "-"}
+          ${contactPhone || '-'}
         </p>
       </div>
 
@@ -286,11 +286,7 @@ export function helpRequestTemplate(
   `;
 }
 
-export function customerReplyTemplate(
-  customerName: string,
-  message: string,
-  cancelUrl?: string,
-) {
+export function customerReplyTemplate(customerName: string, message: string, cancelUrl?: string) {
   return `
     <div
       style="
@@ -419,7 +415,7 @@ export function customerReplyTemplate(
             </a>
           </div>
           `
-              : ""
+              : ''
           }
 
           <p
@@ -565,18 +561,14 @@ export function refundApprovedTemplate(customerName: string, orderUrl: string) {
   `;
 }
 
-export function refundRejectedTemplate(
-  customerName: string,
-  reason: string,
-  orderUrl: string,
-) {
+export function refundRejectedTemplate(customerName: string, reason: string, orderUrl: string) {
   return `
     <div style="font-family:Arial;padding:32px;max-width:640px;margin:auto">
 
       <h1>Refund request rejected</h1>
 
       <p>
-        Hello ${customerName},
+        Hi ${customerName},
       </p>
 
       <p>
@@ -622,11 +614,7 @@ export function refundRejectedTemplate(
   `;
 }
 
-export function refundCompletedTemplate(
-  customerName: string,
-  amount: string,
-  orderUrl: string,
-) {
+export function refundCompletedTemplate(customerName: string, amount: string, orderUrl: string) {
   return `
     <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
@@ -707,10 +695,7 @@ export function refundCompletedTemplate(
   `;
 }
 
-export function abandonedCheckoutEmail1Template(
-  customerName: string,
-  orderUrl: string,
-) {
+export function abandonedCheckoutEmail1Template(customerName: string, orderUrl: string) {
   return `
     <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
@@ -773,10 +758,7 @@ export function abandonedCheckoutEmail1Template(
   `;
 }
 
-export function abandonedCheckoutEmail2Template(
-  customerName: string,
-  orderUrl: string,
-) {
+export function abandonedCheckoutEmail2Template(customerName: string, orderUrl: string) {
   return `
     <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
@@ -851,10 +833,7 @@ export function abandonedCheckoutEmail2Template(
   `;
 }
 
-export function abandonedCheckoutEmail3Template(
-  customerName: string,
-  orderUrl: string,
-) {
+export function abandonedCheckoutEmail3Template(customerName: string, orderUrl: string) {
   return `
     <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 
@@ -929,10 +908,7 @@ export function abandonedCheckoutEmail3Template(
   `;
 }
 
-export function passwordResetTemplate(
-  customerName: string,
-  resetUrl: string,
-) {
+export function passwordResetTemplate(customerName: string, resetUrl: string) {
   return `
     <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
 

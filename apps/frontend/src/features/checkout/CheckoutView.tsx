@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useCart } from "@/features/cart/CartContext";
-import CreateOrderForm from "./CreateOrderForm";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCart } from '@/features/cart/CartContext';
+import CreateOrderForm from './CreateOrderForm';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function CheckoutView() {
   const { items } = useCart();
@@ -27,16 +27,14 @@ export default function CheckoutView() {
   ======================================================= */
   useEffect(() => {
     if (isReady && items.length === 0) {
-      router.push("/");
+      router.replace('/shop');
     }
   }, [isReady, items, router]);
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 md:px-10 py-10">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-8">
-          Checkout
-        </h1>
+    <main className="min-h-screen bg-black px-4 py-10 text-white md:px-10">
+      <div className="mx-auto max-w-6xl">
+        <h1 className="mb-8 text-2xl font-bold md:text-3xl">Checkout</h1>
 
         <CreateOrderForm />
       </div>
