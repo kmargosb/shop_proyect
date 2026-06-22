@@ -171,6 +171,7 @@ model Order {
   user                  User?                  @relation(fields: [userId], references: [id])
   OrderChangeRequest    OrderChangeRequest[]
   events                OrderEvent[]
+  analyticsEvents       AnalyticsEvent[]
   items                 OrderItem[]
   transactions          OrderTransaction[]
   paymentSessions       PaymentSession[]
@@ -412,6 +413,7 @@ model AnalyticsEvent {
 
   userId    String?
   productId String?
+  orderId   String?
 
   event     String
 
@@ -419,9 +421,9 @@ model AnalyticsEvent {
 
   createdAt DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
 }
 
 

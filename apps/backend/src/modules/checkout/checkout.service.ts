@@ -1,5 +1,6 @@
 import { CartService } from "@/modules/cart/cart.service";
 import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
+import { prisma } from "@/lib/prisma"
 
 type CheckoutInput = {
   cartId: string;
@@ -46,6 +47,15 @@ export const CheckoutService = {
       ...checkoutData,
       userId,
     });
+
+    await prisma.analyticsEvent.create({
+  data: {
+    userId,
+    productId: null,
+    orderId: order.id,
+    event: "CHECKOUT_STARTED",
+  },
+});
 
     /* =========================
        CREATE PAYMENT SESSION

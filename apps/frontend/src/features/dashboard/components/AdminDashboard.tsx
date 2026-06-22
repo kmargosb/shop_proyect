@@ -30,6 +30,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import ConversionFunnel from "./ConversionFunnel";
+import TopProductsAnalytics from "../components/TopProductsAnalytics";
 
 /* ================= TYPES ================= */
 
@@ -102,6 +104,16 @@ export default function AdminDashboard() {
   >("total");
   const [countries, setCountries] = useState<Country[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [funnel, setFunnel] = useState({
+    views: 0,
+    addToCart: 0,
+    checkoutStarted: 0,
+    purchases: 0,
+    addToCartRate: 0,
+    checkoutRate: 0,
+    purchaseRate: 0,
+  });
+  const [topProducts, setTopProducts] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   /* ================= LOAD ================= */
@@ -109,10 +121,12 @@ export default function AdminDashboard() {
     setIsRefreshing(true);
 
     try {
-      const [m, c, a] = await Promise.all([
+      const [m, c, a, f, p] = await Promise.all([
         apiFetch("/dashboard/metrics"),
         apiFetch("/dashboard/sales-by-country"),
         apiFetch("/orders/activity-feed"),
+        apiFetch("/analytics/funnel"),
+        apiFetch("/analytics/top-products"),
       ]);
 
       if (m?.ok) setMetrics(await m.json());
@@ -125,6 +139,12 @@ export default function AdminDashboard() {
       if (a?.ok) {
         const data = await a.json();
         setActivity(Array.isArray(data) ? data : (data.data ?? []));
+      }
+      if (f?.ok) {
+        setFunnel(await f.json());
+      }
+      if (p?.ok) {
+        setTopProducts(await p.json());
       }
     } catch (e) {
       console.error("Dashboard load error:", e);
@@ -355,11 +375,15 @@ export default function AdminDashboard() {
             </button>
           ))}
         </div>
-        <h2 className="mb-6 text-lg font-semibold text-white">
-          Resumen financiero
+        <h2 className="mb-2 text-lg font-semibold text-white">
+          Rendimiento financiero
         </h2>
+
+        <p className="mb-6 text-sm text-neutral-500">
+          Resumen de ingresos, reembolsos y rentabilidad.
+        </p>
         {/* ================= Resumen Financiero ================= */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="hidden md:grid md:grid-cols-4 gap-4">
           <div className="rounded-2xl border border-white/10 p-4">
             <p className="text-sm text-neutral-500">Ventas brutas</p>
 
@@ -391,52 +415,49 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
-        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10">
-  <table className="w-full text-sm">
-    <tbody>
-      <tr className="border-b border-white/10">
-        <td className="px-5 py-4 text-neutral-400">
-          Ventas brutas
-        </td>
+        <div className="md:hidden mt-6 overflow-hidden rounded-3xl border border-white/10">
+          <table className="w-full text-sm">
+            <tbody>
+              <tr className="border-b border-white/10">
+                <td className="px-5 py-4 text-neutral-400">Ventas brutas</td>
 
-        <td className="px-5 py-4 text-right font-medium text-white">
-          {format(financialData.grossRevenue)}
-        </td>
-      </tr>
+                <td className="px-5 py-4 text-right font-medium text-white">
+                  {format(financialData.grossRevenue)}
+                </td>
+              </tr>
 
-      <tr className="border-b border-white/10">
-        <td className="px-5 py-4 text-neutral-400">
-          Reembolsos
-        </td>
+              <tr className="border-b border-white/10">
+                <td className="px-5 py-4 text-neutral-400">Reembolsos</td>
 
-        <td className="px-5 py-4 text-right font-medium text-red-300">
-          -{format(financialData.refundedAmount)}
-        </td>
-      </tr>
+                <td className="px-5 py-4 text-right font-medium text-red-300">
+                  -{format(financialData.refundedAmount)}
+                </td>
+              </tr>
 
-      <tr className="border-b border-white/10">
-        <td className="px-5 py-4 text-neutral-400">
-          Ingresos netos
-        </td>
+              <tr className="border-b border-white/10">
+                <td className="px-5 py-4 text-neutral-400">Ingresos netos</td>
 
-        <td className="px-5 py-4 text-right font-medium text-emerald-300">
-          {format(financialData.netRevenue)}
-        </td>
-      </tr>
+                <td className="px-5 py-4 text-right font-medium text-emerald-300">
+                  {format(financialData.netRevenue)}
+                </td>
+              </tr>
 
-      <tr>
-        <td className="px-5 py-4 text-neutral-400">
-          Ticket medio
-        </td>
+              <tr>
+                <td className="px-5 py-4 text-neutral-400">Ticket medio</td>
 
-        <td className="px-5 py-4 text-right font-medium text-indigo-300">
-          {format(averageTicketSelected)}
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+                <td className="px-5 py-4 text-right font-medium text-indigo-300">
+                  {format(averageTicketSelected)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
+
+      <div className="space-y-6">
+        <ConversionFunnel funnel={funnel} />
+        <TopProductsAnalytics products={topProducts} />
+      </div>
 
       {/* ================= CHART ================= */}
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">

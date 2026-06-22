@@ -69,6 +69,31 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       },
     });
 
+    await prisma.analyticsEvent.create({
+      data: {
+        userId: order.userId,
+        orderId: order.id,
+        event: "PURCHASE_COMPLETED",
+      },
+    });
+
+    const orderItems = await prisma.orderItem.findMany({
+      where: {
+        orderId: order.id,
+      },
+    });
+
+    for (const item of orderItems) {
+      await prisma.analyticsEvent.create({
+        data: {
+          userId: order.userId,
+          orderId: order.id,
+          productId: item.productId,
+          event: "PRODUCT_PURCHASED",
+        },
+      });
+    }
+
     await InventoryService.confirmReservation(order.id);
 
     getIO().emit("orderUpdated", {
@@ -380,12 +405,11 @@ async function handleRefundUpdated(refund: any) {
 
   const totalRefunded = refundAggregate._sum.amount ?? 0;
 
-/* =========================
+  /* =========================
    ORDER ADJUSTMENT REFUND
 ========================= */
 
-const orderAdjustedEvent =
-  await prisma.orderEvent.findFirst({
+  const orderAdjustedEvent = await prisma.orderEvent.findFirst({
     where: {
       orderId: order.id,
       type: "ORDER_ADJUSTED",
@@ -395,29 +419,25 @@ const orderAdjustedEvent =
     },
   });
 
-if (orderAdjustedEvent) {
-  console.log(
-    "⚠️ Order adjustment refund detected",
-  );
+  if (orderAdjustedEvent) {
+    console.log("⚠️ Order adjustment refund detected");
 
-  return;
-}
+    return;
+  }
 
-/* =========================
+  /* =========================
    NORMAL CUSTOMER REFUND
 ========================= */
 
-const newStatus =
-  totalRefunded >= order.totalAmount
-    ? "REFUNDED"
-    : "PARTIALLY_REFUNDED";
+  const newStatus =
+    totalRefunded >= order.totalAmount ? "REFUNDED" : "PARTIALLY_REFUNDED";
 
-await prisma.order.update({
-  where: { id: order.id },
-  data: {
-    status: newStatus,
-  },
-});
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      status: newStatus,
+    },
+  });
 
   await prisma.orderEvent.create({
     data: {
