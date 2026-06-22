@@ -1,10 +1,11 @@
-import "dotenv/config";
-import app from "./app";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import { startJobScheduler } from "@/services/jobs/job.scheduler";
-import { setIO } from "@/lib/socket";
-import { allowedOrigins } from "@/config/origins";
+process.env.TZ = 'Europe/Madrid';
+import 'dotenv/config';
+import app from './app';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { startJobScheduler } from '@/services/jobs/job.scheduler';
+import { setIO } from '@/lib/socket';
+import { allowedOrigins } from '@/config/origins';
 
 const PORT = process.env.PORT || 4000;
 
@@ -26,11 +27,11 @@ setIO(io);
 
 /* ================= SOCKET EVENTS ================= */
 
-io.on("connection", (socket) => {
-  console.log("🟢 Admin conectado:", socket.id);
+io.on('connection', (socket) => {
+  console.log('🟢 Admin conectado:', socket.id);
 
-  socket.on("disconnect", () => {
-    console.log("🔴 Admin desconectado:", socket.id);
+  socket.on('disconnect', () => {
+    console.log('🔴 Admin desconectado:', socket.id);
   });
 });
 
@@ -39,10 +40,17 @@ io.on("connection", (socket) => {
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 
+  console.log(
+    'Madrid:',
+    new Date().toLocaleString('es-ES', {
+      timeZone: 'Europe/Madrid',
+    }),
+  );
+
   /* 🔥 jobs (no bloquear arranque) */
   try {
     startJobScheduler();
   } catch (err) {
-    console.error("❌ Job scheduler error:", err);
+    console.error('❌ Job scheduler error:', err);
   }
 });

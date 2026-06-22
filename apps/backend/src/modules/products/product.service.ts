@@ -176,9 +176,40 @@ export async function getProductById(id: string) {
 
   if (!product) return null;
 
+  const views = await prisma.analyticsEvent.count({
+    where: {
+      productId: id,
+      event: "PRODUCT_VIEW",
+    },
+  });
+
+  const addToCart = await prisma.analyticsEvent.count({
+    where: {
+      productId: id,
+      event: "ADD_TO_CART",
+    },
+  });
+
+  const purchases = await prisma.analyticsEvent.count({
+    where: {
+      productId: id,
+      event: "PRODUCT_PURCHASED",
+    },
+  });
+
   return {
     ...product,
+
     totalStock: calculateProductStock(product),
+
+    analytics: {
+      views,
+      addToCart,
+      purchases,
+
+      conversionRate:
+        views > 0 ? Number(((purchases / views) * 100).toFixed(2)) : 0,
+    },
   };
 }
 
@@ -445,8 +476,8 @@ export async function updateProduct(
     });
 
     getIO().emit("productUpdated", {
-  productId: updated.id,
-});
+      productId: updated.id,
+    });
 
     return updated;
   });

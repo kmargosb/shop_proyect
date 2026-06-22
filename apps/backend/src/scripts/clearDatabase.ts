@@ -1,62 +1,35 @@
-import { prisma } from "../lib/prisma"
+import { prisma } from '../lib/prisma';
 
 async function clearDatabase() {
+  console.log('🧹 Clearing database...');
 
-  console.log("🧹 Clearing database...")
+  await prisma.refundItem.deleteMany();
+  await prisma.refund.deleteMany();
 
-  /* =========================
-     REFUNDS
-  ========================= */
+  await prisma.orderTransaction.deleteMany();
+  await prisma.orderEvent.deleteMany();
 
-  await prisma.refundItem.deleteMany()
-  await prisma.refund.deleteMany()
+  await prisma.paymentSession.deleteMany();
 
-  /* =========================
-     ORDER EVENTS
-  ========================= */
+  await prisma.inventoryReservation.deleteMany();
 
-  await prisma.orderTransaction.deleteMany()
-  await prisma.orderEvent.deleteMany()
+  await prisma.orderItem.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.order.deleteMany();
 
-  /* =========================
-     PAYMENT SESSIONS
-  ========================= */
+  await prisma.cartItem.deleteMany();
+  await prisma.cart.deleteMany();
 
-  await prisma.paymentSession.deleteMany()
+  await prisma.refreshToken.deleteMany();
 
-  /* =========================
-     INVENTORY
-  ========================= */
+  // NUEVO
+  await prisma.analyticsEvent.deleteMany();
 
-  await prisma.inventoryReservation.deleteMany()
-
-  /* =========================
-     ORDERS
-  ========================= */
-
-  await prisma.orderItem.deleteMany()
-  await prisma.invoice.deleteMany()
-  await prisma.order.deleteMany()
-
-  /* =========================
-     CART
-  ========================= */
-
-  await prisma.cartItem.deleteMany()
-  await prisma.cart.deleteMany()
-
-  /* =========================
-     AUTH
-  ========================= */
-
-  await prisma.refreshToken.deleteMany()
-
-  console.log("✅ Database cleaned")
-
+  console.log('✅ Database cleaned');
 }
 
 clearDatabase()
   .catch(console.error)
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

@@ -1,69 +1,62 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { ImagePlus, Loader2, Plus, Save, Star, Trash2, X } from "lucide-react";
+import { ImagePlus, Loader2, Plus, Save, Star, Trash2, X } from 'lucide-react';
 
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
-import { apiFetch } from "@/shared/lib/api";
+import { apiFetch } from '@/shared/lib/api';
 
-import type { Product, ProductBrand, ProductImage } from "@/types/product";
+import type { Product, ProductBrand, ProductImage } from '@/types/product';
 
 const categories = [
-  { value: "T_SHIRTS", label: "T-Shirts" },
-  { value: "SHIRTS", label: "Shirts" },
-  { value: "TANK_TOPS", label: "Tank Tops" },
-  { value: "PANTS", label: "Pants" },
-  { value: "SOCKS", label: "Socks" },
-  { value: "CAPS", label: "Caps" },
+  { value: 'T_SHIRTS', label: 'T-Shirts' },
+  { value: 'SHIRTS', label: 'Shirts' },
+  { value: 'TANK_TOPS', label: 'Tank Tops' },
+  { value: 'PANTS', label: 'Pants' },
+  { value: 'SOCKS', label: 'Socks' },
+  { value: 'CAPS', label: 'Caps' },
 
-  { value: "SKATE_DECKS", label: "Skate Decks" },
-  { value: "TRUCKS", label: "Trucks" },
-  { value: "BEARINGS", label: "Bearings" },
-  { value: "WHEELS", label: "Wheels" },
-  { value: "HARDWARE", label: "Hardware" },
-  { value: "WAX", label: "Wax" },
+  { value: 'SKATE_DECKS', label: 'Skate Decks' },
+  { value: 'TRUCKS', label: 'Trucks' },
+  { value: 'BEARINGS', label: 'Bearings' },
+  { value: 'WHEELS', label: 'Wheels' },
+  { value: 'HARDWARE', label: 'Hardware' },
+  { value: 'WAX', label: 'Wax' },
 
-  { value: "STICKERS", label: "Stickers" },
+  { value: 'STICKERS', label: 'Stickers' },
   {
-    value: "SPECIAL_ITEMS",
-    label: "Special Items",
+    value: 'SPECIAL_ITEMS',
+    label: 'Special Items',
   },
 
-  { value: "OTHER", label: "Other" },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 const genders = [
   {
-    value: "MEN",
-    label: "Men",
+    value: 'MEN',
+    label: 'Men',
   },
 
   {
-    value: "WOMEN",
-    label: "Women",
+    value: 'WOMEN',
+    label: 'Women',
   },
 
   {
-    value: "UNISEX",
-    label: "Unisex",
+    value: 'UNISEX',
+    label: 'Unisex',
   },
 ];
 
-const sizes = ["XS", "S", "M", "L", "XL", "XXL", "ONE_SIZE"];
+const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ONE_SIZE'];
 
-const colors = [
-  "BLACK",
-  "WHITE",
-  "BEIGE",
-  "GREY",
-  "GREEN",
-  "RED",
-  "BLUE",
-  "BROWN",
-];
+const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ONE_SIZE'];
+
+const colors = ['BLACK', 'WHITE', 'BEIGE', 'GREY', 'GREEN', 'RED', 'BLUE', 'BROWN'];
 
 type Props = {
   product: Product;
@@ -88,11 +81,7 @@ type ProductForm = {
   variants: VariantForm[];
 };
 
-export default function EditProductModal({
-  product,
-  onClose,
-  onUpdated,
-}: Props) {
+export default function EditProductModal({ product, onClose, onUpdated }: Props) {
   const [loading, setLoading] = useState(false);
 
   const [files, setFiles] = useState<File[]>([]);
@@ -104,23 +93,21 @@ export default function EditProductModal({
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
   const [primaryImageId, setPrimaryImageId] = useState<string | null>(
-    product.images?.find((img) => img.isPrimary)?.id ??
-      product.images?.[0]?.id ??
-      null,
+    product.images?.find((img) => img.isPrimary)?.id ?? product.images?.[0]?.id ?? null,
   );
 
   const [form, setForm] = useState<ProductForm>({
     name: product.name,
 
-    description: product.description ?? "",
+    description: product.description ?? '',
 
     price: String((product.price / 100).toFixed(2)),
 
-    brandId: product.brandId ?? "",
+    brandId: product.brandId ?? '',
 
-    category: product.category ?? "OTHER",
+    category: product.category ?? 'OTHER',
 
-    gender: product.gender ?? "UNISEX",
+    gender: product.gender ?? 'UNISEX',
 
     variants:
       product.variants?.map((variant: any) => ({
@@ -130,15 +117,19 @@ export default function EditProductModal({
       })) ?? [],
   });
 
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [variantColor, setVariantColor] = useState('BLACK');
+  const [defaultStock, setDefaultStock] = useState(5);
+
   /* ===============================
      BODY LOCK
   =============================== */
 
   useEffect(() => {
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, []);
 
@@ -149,7 +140,7 @@ export default function EditProductModal({
   useEffect(() => {
     async function loadBrands() {
       try {
-        const res = await apiFetch("/brands");
+        const res = await apiFetch('/brands');
 
         if (!res) return;
 
@@ -181,17 +172,14 @@ export default function EditProductModal({
      VALIDATION
   =============================== */
 
-  const isValid =
-    form.name.trim() && Number(form.price) >= 0 && form.variants.length > 0;
+  const isValid = form.name.trim() && Number(form.price) >= 0 && form.variants.length > 0;
 
   /* ===============================
      HANDLERS
   =============================== */
 
   const handleChange = (
-    event: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     setForm((prev) => ({
       ...prev,
@@ -215,28 +203,45 @@ export default function EditProductModal({
     }));
   };
 
-  const addVariant = () => {
-    setForm((prev) => ({
-      ...prev,
-
-      variants: [
-        ...prev.variants,
-
-        {
-          size: "M",
-          color: "BLACK",
-          stock: "1",
-        },
-      ],
-    }));
-  };
-
   const removeVariant = (index: number) => {
     setForm((prev) => ({
       ...prev,
 
       variants: prev.variants.filter((_, i) => i !== index),
     }));
+  };
+
+  const toggleSize = (size: string) => {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
+    );
+  };
+
+  const generateVariants = () => {
+    setForm((prev) => {
+      const existing = [...prev.variants];
+
+      selectedSizes.forEach((size) => {
+        const alreadyExists = existing.some(
+          (variant) => variant.size === size && variant.color === variantColor,
+        );
+
+        if (!alreadyExists) {
+          existing.push({
+            size,
+            color: variantColor,
+            stock: String(defaultStock),
+          });
+        }
+      });
+
+      return {
+        ...prev,
+        variants: existing,
+      };
+    });
+
+    setSelectedSizes([]);
   };
 
   const markImageForDeletion = (id: string) => {
@@ -255,7 +260,7 @@ export default function EditProductModal({
 
   const updateProduct = async () => {
     if (!isValid) {
-      toast.error("Complete required fields");
+      toast.error('Complete required fields');
 
       return;
     }
@@ -265,45 +270,58 @@ export default function EditProductModal({
 
       const formData = new FormData();
 
-      formData.append("name", form.name.trim());
+      formData.append('name', form.name.trim());
 
-      formData.append("description", form.description.trim());
+      formData.append('description', form.description.trim());
 
-      formData.append("price", String(Math.round(Number(form.price) * 100)));
+      formData.append('price', String(Math.round(Number(form.price) * 100)));
 
-      formData.append("brandId", form.brandId);
+      formData.append('brandId', form.brandId);
 
-      formData.append("category", form.category);
+      formData.append('category', form.category);
 
-      formData.append("gender", form.gender);
+      formData.append('gender', form.gender);
 
-      formData.append("variants", JSON.stringify(form.variants));
+      formData.append('variants', JSON.stringify(form.variants));
 
-      formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
 
-      formData.append("primaryImageId", primaryImageId ?? "");
+      formData.append('primaryImageId', primaryImageId ?? '');
 
-      files.forEach((file) => formData.append("images", file));
+      files.forEach((file) => formData.append('images', file));
 
       const res = await apiFetch(`/products/${product.id}`, {
-        method: "PUT",
+        method: 'PUT',
         body: formData,
       });
 
       if (!res || !res.ok) {
-        throw new Error("Update product failed");
+        throw new Error('Update product failed');
       }
 
-      toast.success("Product updated successfully");
+      toast.success('Product updated successfully');
 
       onUpdated();
       onClose();
     } catch {
-      toast.error("Error updating product");
+      toast.error('Error updating product');
     } finally {
       setLoading(false);
     }
   };
+
+  const groupedVariants = form.variants.reduce(
+    (acc, variant) => {
+      if (!acc[variant.color]) {
+        acc[variant.color] = [];
+      }
+
+      acc[variant.color].push(variant);
+
+      return acc;
+    },
+    {} as Record<string, typeof form.variants>,
+  );
 
   return (
     <div
@@ -321,9 +339,7 @@ export default function EditProductModal({
               Edit product
             </div>
 
-            <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl">
-              Edit product
-            </h2>
+            <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl">Edit product</h2>
 
             <p className="mt-1 text-sm text-neutral-400">
               Update variants, media and inventory from the dashboard.
@@ -432,76 +448,198 @@ export default function EditProductModal({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-white sm:text-base">
-                  Product variants
+                  Variantes de Productos
                 </h3>
 
                 <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                  Manage stock independently for each size and color.
+                  Manage sizes, colors and inventory independently.
                 </p>
               </div>
+            </div>
+            <div className="mb-6 space-y-5">
+              <div className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+                  <Field label="Color">
+                    <div className="relative">
+                      <select
+                        value={variantColor}
+                        onChange={(e) => setVariantColor(e.target.value)}
+                        className="dashboard-input dashboard-input appearance-none"
+                      >
+                        {colors.map((color) => (
+                          <option key={color}>{color}</option>
+                        ))}
+                      </select>
+                      <svg
+                        className="pointer-events-none absolute top-1/2 right-4 h-4 w-4 -translate-y-1/2 text-neutral-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </Field>
+
+                  <Field label="Stock inicial">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDefaultStock((prev) => Math.max(0, prev - 1))}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg font-bold"
+                      >
+                        −
+                      </button>
+
+                      <input
+                        type="number"
+                        min="0"
+                        value={defaultStock}
+                        onChange={(e) => setDefaultStock(Number(e.target.value))}
+                        className="no-spinner h-10 w-20 rounded-xl border border-white/10 bg-transparent text-center font-semibold"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setDefaultStock((prev) => prev + 1)}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </Field>
+                </div>
+
+                <div>
+                  <p className="mb-3 text-sm font-medium text-white">Tallas</p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => toggleSize(size)}
+                        className={`flex h-10 ${size === 'ONE_SIZE' ? 'w-auto px-3' : 'w-10'} items-center justify-center rounded-xl border text-sm font-medium transition ${
+                          selectedSizes.includes(size)
+                            ? 'border-white bg-white text-black'
+                            : 'border-white/10 text-white hover:bg-white/[0.05]'
+                        } `}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-neutral-400">
+                {selectedSizes.length === 0
+                  ? 'Selecciona al menos una talla'
+                  : `${selectedSizes.length} talla${
+                      selectedSizes.length > 1 ? 's' : ''
+                    } seleccionada${selectedSizes.length > 1 ? 's' : ''}`}
+              </p>
 
               <button
                 type="button"
-                onClick={addVariant}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs font-semibold text-white transition hover:bg-white/[0.06]"
+                onClick={generateVariants}
+                disabled={selectedSizes.length === 0}
+                className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40 md:w-auto"
               >
-                <Plus size={14} />
-                Add variant
+                {selectedSizes.length === 0
+                  ? 'Selecciona tallas'
+                  : `Generar ${selectedSizes.length} variante${
+                      selectedSizes.length > 1 ? 's' : ''
+                    }`}
               </button>
             </div>
 
-            <div className="mt-5 space-y-4">
-              {form.variants.map((variant, index) => (
-                <div
-                  key={index}
-                  className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-4"
-                >
-                  <select
-                    value={variant.size}
-                    onChange={(e) =>
-                      updateVariant(index, "size", e.target.value)
-                    }
-                    className="dashboard-input"
-                  >
-                    {sizes.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
+            <div className="mt-6 space-y-6">
+              {Object.entries(groupedVariants).map(([color, variants]) => (
+                <div key={color}>
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-white/40" />
 
-                  <select
-                    value={variant.color}
-                    onChange={(e) =>
-                      updateVariant(index, "color", e.target.value)
-                    }
-                    className="dashboard-input"
-                  >
-                    {colors.map((color) => (
-                      <option key={color} value={color}>
-                        {color}
-                      </option>
-                    ))}
-                  </select>
+                    <h4 className="text-sm font-semibold text-white">
+                      ⚫ {color}
+                      <span className="ml-2 text-xs text-neutral-500">
+                        {variants.length} variante
+                        {variants.length > 1 ? 's' : ''}
+                      </span>
+                    </h4>
+                  </div>
 
-                  <input
-                    type="number"
-                    min="0"
-                    value={variant.stock}
-                    onChange={(e) =>
-                      updateVariant(index, "stock", e.target.value)
-                    }
-                    className="dashboard-input"
-                  />
+                  <div className="space-y-2">
+                    {variants
+                      .sort((a, b) => SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size))
+                      .map((variant) => {
+                        const realIndex = form.variants.findIndex(
+                          (v) => v.size === variant.size && v.color === variant.color,
+                        );
 
-                  <button
-                    type="button"
-                    onClick={() => removeVariant(index)}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
-                  >
-                    <Trash2 size={14} />
-                    Remove
-                  </button>
+                        return (
+                          <div
+                            key={`${variant.size}-${variant.color}`}
+                            className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2"
+                          >
+                            <p className="font-medium text-white">{variant.size}</p>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateVariant(
+                                    realIndex,
+                                    'stock',
+                                    String(Math.max(0, Number(variant.stock) - 1)),
+                                  )
+                                }
+                                className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10"
+                              >
+                                −
+                              </button>
+
+                              <input
+                                type="number"
+                                min="0"
+                                value={variant.stock}
+                                onChange={(e) => updateVariant(realIndex, 'stock', e.target.value)}
+                                className="no-spinner h-8 w-16 rounded-lg border border-white/10 bg-transparent text-center text-sm"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateVariant(
+                                    realIndex,
+                                    'stock',
+                                    String(Number(variant.stock) + 1),
+                                  )
+                                }
+                                className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10"
+                              >
+                                +
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('¿Eliminar esta variante?')) {
+                                    removeVariant(realIndex);
+                                  }
+                                }}
+                                className="ml-2 flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/20 text-red-300"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
               ))}
             </div>
@@ -528,10 +666,7 @@ export default function EditProductModal({
                   accept="image/*"
                   className="sr-only"
                   onChange={(event) =>
-                    setFiles((prev) => [
-                      ...prev,
-                      ...Array.from(event.target.files ?? []),
-                    ])
+                    setFiles((prev) => [...prev, ...Array.from(event.target.files ?? [])])
                   }
                 />
               </label>
@@ -543,29 +678,22 @@ export default function EditProductModal({
                   key={img.id}
                   className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
                 >
-                  <img
-                    src={img.url}
-                    alt={product.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={img.url} alt={product.name} className="h-full w-full object-cover" />
 
                   <button
                     onClick={() => setPrimaryImageId(img.id)}
                     className={`absolute bottom-2 left-2 rounded-full p-1.5 transition ${
                       primaryImageId === img.id
-                        ? "bg-yellow-400 text-black"
-                        : "bg-black/70 text-white hover:bg-yellow-400 hover:text-black"
+                        ? 'bg-yellow-400 text-black'
+                        : 'bg-black/70 text-white hover:bg-yellow-400 hover:text-black'
                     }`}
                   >
-                    <Star
-                      size={14}
-                      fill={primaryImageId === img.id ? "currentColor" : "none"}
-                    />
+                    <Star size={14} fill={primaryImageId === img.id ? 'currentColor' : 'none'} />
                   </button>
 
                   <button
                     onClick={() => markImageForDeletion(img.id)}
-                    className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
+                    className="absolute top-2 right-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
                   >
                     <X size={14} />
                   </button>
@@ -588,10 +716,8 @@ export default function EditProductModal({
                   </span>
 
                   <button
-                    onClick={() =>
-                      setFiles((prev) => prev.filter((_, i) => i !== index))
-                    }
-                    className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
+                    onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))}
+                    className="absolute top-2 right-2 rounded-full bg-black/70 p-1.5 text-white transition hover:bg-red-500"
                   >
                     <X size={14} />
                   </button>
@@ -619,7 +745,7 @@ export default function EditProductModal({
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
 
-            {loading ? "Saving..." : "Save changes"}
+            {loading ? 'Saving...' : 'Save changes'}
           </button>
         </div>
       </div>
