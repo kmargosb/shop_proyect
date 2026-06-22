@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiFetch } from "@/shared/lib/api";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '@/shared/lib/api';
 import {
   AreaChart,
   Area,
@@ -12,9 +12,9 @@ import {
   BarChart,
   Bar,
   YAxis,
-} from "recharts";
-import { socket } from "@/shared/lib/socket";
-import { COUNTRIES } from "@/shared/constants/countries";
+} from 'recharts';
+import { socket } from '@/shared/lib/socket';
+import { COUNTRIES } from '@/shared/constants/countries';
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -28,11 +28,11 @@ import {
   RefreshCw,
   ShoppingBag,
   Sparkles,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import ConversionFunnel from "./ConversionFunnel";
-import TopProductsAnalytics from "../components/TopProductsAnalytics";
-import AnalyticsInsights from "./AnalyticsInsights";
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import ConversionFunnel from './ConversionFunnel';
+import TopProductsAnalytics from '../components/TopProductsAnalytics';
+import AnalyticsInsights from './AnalyticsInsights';
 
 /* ================= TYPES ================= */
 
@@ -81,7 +81,7 @@ type Activity = {
   orderId?: string;
 };
 
-type Range = "7d" | "30d" | "90d";
+type Range = '7d' | '30d' | '90d';
 
 type KpiCardProps = {
   title: string;
@@ -97,12 +97,11 @@ type KpiCardProps = {
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [financialSummary, setFinancialSummary] =
-    useState<FinancialSummary | null>(null);
-  const [range, setRange] = useState<Range>("30d");
-  const [financialPeriod, setFinancialPeriod] = useState<
-    "day" | "month" | "year" | "total"
-  >("total");
+  const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
+  const [range, setRange] = useState<Range>('30d');
+  const [financialPeriod, setFinancialPeriod] = useState<'day' | 'month' | 'year' | 'total'>(
+    'total',
+  );
   const [countries, setCountries] = useState<Country[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [funnel, setFunnel] = useState({
@@ -116,6 +115,7 @@ export default function AdminDashboard() {
   });
   const [topProducts, setTopProducts] = useState([]);
   const [insights, setInsights] = useState([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   /* ================= LOAD ================= */
@@ -123,13 +123,14 @@ export default function AdminDashboard() {
     setIsRefreshing(true);
 
     try {
-      const [m, c, a, f, p, i] = await Promise.all([
-        apiFetch("/dashboard/metrics"),
-        apiFetch("/dashboard/sales-by-country"),
-        apiFetch("/orders/activity-feed"),
-        apiFetch("/analytics/funnel"),
-        apiFetch("/analytics/top-products"),
-        apiFetch("/analytics/insights"),
+      const [m, c, a, f, p, i, al] = await Promise.all([
+        apiFetch('/dashboard/metrics'),
+        apiFetch('/dashboard/sales-by-country'),
+        apiFetch('/orders/activity-feed'),
+        apiFetch('/analytics/funnel'),
+        apiFetch('/analytics/top-products'),
+        apiFetch('/analytics/insights'),
+        apiFetch('/dashboard/alerts'),
       ]);
 
       if (m?.ok) setMetrics(await m.json());
@@ -152,8 +153,11 @@ export default function AdminDashboard() {
       if (i?.ok) {
         setInsights(await i.json());
       }
+      if (al?.ok) {
+        setAlerts(await al.json());
+      }
     } catch (e) {
-      console.error("Dashboard load error:", e);
+      console.error('Dashboard load error:', e);
     } finally {
       setIsRefreshing(false);
     }
@@ -161,9 +165,7 @@ export default function AdminDashboard() {
 
   const loadFinancialSummary = useCallback(async () => {
     try {
-      const res = await apiFetch(
-        `/dashboard/financial-summary?period=${financialPeriod}`,
-      );
+      const res = await apiFetch(`/dashboard/financial-summary?period=${financialPeriod}`);
 
       if (!res?.ok) return;
 
@@ -188,12 +190,12 @@ export default function AdminDashboard() {
       void loadFinancialSummary();
     };
 
-    socket.on("dashboard:update", refreshDashboard);
-    socket.on("orderUpdated", refreshDashboard);
+    socket.on('dashboard:update', refreshDashboard);
+    socket.on('orderUpdated', refreshDashboard);
 
     return () => {
-      socket.off("dashboard:update", refreshDashboard);
-      socket.off("orderUpdated", refreshDashboard);
+      socket.off('dashboard:update', refreshDashboard);
+      socket.off('orderUpdated', refreshDashboard);
     };
   }, [loadAll]);
 
@@ -203,9 +205,9 @@ export default function AdminDashboard() {
     if (!metrics) return [];
 
     const rawByRange: Record<Range, RevenuePoint[]> = {
-      "7d": metrics.revenue7d ?? [],
-      "30d": metrics.revenue30d ?? [],
-      "90d": metrics.revenue90d ?? metrics.revenue30d ?? [],
+      '7d': metrics.revenue7d ?? [],
+      '30d': metrics.revenue30d ?? [],
+      '90d': metrics.revenue90d ?? metrics.revenue30d ?? [],
     };
 
     return rawByRange[range].map((d) => ({
@@ -241,8 +243,7 @@ export default function AdminDashboard() {
   }, [revenueData]);
 
   const conversionHint = useMemo(() => {
-    if (!metrics?.totalOrders || !metrics.netRevenue)
-      return "Sin datos todavía";
+    if (!metrics?.totalOrders || !metrics.netRevenue) return 'Sin datos todavía';
     return `${format(metrics.netRevenue / metrics.totalOrders)} ticket medio`;
   }, [metrics]);
 
@@ -274,29 +275,13 @@ export default function AdminDashboard() {
                 Resumen comercial
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base">
-                Supervisa ingresos, pedidos, reembolsos, mercados principales y
-                actividad reciente sin salir del panel.
+                Supervisa ingresos, pedidos, reembolsos, mercados principales y actividad reciente
+                sin salir del panel.
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex rounded-2xl border border-white/10 bg-black/30 p-1">
-              {(["7d", "30d", "90d"] as Range[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRange(r)}
-                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 ${
-                    range === r
-                      ? "bg-white text-black shadow-lg shadow-white/10"
-                      : "text-neutral-400 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-
             <button
               onClick={() => {
                 loadAll();
@@ -305,10 +290,7 @@ export default function AdminDashboard() {
               disabled={isRefreshing}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw
-                size={14}
-                className={isRefreshing ? "animate-spin" : ""}
-              />
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
               Actualizar
             </button>
           </div>
@@ -316,12 +298,15 @@ export default function AdminDashboard() {
       </section>
 
       {/* ================= ALERTS ================= */}
-      {(metrics.refundedAmount > 10000 || growth < -20) && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {metrics.refundedAmount > 10000 && (
-            <Alert text="Alto volumen de reembolsos detectado" />
-          )}
+      {(metrics.refundedAmount > 10000 || growth < -20 || alerts.length > 0) && (
+        <div className="grid gap-x-6 gap-y-2 md:grid-cols-2 xl:grid-cols-4">
+          {metrics.refundedAmount > 10000 && <Alert text="Alto volumen de reembolsos detectado" />}
+
           {growth < -20 && <Alert text="Caída fuerte en ingresos recientes" />}
+
+          {alerts.map((alert, index) => (
+            <Alert key={index} text={alert.message} level={alert.level} />
+          ))}
         </div>
       )}
 
@@ -361,35 +346,31 @@ export default function AdminDashboard() {
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-6">
         <div className="mb-6 flex gap-2">
           {[
-            ["total", "Total"],
-            ["year", "Año"],
-            ["month", "Mes"],
-            ["day", "Día"],
+            ['total', 'Total'],
+            ['year', 'Año'],
+            ['month', 'Mes'],
+            ['day', 'Día'],
           ].map(([value, label]) => (
             <button
               key={value}
-              onClick={() =>
-                setFinancialPeriod(value as "day" | "month" | "year" | "total")
-              }
+              onClick={() => setFinancialPeriod(value as 'day' | 'month' | 'year' | 'total')}
               className={
                 financialPeriod === value
-                  ? "rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
-                  : "rounded-xl border border-white/10 px-4 py-2 text-sm text-neutral-300"
+                  ? 'rounded-xl bg-white px-4 py-2 text-sm font-medium text-black'
+                  : 'rounded-xl border border-white/10 px-4 py-2 text-sm text-neutral-300'
               }
             >
               {label}
             </button>
           ))}
         </div>
-        <h2 className="mb-2 text-lg font-semibold text-white">
-          Rendimiento financiero
-        </h2>
+        <h2 className="mb-2 text-lg font-semibold text-white">Rendimiento financiero</h2>
 
         <p className="mb-6 text-sm text-neutral-500">
           Resumen de ingresos, reembolsos y rentabilidad.
         </p>
         {/* ================= Resumen Financiero ================= */}
-        <div className="hidden md:grid md:grid-cols-4 gap-4">
+        <div className="hidden gap-4 md:grid md:grid-cols-4">
           <div className="rounded-2xl border border-white/10 p-4">
             <p className="text-sm text-neutral-500">Ventas brutas</p>
 
@@ -421,7 +402,7 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
-        <div className="md:hidden mt-6 overflow-hidden rounded-3xl border border-white/10">
+        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10 md:hidden">
           <table className="w-full text-sm">
             <tbody>
               <tr className="border-b border-white/10">
@@ -461,37 +442,45 @@ export default function AdminDashboard() {
       </section>
 
       <div className="space-y-6">
-  <AnalyticsInsights insights={insights} />
+        <AnalyticsInsights insights={insights} />
 
-  <ConversionFunnel funnel={funnel} />
+        <ConversionFunnel funnel={funnel} />
 
-  <TopProductsAnalytics products={topProducts} />
-</div>
+        <TopProductsAnalytics products={topProducts} />
+      </div>
 
       {/* ================= CHART ================= */}
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+            <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
               Revenue
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-white">
-              Ingresos por periodo
-            </h2>
+            <h2 className="mt-2 text-xl font-semibold text-white">Ingresos por periodo</h2>
+          </div>
+
+          <div className="flex rounded-2xl border border-white/10 bg-black/30 p-1">
+            {(['7d', '30d', '90d'] as Range[]).map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 ${
+                  range === r
+                    ? 'bg-white text-black shadow-lg shadow-white/10'
+                    : 'text-neutral-400 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
           </div>
 
           <div
             className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
-              growth >= 0
-                ? "bg-emerald-500/10 text-emerald-300"
-                : "bg-red-500/10 text-red-300"
+              growth >= 0 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300'
             }`}
           >
-            {growth >= 0 ? (
-              <ArrowUpRight size={16} />
-            ) : (
-              <ArrowDownRight size={16} />
-            )}
+            {growth >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
             {growth.toFixed(1)}%
           </div>
         </div>
@@ -499,10 +488,7 @@ export default function AdminDashboard() {
         <div className="h-72 sm:h-80">
           {revenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={revenueData}
-                margin={{ left: 0, right: 8, top: 8 }}
-              >
+              <AreaChart data={revenueData} margin={{ left: 0, right: 8, top: 8 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#818cf8" stopOpacity={0.45} />
@@ -510,16 +496,8 @@ export default function AdminDashboard() {
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid
-                  stroke="rgba(255,255,255,0.06)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  stroke="#737373"
-                  tickLine={false}
-                  axisLine={false}
-                />
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                <XAxis dataKey="date" stroke="#737373" tickLine={false} axisLine={false} />
                 <YAxis
                   stroke="#737373"
                   tickLine={false}
@@ -530,20 +508,20 @@ export default function AdminDashboard() {
                 <Tooltip
                   formatter={(value, name) => {
                     const label =
-                      String(name) === "grossRevenue"
-                        ? "Ventas brutas"
-                        : String(name) === "netRevenue"
-                          ? "Ingresos netos"
-                          : "Reembolsos";
+                      String(name) === 'grossRevenue'
+                        ? 'Ventas brutas'
+                        : String(name) === 'netRevenue'
+                          ? 'Ingresos netos'
+                          : 'Reembolsos';
                     return [`€${Number(value).toFixed(2)}`, label];
                   }}
                   contentStyle={{
-                    background: "rgba(10,10,10,0.96)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: "16px",
-                    color: "#fff",
+                    background: 'rgba(10,10,10,0.96)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '16px',
+                    color: '#fff',
                   }}
-                  labelStyle={{ color: "#a3a3a3" }}
+                  labelStyle={{ color: '#a3a3a3' }}
                 />
                 <Area
                   type="monotone"
@@ -585,12 +563,10 @@ export default function AdminDashboard() {
         <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+              <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
                 Mercados
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-white">
-                Ventas por país
-              </h2>
+              <h2 className="mt-2 text-xl font-semibold text-white">Ventas por país</h2>
             </div>
             <Globe2 className="text-neutral-500" size={22} />
           </div>
@@ -598,14 +574,8 @@ export default function AdminDashboard() {
           <div className="h-72">
             {countriesFormatted.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={countriesFormatted}
-                  margin={{ left: 0, right: 8 }}
-                >
-                  <CartesianGrid
-                    stroke="rgba(255,255,255,0.06)"
-                    vertical={false}
-                  />
+                <BarChart data={countriesFormatted} margin={{ left: 0, right: 8 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
                   <XAxis
                     dataKey="country"
                     stroke="#737373"
@@ -622,23 +592,16 @@ export default function AdminDashboard() {
                     tickFormatter={(value) => `€${value}`}
                   />
                   <Tooltip
-                    formatter={(value) => [
-                      `€${Number(value).toFixed(2)}`,
-                      "Ventas",
-                    ]}
+                    formatter={(value) => [`€${Number(value).toFixed(2)}`, 'Ventas']}
                     contentStyle={{
-                      background: "rgba(10,10,10,0.96)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: "16px",
-                      color: "#fff",
+                      background: 'rgba(10,10,10,0.96)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '16px',
+                      color: '#fff',
                     }}
-                    labelStyle={{ color: "#a3a3a3" }}
+                    labelStyle={{ color: '#a3a3a3' }}
                   />
-                  <Bar
-                    dataKey="revenue"
-                    fill="#34d399"
-                    radius={[10, 10, 0, 0]}
-                  />
+                  <Bar dataKey="revenue" fill="#34d399" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -654,21 +617,17 @@ export default function AdminDashboard() {
         <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+              <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
                 Timeline
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-white">
-                Actividad reciente
-              </h2>
+              <h2 className="mt-2 text-xl font-semibold text-white">Actividad reciente</h2>
             </div>
             <ReceiptText className="text-neutral-500" size={22} />
           </div>
 
-          <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+          <div className="premium-scrollbar max-h-96 space-y-3 overflow-y-auto pr-1">
             {activity.length > 0 ? (
-              activity.map((item, index) => (
-                <ActivityItem key={item.id ?? index} item={item} />
-              ))
+              activity.map((item, index) => <ActivityItem key={item.id ?? index} item={item} />)
             ) : (
               <EmptyState
                 title="Sin actividad reciente"
@@ -684,37 +643,21 @@ export default function AdminDashboard() {
 
 /* ================= UI ================= */
 
-function KpiCard({
-  title,
-  value,
-  description,
-  icon: Icon,
-  accent,
-  trend,
-  danger,
-}: KpiCardProps) {
+function KpiCard({ title, value, description, icon: Icon, accent, trend, danger }: KpiCardProps) {
   return (
     <article className="group rounded-2xl border border-white/10 bg-neutral-950/80 p-3 shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-white/20 sm:rounded-3xl sm:p-5">
       <div className="flex items-start justify-between gap-4">
-        <div
-          className={`rounded-xl bg-gradient-to-br p-2.5 ${accent} sm:rounded-2xl sm:p-3`}
-        >
+        <div className={`rounded-xl bg-gradient-to-br p-2.5 ${accent} sm:rounded-2xl sm:p-3`}>
           <Icon size={20} />
         </div>
 
-        {typeof trend === "number" && (
+        {typeof trend === 'number' && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-              trend >= 0
-                ? "bg-emerald-500/10 text-emerald-300"
-                : "bg-red-500/10 text-red-300"
+              trend >= 0 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300'
             }`}
           >
-            {trend >= 0 ? (
-              <ArrowUpRight size={13} />
-            ) : (
-              <ArrowDownRight size={13} />
-            )}
+            {trend >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
             {trend.toFixed(1)}%
           </span>
         )}
@@ -723,7 +666,7 @@ function KpiCard({
       <div className="mt-5">
         <p className="text-sm text-neutral-400">{title}</p>
         <p
-          className={`mt-2 text-lg font-semibold tracking-tight sm:text-2xl ${danger ? "text-rose-300" : "text-white"}`}
+          className={`mt-2 text-lg font-semibold tracking-tight sm:text-2xl ${danger ? 'text-rose-300' : 'text-white'}`}
         >
           {value}
         </p>
@@ -737,28 +680,28 @@ function KpiCard({
 
 function ActivityItem({ item }: { item: Activity }) {
   const map: Record<string, { icon: string; color: string; text: string }> = {
-    ORDER_CREATED: { icon: "🛒", color: "text-sky-300", text: "Nueva orden" },
+    ORDER_CREATED: { icon: '🛒', color: 'text-sky-300', text: 'Nueva orden' },
     PAYMENT_SUCCEEDED: {
-      icon: "💳",
-      color: "text-emerald-300",
-      text: "Pago completado",
+      icon: '💳',
+      color: 'text-emerald-300',
+      text: 'Pago completado',
     },
     REFUND_CREATED: {
-      icon: "💸",
-      color: "text-rose-300",
-      text: "Reembolso creado",
+      icon: '💸',
+      color: 'text-rose-300',
+      text: 'Reembolso creado',
     },
     REFUND_COMPLETED: {
-      icon: "💰",
-      color: "text-amber-300",
-      text: "Reembolso completado",
+      icon: '💰',
+      color: 'text-amber-300',
+      text: 'Reembolso completado',
     },
   };
 
   const activity = map[item.type] || {
-    icon: "📦",
-    color: "text-neutral-300",
-    text: item.message || "Actualización de tienda",
+    icon: '📦',
+    color: 'text-neutral-300',
+    text: item.message || 'Actualización de tienda',
   };
 
   return (
@@ -769,32 +712,45 @@ function ActivityItem({ item }: { item: Activity }) {
 
       <div className="min-w-0 flex-1">
         <p className={`truncate text-sm font-medium ${activity.color}`}>
-          {activity.text} {item.orderId ? `#${item.orderId.slice(0, 6)}` : ""}
+          {activity.text} {item.orderId ? `#${item.orderId.slice(0, 6)}` : ''}
         </p>
-        <p className="mt-1 text-xs text-neutral-500">
-          {new Date(item.createdAt).toLocaleString()}
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">{new Date(item.createdAt).toLocaleString()}</p>
       </div>
     </div>
   );
 }
 
-function Alert({ text }: { text: string }) {
+function Alert({ text, level = 'low' }: { text: string; level?: 'low' | 'warning' | 'critical' }) {
+  const styles = {
+    low: {
+      dot: 'bg-yellow-400',
+      glow: 'shadow-[0_0_10px_rgba(250,204,21,.9)]',
+      text: 'text-yellow-300',
+    },
+
+    warning: {
+      dot: 'bg-orange-400',
+      glow: 'shadow-[0_0_10px_rgba(251,146,60,.9)]',
+      text: 'text-orange-300',
+    },
+
+    critical: {
+      dot: 'bg-red-500',
+      glow: 'shadow-[0_0_10px_rgba(239,68,68,.9)]',
+      text: 'text-red-300',
+    },
+  }[level];
+
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-      <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-300" />
-      <span>{text}</span>
+    <div className={`flex items-center gap-2 truncate text-xs sm:text-sm ${styles.text}`}>
+      <div className={`h-2 w-2 rounded-full ${styles.dot} ${styles.glow}`} />
+
+      <span className="truncate">{text}</span>
     </div>
   );
 }
 
-function EmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
+function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="flex h-full min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
       <p className="font-medium text-neutral-200">{title}</p>
@@ -809,10 +765,7 @@ function DashboardSkeleton() {
       <div className="h-48 animate-pulse rounded-3xl bg-white/[0.06]" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-36 animate-pulse rounded-3xl bg-white/[0.06]"
-          />
+          <div key={index} className="h-36 animate-pulse rounded-3xl bg-white/[0.06]" />
         ))}
       </div>
       <div className="h-96 animate-pulse rounded-3xl bg-white/[0.06]" />
@@ -825,12 +778,12 @@ function formatDateLabel(date: string) {
 
   if (Number.isNaN(parsed.getTime())) return date.slice(5);
 
-  return parsed.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
+  return parsed.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
   });
 }
 
 function format(n: number) {
-  return "€" + (n / 100).toFixed(2);
+  return '€' + (n / 100).toFixed(2);
 }

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ChevronLeft,
@@ -13,44 +13,38 @@ import {
   Search,
   Truck,
   X,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { apiFetch } from "@/shared/lib/api";
-import type { Order, OrderStatus } from "@/types/order";
-import StatusBadge from "./StatusBadge";
-import RefundModal from "./RefundModal";
-import ShipmentModal from "./ShipmentModal";
-import {
-  formatMoney,
-  CustomerPreview,
-  OrderTimeline,
-  ActionTile,
-  safeNumber,
-} from "./order-ui";
-import { socket } from "@/shared/lib/socket";
-import Link from "next/link";
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { apiFetch } from '@/shared/lib/api';
+import type { Order, OrderStatus } from '@/types/order';
+import StatusBadge from './StatusBadge';
+import RefundModal from './RefundModal';
+import ShipmentModal from './ShipmentModal';
+import { formatMoney, CustomerPreview, OrderTimeline, ActionTile, safeNumber } from './order-ui';
+import { socket } from '@/shared/lib/socket';
+import Link from 'next/link';
 
-type FilterStatus = "ALL" | OrderStatus;
+type FilterStatus = 'ALL' | OrderStatus;
 
 const PAGE_SIZE = 8;
 const STATUSES: FilterStatus[] = [
-  "ALL",
-  "PENDING",
-  "PAID",
-  "SHIPPED",
-  "DELIVERED",
-  "REFUNDED",
-  "FAILED",
+  'ALL',
+  'PENDING',
+  'PAID',
+  'SHIPPED',
+  'DELIVERED',
+  'REFUNDED',
+  'FAILED',
 ];
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<FilterStatus>("ALL");
-  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterStatus>('ALL');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [shipmentOrder, setShipmentOrder] = useState<Order | null>(null);
   const [refundOrder, setRefundOrder] = useState<Order | null>(null);
@@ -58,12 +52,12 @@ export default function AdminOrders() {
   const loadOrders = useCallback(async () => {
     try {
       setRefreshing(true);
-      const res = await apiFetch("/orders?limit=100");
-      if (!res || !res.ok) throw new Error("Orders request failed");
+      const res = await apiFetch('/orders?limit=100');
+      if (!res || !res.ok) throw new Error('Orders request failed');
       const data: unknown = await res.json();
       setOrders(parseOrders(data));
     } catch {
-      toast.error("Error cargando órdenes");
+      toast.error('Error cargando órdenes');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -76,12 +70,12 @@ export default function AdminOrders() {
       void loadOrders();
     };
 
-    socket.on("dashboard:update", refreshOrders);
-    socket.on("orderUpdated", refreshOrders);
+    socket.on('dashboard:update', refreshOrders);
+    socket.on('orderUpdated', refreshOrders);
 
     return () => {
-      socket.off("dashboard:update", refreshOrders);
-      socket.off("orderUpdated", refreshOrders);
+      socket.off('dashboard:update', refreshOrders);
+      socket.off('orderUpdated', refreshOrders);
     };
   }, [loadOrders]);
 
@@ -94,7 +88,7 @@ export default function AdminOrders() {
     return orders.filter((order) => {
       const searchable =
         `${order.id} ${order.fullName} ${order.email} ${order.phone}`.toLowerCase();
-      if (filter !== "ALL" && order.status !== filter) return false;
+      if (filter !== 'ALL' && order.status !== filter) return false;
       if (query && !searchable.includes(query)) return false;
       return true;
     });
@@ -105,32 +99,32 @@ export default function AdminOrders() {
   const updateStatus = async (id: string, status: OrderStatus) => {
     try {
       const res = await apiFetch(`/orders/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      if (!res || !res.ok) throw new Error("Update order failed");
-      toast.success("Orden actualizada");
+      if (!res || !res.ok) throw new Error('Update order failed');
+      toast.success('Orden actualizada');
       await loadOrders();
     } catch {
-      toast.error("Error actualizando");
+      toast.error('Error actualizando');
     }
   };
   const cancelOrder = async (id: string) => {
     try {
       const res = await apiFetch(`/orders/${id}/cancel`, {
-        method: "POST",
+        method: 'POST',
       });
 
       if (!res || !res.ok) {
         throw new Error();
       }
 
-      toast.success("Pedido cancelado");
+      toast.success('Pedido cancelado');
 
       await loadOrders();
     } catch {
-      toast.error("No se pudo cancelar");
+      toast.error('No se pudo cancelar');
     }
   };
 
@@ -141,15 +135,15 @@ export default function AdminOrders() {
       <section className="rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_32%),linear-gradient(135deg,#111111,#070707)] p-5 shadow-2xl shadow-black/30 sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
+            <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
               Operaciones
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
               Órdenes
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base">
-              Monitorea pagos, envíos, incidencias y acciones futuras de
-              facturas o reembolsos con una vista rápida profesional.
+              Monitorea pagos, envíos, incidencias y acciones futuras de facturas o reembolsos con
+              una vista rápida profesional.
             </p>
           </div>
           <button
@@ -157,8 +151,7 @@ export default function AdminOrders() {
             disabled={refreshing}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60 sm:w-auto"
           >
-            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />{" "}
-            Actualizar
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} /> Actualizar
           </button>
         </div>
       </section>
@@ -199,7 +192,7 @@ export default function AdminOrders() {
           <div className="relative w-full xl:max-w-md">
             <Search
               size={16}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"
+              className="absolute top-1/2 left-4 -translate-y-1/2 text-neutral-500"
             />
             <input
               value={search}
@@ -213,7 +206,7 @@ export default function AdminOrders() {
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`shrink-0 rounded-2xl px-3 py-2 text-xs font-semibold transition ${filter === status ? "bg-white text-black" : "border border-white/10 bg-white/[0.04] text-neutral-400 hover:bg-white/10 hover:text-white"}`}
+                className={`shrink-0 rounded-2xl px-3 py-2 text-xs font-semibold transition ${filter === status ? 'bg-white text-black' : 'border border-white/10 bg-white/[0.04] text-neutral-400 hover:bg-white/10 hover:text-white'}`}
               >
                 {statusLabel(status)}
               </button>
@@ -227,33 +220,30 @@ export default function AdminOrders() {
           <OrderMobileCard
             key={order.id}
             order={order}
-            onMarkPaid={() => updateStatus(order.id, "PAID")}
+            onMarkPaid={() => updateStatus(order.id, 'PAID')}
             onDelivered={async () => {
               try {
-                const res = await apiFetch(
-                  `/shipping/${order.shipment!.id}/status`,
-                  {
-                    method: "PATCH",
+                const res = await apiFetch(`/shipping/${order.shipment!.id}/status`, {
+                  method: 'PATCH',
 
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-
-                    body: JSON.stringify({
-                      status: "DELIVERED",
-                    }),
+                  headers: {
+                    'Content-Type': 'application/json',
                   },
-                );
+
+                  body: JSON.stringify({
+                    status: 'DELIVERED',
+                  }),
+                });
 
                 if (!res || !res.ok) {
                   throw new Error();
                 }
 
-                toast.success("Pedido entregado");
+                toast.success('Pedido entregado');
 
                 await loadOrders();
               } catch {
-                toast.error("No se pudo actualizar");
+                toast.error('No se pudo actualizar');
               }
             }}
           />
@@ -263,7 +253,7 @@ export default function AdminOrders() {
       <section className="hidden min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/80 shadow-xl shadow-black/20 xl:block">
         <div className="min-w-0 overflow-x-auto">
           <table className="w-full min-w-[920px] table-fixed text-sm">
-            <thead className="bg-white/[0.03] text-xs uppercase tracking-[0.16em] text-neutral-500">
+            <thead className="bg-white/[0.03] text-xs tracking-[0.16em] text-neutral-500 uppercase">
               <tr>
                 <th className="p-4 text-left font-medium">Orden</th>
                 <th className="p-4 text-left font-medium">Cliente</th>
@@ -281,12 +271,8 @@ export default function AdminOrders() {
                   className="border-t border-white/10 transition hover:bg-white/[0.04]"
                 >
                   <td className="p-4">
-                    <p className="font-semibold text-white">
-                      #{order.id.slice(0, 8)}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {order.items?.length ?? 0} items
-                    </p>
+                    <p className="font-semibold text-white">#{order.id.slice(0, 8)}</p>
+                    <p className="text-xs text-neutral-500">{order.items?.length ?? 0} items</p>
                   </td>
                   <td className="p-4">
                     <CustomerPreview order={order} />
@@ -294,15 +280,11 @@ export default function AdminOrders() {
                   <td className="p-4">
                     <OrderTimeline status={order.status} />
                   </td>
-                  <td className="p-4 font-semibold text-white">
-                    {formatMoney(order.totalAmount)}
-                  </td>
+                  <td className="p-4 font-semibold text-white">{formatMoney(order.totalAmount)}</td>
                   <td className="p-4">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="p-4 text-neutral-400">
-                    {formatDate(order.createdAt)}
-                  </td>
+                  <td className="p-4 text-neutral-400">{formatDate(order.createdAt)}</td>
                   <td className="p-4">
                     <div className="flex justify-end gap-2">
                       <Link
@@ -313,9 +295,9 @@ export default function AdminOrders() {
                         <FileText size={15} />
                       </Link>
 
-                      {order.status === "PENDING" && (
+                      {order.status === 'PENDING' && (
                         <button
-                          onClick={() => updateStatus(order.id, "PAID")}
+                          onClick={() => updateStatus(order.id, 'PAID')}
                           className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-200"
                         >
                           Marcar paid
@@ -332,12 +314,7 @@ export default function AdminOrders() {
 
       {filtered.length === 0 && <EmptyOrders />}
       {filtered.length > 0 && (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={filtered.length}
-          onPage={setPage}
-        />
+        <Pagination page={page} totalPages={totalPages} total={filtered.length} onPage={setPage} />
       )}
       {shipmentOrder && (
         <ShipmentModal
@@ -361,54 +338,44 @@ export default function AdminOrders() {
 
 function parseOrders(data: unknown): Order[] {
   if (Array.isArray(data)) return data.filter(isOrderLike);
-  if (typeof data === "object" && data !== null && "data" in data) {
+  if (typeof data === 'object' && data !== null && 'data' in data) {
     const payload = (data as { data?: unknown }).data;
     return Array.isArray(payload) ? payload.filter(isOrderLike) : [];
   }
   return [];
 }
 function isOrderLike(value: unknown): value is Order {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "id" in value &&
-    "status" in value
-  );
+  return typeof value === 'object' && value !== null && 'id' in value && 'status' in value;
 }
 function buildOrderStats(orders: Order[]) {
   return orders.reduce(
     (acc, order) => {
-      if (
-        order.status === "PAID" ||
-        order.status === "SHIPPED" ||
-        order.status === "DELIVERED"
-      ) {
+      if (order.status === 'PAID' || order.status === 'SHIPPED' || order.status === 'DELIVERED') {
         acc.revenue += safeNumber(order.totalAmount);
         acc.paid += 1;
       }
-      if (order.status === "PENDING") acc.pending += 1;
-      if (order.status === "SHIPPED") acc.shipped += 1;
-      if (order.status === "REFUNDED" || order.status === "PARTIALLY_REFUNDED")
-        acc.refunded += 1;
+      if (order.status === 'PENDING') acc.pending += 1;
+      if (order.status === 'SHIPPED') acc.shipped += 1;
+      if (order.status === 'REFUNDED' || order.status === 'PARTIALLY_REFUNDED') acc.refunded += 1;
       return acc;
     },
     { revenue: 0, paid: 0, pending: 0, shipped: 0, refunded: 0 },
   );
 }
 function statusLabel(status: FilterStatus) {
-  return status === "ALL"
-    ? "Todas"
-    : status.replace("PARTIALLY_", "PART. ").toLowerCase();
+  return status === 'ALL' ? 'Todas' : status.replace('PARTIALLY_', 'PART. ').toLowerCase();
 }
 function formatDate(date: string) {
   const parsed = new Date(date);
-  return Number.isNaN(parsed.getTime())
-    ? "—"
-    : parsed.toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
+
+  return parsed.toLocaleString('es-ES', {
+    timeZone: 'Europe/Madrid',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 function OrderStat({
   icon: Icon,
@@ -421,13 +388,13 @@ function OrderStat({
   label: string;
   value: string | number;
   helper: string;
-  tone: "emerald" | "amber" | "rose" | "sky";
+  tone: 'emerald' | 'amber' | 'rose' | 'sky';
 }) {
   const tones = {
-    emerald: "text-emerald-300 bg-emerald-400/10",
-    amber: "text-amber-300 bg-amber-400/10",
-    rose: "text-rose-300 bg-rose-400/10",
-    sky: "text-sky-300 bg-sky-400/10",
+    emerald: 'text-emerald-300 bg-emerald-400/10',
+    amber: 'text-amber-300 bg-amber-400/10',
+    rose: 'text-rose-300 bg-rose-400/10',
+    sky: 'text-sky-300 bg-sky-400/10',
   };
   return (
     <div className="rounded-3xl border border-white/10 bg-neutral-950/80 p-5 shadow-xl shadow-black/20">
@@ -451,10 +418,7 @@ function OrderMobileCard({
 }) {
   return (
     <article className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20">
-      <Link
-        href={`/dashboard/orders/${order.id}`}
-        className="block w-full text-left"
-      >
+      <Link href={`/dashboard/orders/${order.id}`} className="block w-full text-left">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-semibold text-white">#{order.id.slice(0, 8)}</p>
@@ -468,7 +432,7 @@ function OrderMobileCard({
           <Metric label="Fecha" value={formatDate(order.createdAt)} />
         </div>
       </Link>
-      {order.status === "PENDING" && (
+      {order.status === 'PENDING' && (
         <button
           onClick={onMarkPaid}
           className="mt-4 w-full rounded-2xl bg-emerald-300 px-3 py-2 text-sm font-semibold text-black"
@@ -476,7 +440,7 @@ function OrderMobileCard({
           Marcar como pagada
         </button>
       )}
-      {order.shipment?.status === "SHIPPED" && (
+      {order.shipment?.status === 'SHIPPED' && (
         <button
           onClick={onDelivered}
           className="rounded-xl border border-sky-400/20 bg-sky-400/10 px-3 py-2 text-xs font-semibold text-sky-200"
@@ -499,9 +463,7 @@ function EmptyOrders() {
   return (
     <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
       <PackageCheck className="mx-auto text-neutral-600" size={34} />
-      <p className="mt-4 font-semibold text-neutral-200">
-        No hay órdenes para esta vista
-      </p>
+      <p className="mt-4 font-semibold text-neutral-200">No hay órdenes para esta vista</p>
       <p className="mt-2 text-sm text-neutral-500">
         Cambia filtros o búsqueda para ver otros pedidos.
       </p>
@@ -549,10 +511,7 @@ function OrdersSkeleton() {
       <div className="h-44 animate-pulse rounded-3xl bg-white/[0.06]" />
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-28 animate-pulse rounded-3xl bg-white/[0.06]"
-          />
+          <div key={index} className="h-28 animate-pulse rounded-3xl bg-white/[0.06]" />
         ))}
       </div>
       <div className="h-96 animate-pulse rounded-3xl bg-white/[0.06]" />

@@ -1,17 +1,14 @@
-import { prisma } from "@/lib/prisma";
-import cloudinary from "@/common/utils/cloudinary";
-import { AppError } from "@/common/errors/AppError";
-import { getIO } from "@/lib/socket";
+import { prisma } from '@/lib/prisma';
+import cloudinary from '@/common/utils/cloudinary';
+import { AppError } from '@/common/errors/AppError';
+import { getIO } from '@/lib/socket';
 
 /* ===============================
    HELPERS
 =============================== */
 
 function calculateProductStock(product: any) {
-  return product.variants.reduce(
-    (acc: number, variant: any) => acc + variant.stock,
-    0,
-  );
+  return product.variants.reduce((acc: number, variant: any) => acc + variant.stock, 0);
 }
 
 async function uploadImages(
@@ -26,7 +23,7 @@ async function uploadImages(
 
     const result: any = await new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder: "products" }, (err, result) => {
+        .upload_stream({ folder: 'products' }, (err, result) => {
           if (err) reject(err);
           else resolve(result);
         })
@@ -57,7 +54,7 @@ function buildProductFilters(query: any) {
     ...(search && {
       name: {
         contains: search,
-        mode: "insensitive",
+        mode: 'insensitive',
       },
     }),
 
@@ -102,7 +99,7 @@ export async function getProducts() {
     },
 
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -128,7 +125,7 @@ export async function getProductsByBrand(brandSlug: string) {
     },
 
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -153,7 +150,7 @@ export async function getProductsWithFilters(query: any) {
     },
 
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -179,21 +176,21 @@ export async function getProductById(id: string) {
   const views = await prisma.analyticsEvent.count({
     where: {
       productId: id,
-      event: "PRODUCT_VIEW",
+      event: 'PRODUCT_VIEW',
     },
   });
 
   const addToCart = await prisma.analyticsEvent.count({
     where: {
       productId: id,
-      event: "ADD_TO_CART",
+      event: 'ADD_TO_CART',
     },
   });
 
   const purchases = await prisma.analyticsEvent.count({
     where: {
       productId: id,
-      event: "PRODUCT_PURCHASED",
+      event: 'PRODUCT_PURCHASED',
     },
   });
 
@@ -207,8 +204,7 @@ export async function getProductById(id: string) {
       addToCart,
       purchases,
 
-      conversionRate:
-        views > 0 ? Number(((purchases / views) * 100).toFixed(2)) : 0,
+      conversionRate: views > 0 ? Number(((purchases / views) * 100).toFixed(2)) : 0,
     },
   };
 }
@@ -243,7 +239,7 @@ export async function getRelatedProducts(productId: string) {
     take: 4,
 
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -259,10 +255,7 @@ export async function getRelatedProducts(productId: string) {
 
 export async function createProduct(data: any, files: Express.Multer.File[]) {
   return prisma.$transaction(async (tx) => {
-    const variants =
-      typeof data.variants === "string"
-        ? JSON.parse(data.variants)
-        : data.variants;
+    const variants = typeof data.variants === 'string' ? JSON.parse(data.variants) : data.variants;
 
     const product = await tx.product.create({
       data: {
@@ -317,16 +310,21 @@ export async function createProduct(data: any, files: Express.Multer.File[]) {
   });
 }
 
-export async function updateProduct(
-  id: string,
-  data: any,
-  files: Express.Multer.File[],
-) {
+export async function updateProduct(id: string, data: any, files: Express.Multer.File[]) {
   return prisma.$transaction(async (tx) => {
-    const variants =
-      typeof data.variants === "string"
-        ? JSON.parse(data.variants)
-        : data.variants;
+    const variants = typeof data.variants === 'string' ? JSON.parse(data.variants) : data.variants;
+
+    const seen = new Set<string>();
+
+    for (const variant of variants ?? []) {
+      const key = `${variant.size}-${variant.color}`;
+
+      if (seen.has(key)) {
+        throw new AppError(`Duplicate variant detected: ${variant.size} ${variant.color}`, 400);
+      }
+
+      seen.add(key);
+    }
 
     const product = await tx.product.findUnique({
       where: { id },
@@ -337,17 +335,13 @@ export async function updateProduct(
       },
     });
 
-    if (!product) throw new Error("Producto no encontrado");
+    if (!product) throw new Error('Producto no encontrado');
 
-    const imagesToDelete = data.imagesToDelete
-      ? JSON.parse(data.imagesToDelete)
-      : [];
+    const imagesToDelete = data.imagesToDelete ? JSON.parse(data.imagesToDelete) : [];
 
     /* DELETE IMAGES */
 
-    for (const image of product.images.filter((img) =>
-      imagesToDelete.includes(img.id),
-    )) {
+    for (const image of product.images.filter((img) => imagesToDelete.includes(img.id))) {
       await cloudinary.uploader.destroy(image.publicId);
 
       await tx.productImage.delete({
@@ -475,7 +469,7 @@ export async function updateProduct(
       },
     });
 
-    getIO().emit("productUpdated", {
+    getIO().emit('productUpdated', {
       productId: updated.id,
     });
 
@@ -493,7 +487,7 @@ export async function deleteProduct(id: string) {
       },
     });
 
-    if (!product) throw new Error("Producto no encontrado");
+    if (!product) throw new Error('Producto no encontrado');
 
     for (const image of product.images) {
       await cloudinary.uploader.destroy(image.publicId);
