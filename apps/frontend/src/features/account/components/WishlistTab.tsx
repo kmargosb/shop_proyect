@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { apiFetch } from "@/shared/lib/api";
-import { Heart } from "lucide-react";
-import { useWishlist } from "@/features/wishlist/WishListContext";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { apiFetch } from '@/shared/lib/api';
+import { Heart } from 'lucide-react';
+import { useWishlist } from '@/features/wishlist/WishListContext';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 type WishlistItem = {
   id: string;
@@ -30,12 +31,12 @@ type WishlistItem = {
 export default function WishlistTab() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
-
   const { toggleWishlist } = useWishlist();
+  const { t } = useLanguage();
 
   const loadWishlist = async () => {
     try {
-      const res = await apiFetch("/wishlist");
+      const res = await apiFetch('/wishlist');
 
       if (!res || !res.ok) {
         return;
@@ -59,43 +60,33 @@ export default function WishlistTab() {
     <div className="rounded-3xl border border-white/10 bg-neutral-950 p-4 md:p-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Wishlist</h2>
+          <h2 className="text-2xl font-bold text-white">{t.wishlist.title}</h2>
 
-          <p className="mt-2 text-sm text-neutral-500">
-            Your saved favorite products.
-          </p>
+          <p className="mt-2 text-sm text-neutral-500">{t.wishlist.description}</p>
         </div>
 
         <div className="text-right">
-          <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
-            Items
-          </p>
+          <p className="text-xs tracking-[0.2em] text-neutral-600 uppercase">{t.wishlist.items}</p>
 
           <p className="text-lg font-semibold text-white">{items.length}</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="mt-8 text-center text-neutral-500">
-          Loading wishlist...
-        </div>
+        <div className="mt-8 text-center text-neutral-500">{t.wishlist.loading}</div>
       ) : items.length === 0 ? (
         <div className="mt-8 rounded-3xl border border-dashed border-white/10 p-10 text-center">
           <Heart size={40} className="mx-auto text-neutral-700" />
 
-          <h3 className="mt-4 text-lg font-medium text-white">
-            Your wishlist is empty
-          </h3>
+          <h3 className="mt-4 text-lg font-medium text-white">{t.wishlist.emptyTitle}</h3>
 
-          <p className="mt-2 text-sm text-neutral-500">
-            Save your favorite products and access them quickly anytime.
-          </p>
+          <p className="mt-2 text-sm text-neutral-500">{t.wishlist.emptyDescription}</p>
 
           <Link
             href="/shop"
             className="mt-6 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
-            Explore Products
+            {t.wishlist.exploreProducts}
           </Link>
         </div>
       ) : (
@@ -104,7 +95,7 @@ export default function WishlistTab() {
             const image =
               item.product.images?.find((img) => img.isPrimary)?.url ??
               item.product.images?.[0]?.url ??
-              "/placeholder-product.png";
+              '/placeholder-product.png';
 
             return (
               <div
@@ -124,7 +115,7 @@ export default function WishlistTab() {
 
                 <div className="space-y-3 p-3 md:p-4">
                   {item.product.brand?.name && (
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                    <p className="text-[10px] tracking-[0.15em] text-neutral-500 uppercase">
                       {item.product.brand.name}
                     </p>
                   )}
@@ -145,10 +136,7 @@ export default function WishlistTab() {
                         await toggleWishlist(item.productId);
 
                         setItems((prev) =>
-                          prev.filter(
-                            (wishlistItem) =>
-                              wishlistItem.productId !== item.productId,
-                          ),
+                          prev.filter((wishlistItem) => wishlistItem.productId !== item.productId),
                         );
                       }}
                       className="rounded-full p-2 text-rose-500 transition hover:bg-white/5"

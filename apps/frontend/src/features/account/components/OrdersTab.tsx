@@ -1,67 +1,62 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { Order } from "../AccountPage";
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
+import type { Order } from '../AccountPage';
 
 type Props = {
   orders: Order[];
 };
-const statusLabels: Record<string, string> = {
-  PENDING: "Pending",
-  PAYMENT_PROCESSING: "Processing",
-  PAID: "Paid",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  FAILED: "Failed",
-  PARTIALLY_REFUNDED: "Partially Refunded",
-  REFUNDED: "Refunded",
-};
 
 export default function OrdersTab({ orders }: Props) {
   const [page, setPage] = useState(1);
-
   const ITEMS_PER_PAGE = 6;
-
   const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+  const { t } = useLanguage();
+
+  const statusLabels: Record<string, string> = {
+    PENDING: t.orders.statuses.pending,
+    PAYMENT_PROCESSING: t.orders.statuses.processing,
+    PAID: t.orders.statuses.paid,
+    SHIPPED: t.orders.statuses.shipped,
+    DELIVERED: t.orders.statuses.delivered,
+    CANCELLED: t.orders.statuses.cancelled,
+    FAILED: t.orders.statuses.failed,
+    PARTIALLY_REFUNDED: t.orders.statuses.partiallyRefunded,
+    REFUNDED: t.orders.statuses.refunded,
+  };
 
   const paginatedOrders = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
-
     return orders.slice(start, start + ITEMS_PER_PAGE);
   }, [orders, page]);
 
   return (
-    <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-neutral-950 p-6 overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">My Orders</h2>
+        <h2 className="text-2xl font-bold">{t.orders.title}</h2>
 
-        <p className="mt-2 text-sm text-neutral-500">
-          View and track all your orders.
-        </p>
+        <p className="mt-2 text-sm text-neutral-500">{t.orders.description}</p>
       </div>
 
       {orders.length === 0 ? (
         <div className="rounded-2xl border border-white/10 p-10 text-center">
-          <p className="text-neutral-400">You haven't placed any orders yet.</p>
+          <p className="text-neutral-400">{t.orders.empty}</p>
 
           <Link
             href="/shop"
             className="mt-4 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
           >
-            Continue Shopping
+            {t.orders.continueShopping}
           </Link>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto pr-1 premium-scrollbar">
+        <div className="premium-scrollbar flex-1 overflow-y-auto pr-1">
           <div className="grid gap-4">
             {paginatedOrders.map((order) => {
-              const totalProducts = order.items.reduce(
-                (sum, item) => sum + item.quantity,
-                0,
-              );
+              const totalProducts = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
               const previewImages = order.items
                 .map((item) => {
@@ -69,10 +64,7 @@ export default function OrdersTab({ orders }: Props) {
 
                   if (!images?.length) return undefined;
 
-                  return (
-                    images.find((img: any) => img.isPrimary)?.url ??
-                    images[0]?.url
-                  );
+                  return images.find((img: any) => img.isPrimary)?.url ?? images[0]?.url;
                 })
                 .filter((image): image is string => Boolean(image))
                 .slice(0, 3);
@@ -80,16 +72,7 @@ export default function OrdersTab({ orders }: Props) {
               return (
                 <div
                   key={order.id}
-                  className="
-        group
-        rounded-3xl
-        border border-white/10
-        bg-gradient-to-b from-white/[0.03] to-transparent
-        p-4
-        transition-all duration-300
-        hover:border-white/20
-        hover:bg-white/[0.04]
-      "
+                  className="group rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent p-4 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.04]"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     {/* LEFT */}
@@ -102,31 +85,20 @@ export default function OrdersTab({ orders }: Props) {
                           {previewImages.map((image, index) => (
                             <div
                               key={image + index}
-                              className="
-                    relative
-                    -ml-2 first:ml-0
-                    h-16 w-16 overflow-hidden
-                    rounded-2xl
-                    border border-white/10
-                    bg-neutral-900
-                  "
+                              className="relative -ml-2 h-16 w-16 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 first:ml-0"
                             >
                               <img
                                 src={image}
                                 alt=""
-                                className="
-                      h-full w-full object-cover
-                      transition-transform duration-300
-                      group-hover:scale-110
-                    "
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                               />
                             </div>
                           ))}
                         </div>
                       )}
 
-                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
-                        Order
+                      <p className="text-xs tracking-[0.2em] text-neutral-500 uppercase">
+                        {t.orders.order}
                       </p>
 
                       <h3 className="mt-1 text-xl font-semibold text-white">
@@ -134,17 +106,14 @@ export default function OrdersTab({ orders }: Props) {
                       </h3>
                       <div className="mt-3 space-y-1">
                         {order.items.slice(0, 2).map((item) => (
-                          <p
-                            key={item.id}
-                            className="truncate text-sm text-neutral-400"
-                          >
+                          <p key={item.id} className="truncate text-sm text-neutral-400">
                             {item.product?.name}
 
                             {(item.color || item.size) && (
                               <>
-                                {" "}
+                                {' '}
                                 · {item.color}
-                                {item.color && item.size ? " · " : ""}
+                                {item.color && item.size ? ' · ' : ''}
                                 {item.size}
                               </>
                             )}
@@ -153,48 +122,43 @@ export default function OrdersTab({ orders }: Props) {
 
                         {order.items.length > 2 && (
                           <p className="text-xs text-neutral-500">
-                            +{order.items.length - 2} more items
+                            +{order.items.length - 2} {t.orders.moreItems}
                           </p>
                         )}
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-                        <span>
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </span>
+                        <span>{new Date(order.createdAt).toLocaleDateString()}</span>
 
                         <span className="text-neutral-700">•</span>
 
-                        <span>
-                          {totalProducts}{" "}
-                          {totalProducts === 1 ? "item" : "items"}
-                        </span>
+                        <span>{totalProducts === 1 ? t.orders.item : t.orders.items}</span>
                       </div>
                     </div>
 
                     {/* RIGHT */}
 
-                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end shrink-0">
+                    <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
                       <span
-                        className={`rounded-full px-2 py-1 text-[11px] sm:px-3 sm:text-xs font-semibold ${
-                          order.status === "PAID"
-                            ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                            : order.status === "SHIPPED"
-                              ? "border border-amber-500/20 bg-amber-500/10 text-amber-300"
-                              : order.status === "REFUNDED"
-                                ? "border border-cyan-500/20 bg-cyan-500/10 text-cyan-300"
-                                : order.status === "PARTIALLY_REFUNDED"
-                                  ? "border border-orange-500/20 bg-orange-500/10 text-orange-300"
-                                  : order.status === "CANCELLED"
-                                    ? "border border-red-500/20 bg-red-500/10 text-red-300"
-                                    : "border border-white/10 bg-white/[0.04] text-neutral-300"
+                        className={`rounded-full px-2 py-1 text-[11px] font-semibold sm:px-3 sm:text-xs ${
+                          order.status === 'PAID'
+                            ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                            : order.status === 'SHIPPED'
+                              ? 'border border-amber-500/20 bg-amber-500/10 text-amber-300'
+                              : order.status === 'REFUNDED'
+                                ? 'border border-cyan-500/20 bg-cyan-500/10 text-cyan-300'
+                                : order.status === 'PARTIALLY_REFUNDED'
+                                  ? 'border border-orange-500/20 bg-orange-500/10 text-orange-300'
+                                  : order.status === 'CANCELLED'
+                                    ? 'border border-red-500/20 bg-red-500/10 text-red-300'
+                                    : 'border border-white/10 bg-white/[0.04] text-neutral-300'
                         }`}
                       >
-                        {statusLabels[order.status] ?? order.status}
+                        {statusLabels[order.status as keyof typeof statusLabels] ?? order.status}
                       </span>
 
                       <div className="text-right">
-                        <p className="text-xs text-neutral-500">Total</p>
+                        <p className="text-xs text-neutral-500">{t.orders.total}</p>
 
                         <p className="text-2xl font-bold text-white">
                           €{(order.totalAmount / 100).toFixed(2)}
@@ -206,20 +170,13 @@ export default function OrdersTab({ orders }: Props) {
                   {/* CTA */}
 
                   <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
-                    <p className="text-xs text-neutral-600">
-                      Thank you for your purchase
-                    </p>
+                    <p className="text-xs text-neutral-600">{t.orders.thanks}</p>
 
                     <Link
                       href={`/orders/${order.id}`}
-                      className="
-            inline-flex items-center gap-2
-            text-sm font-medium text-white
-            transition-all duration-200
-            group-hover:translate-x-1
-          "
+                      className="inline-flex items-center gap-2 text-sm font-medium text-white transition-all duration-200 group-hover:translate-x-1"
                     >
-                      View Details →
+                      {t.orders.viewDetails}
                     </Link>
                   </div>
                 </div>
@@ -262,8 +219,8 @@ export default function OrdersTab({ orders }: Props) {
                   onClick={() => setPage(currentPage)}
                   className={`h-10 min-w-[40px] rounded-xl px-3 text-sm font-medium transition ${
                     page === currentPage
-                      ? "bg-white text-black"
-                      : "border border-white/10 bg-white/[0.03] text-white hover:bg-white/10"
+                      ? 'bg-white text-black'
+                      : 'border border-white/10 bg-white/[0.03] text-white hover:bg-white/10'
                   }`}
                 >
                   {currentPage}
@@ -279,8 +236,8 @@ export default function OrdersTab({ orders }: Props) {
                   onClick={() => setPage(totalPages)}
                   className={`h-10 min-w-[40px] rounded-xl px-3 text-sm font-medium transition ${
                     page === totalPages
-                      ? "bg-white text-black"
-                      : "border border-white/10 bg-white/[0.03] text-white hover:bg-white/10"
+                      ? 'bg-white text-black'
+                      : 'border border-white/10 bg-white/[0.03] text-white hover:bg-white/10'
                   }`}
                 >
                   {totalPages}

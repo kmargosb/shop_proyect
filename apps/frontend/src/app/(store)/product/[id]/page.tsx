@@ -11,6 +11,7 @@ import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/features/wishlist/WishListContext';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -24,6 +25,7 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState('');
   const [loading, setLoading] = useState(true);
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { t } = useLanguage();
 
   /* ===============================
      LOAD PRODUCT
@@ -114,18 +116,16 @@ export default function ProductPage() {
   }, [id]);
 
   if (loading) {
-    return <div className="mx-auto max-w-7xl px-6 py-20 text-center">Loading product...</div>;
+    return <div className="mx-auto max-w-7xl px-6 py-20 text-center">{t.product.loading}</div>;
   }
 
   if (!product) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold">Product not found</h1>
+          <h1 className="text-4xl font-bold">{t.product.notFound}</h1>
 
-          <p className="mt-4 text-neutral-400">
-            The product you're looking for does not exist or is no longer available.
-          </p>
+          <p className="mt-4 text-neutral-400">{t.product.notFoundDescription}</p>
         </div>
       </div>
     );
@@ -194,11 +194,11 @@ export default function ProductPage() {
   let stockBadge = null;
 
   if (outOfStock) {
-    stockBadge = <span className="font-medium text-red-500">Sold Out</span>;
+    stockBadge = <span className="font-medium text-red-500">{t.product.soldOut}</span>;
   } else if (availableStock <= 5) {
-    stockBadge = <span className="font-medium text-amber-400">Low stock</span>;
+    stockBadge = <span className="font-medium text-amber-400">{t.product.lowStock}</span>;
   } else {
-    stockBadge = <span className="font-medium text-emerald-500">In Stock</span>;
+    stockBadge = <span className="font-medium text-emerald-500">{t.product.inStock}</span>;
   }
 
   /* ===============================
@@ -208,7 +208,7 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     try {
       if (!selectedVariant) {
-        toast.error('Please select a size and color');
+        toast.error(t.toast.selectVariant);
         return;
       }
 
@@ -226,16 +226,16 @@ export default function ProductPage() {
         }),
       });
 
-      toast.success('Added to cart');
+      toast.success(t.toast.addedToCart);
     } catch (error: any) {
-      toast.error(error?.message || 'Not enough stock available');
+      toast.error(error?.message || t.toast.stockError);
     }
   };
 
   const handleBuyNow = async () => {
     try {
       if (!selectedVariant) {
-        toast.error('Please select a size and color');
+        toast.error(t.toast.selectVariant);
         return;
       }
 
@@ -254,11 +254,11 @@ export default function ProductPage() {
         }),
       });
 
-      toast.success('Added to cart');
+      toast.success(t.toast.addedToCart);
 
       router.push('/checkout');
     } catch (error: any) {
-      toast.error(error?.message || 'Not enough stock available');
+      toast.error(error?.message || t.toast.stockError);
     }
   };
 
@@ -311,7 +311,7 @@ export default function ProductPage() {
 
             <button
               onClick={() => toggleWishlist(product.id)}
-              title={isWishlisted(product.id) ? 'Saved' : 'Save for later'}
+              title={isWishlisted(product.id) ? t.wishlist.saved : t.wishlist.save}
               className="rounded-full p-2 transition hover:bg-white/5"
             >
               <Heart
@@ -329,7 +329,9 @@ export default function ProductPage() {
 
           <div className="space-y-6">
             <div>
-              <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">Size</p>
+              <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">
+                {t.product.size}
+              </p>
 
               <div className="flex flex-wrap gap-2">
                 {sizes.map((size) => (
@@ -352,7 +354,9 @@ export default function ProductPage() {
             </div>
 
             <div>
-              <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">Color</p>
+              <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">
+                {t.product.color}
+              </p>
 
               <div className="flex flex-wrap gap-5">
                 {colors.map((color) => {
@@ -428,7 +432,7 @@ export default function ProductPage() {
         =============================== */}
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-neutral-400">Quantity</span>
+            <span className="text-sm text-neutral-400">{t.product.quantity}</span>
 
             <div className="flex items-center rounded-md border border-neutral-700">
               <button
@@ -461,7 +465,7 @@ export default function ProductPage() {
               disabled={outOfStock}
               className="cursor-pointer bg-white text-black shadow-sm transition-all hover:bg-neutral-200 hover:shadow-md disabled:bg-neutral-700 disabled:text-neutral-400"
             >
-              Add to cart
+              {t.product.addToCart}
             </Button>
 
             <Button
@@ -470,7 +474,7 @@ export default function ProductPage() {
               variant="outline"
               className="cursor-pointer shadow-sm transition-all hover:shadow-md"
             >
-              Buy now
+              {t.product.buyNow}
             </Button>
           </div>
         </div>

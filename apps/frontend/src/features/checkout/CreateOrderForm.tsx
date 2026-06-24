@@ -10,6 +10,7 @@ import { Input } from '@/shared/ui/input';
 import { COUNTRIES } from '@/shared/constants/countries';
 import LoginInline from '@/features/auth/components/LoginInline';
 import AddressAutocomplete from './components/AddressAutocomplete';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 import { toast } from 'sonner';
 
 /* ================= TYPES ================= */
@@ -49,6 +50,7 @@ export default function CreateOrderForm() {
 
   const [isLogged, setIsLogged] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     firstName: '',
@@ -278,12 +280,12 @@ export default function CreateOrderForm() {
                     }}
                   >
                     <p className="text-sm text-neutral-400">
-                      Already have an account?{' '}
+                      {t.checkout.alreadyAccount}{' '}
                       <button
                         onClick={() => setShowLogin(true)}
                         className="underline transition hover:text-white"
                       >
-                        Sign in
+                        {t.checkout.signIn}
                       </button>
                     </p>
                   </motion.div>
@@ -311,7 +313,7 @@ export default function CreateOrderForm() {
                       onClick={() => setShowLogin(false)}
                       className="mt-4 text-xs text-neutral-400 transition hover:text-white"
                     >
-                      ← Back
+                      ← {t.checkout.back}
                     </button>
                   </motion.div>
                 )}
@@ -323,7 +325,7 @@ export default function CreateOrderForm() {
         {/* ADDRESSES */}
         {addresses.length > 0 && (
           <div className="space-y-3 rounded-xl bg-neutral-900 p-4">
-            <h3 className="text-sm text-neutral-400">Saved addresses</h3>
+            <h3 className="text-sm text-neutral-400">{t.checkout.savedAddresses}</h3>
 
             {addresses.map((addr) => {
               const selected = selectedAddressId === addr.id;
@@ -410,14 +412,14 @@ export default function CreateOrderForm() {
               name="firstName"
               value={form.firstName}
               onChange={handleChange}
-              placeholder="First name"
+              placeholder={t.checkout.firstName}
             />
 
             <Input
               name="lastName"
               value={form.lastName}
               onChange={handleChange}
-              placeholder="Last name"
+              placeholder={t.checkout.lastName}
             />
           </div>
           <Input
@@ -432,7 +434,7 @@ export default function CreateOrderForm() {
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            placeholder="Phone number"
+            placeholder={t.checkout.phone}
           />
 
           <AddressAutocomplete value={form.addressLine1} onChange={handleAddressChange} />
@@ -443,12 +445,17 @@ export default function CreateOrderForm() {
             onChange={handleChange}
             placeholder="Door / Apartment number"
           />
-          <Input name="city" value={form.city} onChange={handleChange} placeholder="City" />
+          <Input
+            name="city"
+            value={form.city}
+            onChange={handleChange}
+            placeholder={t.checkout.city}
+          />
           <Input
             name="postalCode"
             value={form.postalCode}
             onChange={handleChange}
-            placeholder="Zip code"
+            placeholder={t.checkout.postalCode}
           />
 
           <select
@@ -470,9 +477,9 @@ export default function CreateOrderForm() {
       <div className="space-y-6 rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Order Summary</h2>
+          <h2 className="text-lg font-semibold">{t.checkout.orderSummary}</h2>
           <span className="text-xs text-neutral-400">
-            {items.length} {items.length === 1 ? 'item' : 'items'}
+            {items.length} {items.length === 1 ? t.checkout.item : t.checkout.items}
           </span>
         </div>
 
@@ -498,7 +505,7 @@ export default function CreateOrderForm() {
 
                   {(item.size || item.color) && (
                     <span className="mt-1 text-xs text-neutral-400">
-                      {item.size && `Size ${item.size}`}
+                      {item.size && `${t.product.size} ${item.size}`}
                       {item.size && item.color && ' · '}
                       {item.color}
                     </span>
@@ -530,7 +537,7 @@ export default function CreateOrderForm() {
                       onClick={() => removeItem(item.id)}
                       className="ml-2 text-xs text-neutral-500 transition hover:text-red-400"
                     >
-                      Remove
+                      {t.checkout.remove}
                     </button>
                   </div>
                 </div>
@@ -550,24 +557,24 @@ export default function CreateOrderForm() {
         {/* COST BREAKDOWN */}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-neutral-400">
-            <span>Subtotal</span>
+            <span>{t.checkout.subtotal}</span>
             <span>€{(totalPrice / 100).toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between text-neutral-400">
-            <span>Shipping</span>
-            <span className="text-green-400">Free</span>
+            <span>{t.checkout.shipping}</span>
+            <span className="text-green-400">{t.checkout.free}</span>
           </div>
 
           <div className="flex justify-between text-neutral-400">
-            <span>Taxes</span>
-            <span>Included</span>
+            <span>{t.checkout.taxes}</span>
+            <span>{t.checkout.included}</span>
           </div>
         </div>
 
         {/* TOTAL */}
         <div className="flex items-center justify-between border-t border-white/10 pt-4">
-          <span className="text-base font-semibold">Total</span>
+          <span className="text-base font-semibold">{t.checkout.total}</span>
           <span className="text-xl font-bold">€{(totalPrice / 100).toFixed(2)}</span>
         </div>
 
@@ -577,14 +584,14 @@ export default function CreateOrderForm() {
           disabled={!isValid || loading}
           className="h-12 w-full rounded-xl border border-white/20 !bg-white font-semibold !text-black shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
         >
-          {loading ? 'Processing...' : `Pay €${(totalPrice / 100).toFixed(2)}`}
+          {loading ? t.checkout.processing : `${t.checkout.pay} €${(totalPrice / 100).toFixed(2)}`}
         </Button>
 
         {/* TRUST / UX BOOST */}
         <div className="mt-20 space-y-1 text-xs text-neutral-500">
-          <p>🔒 Secure SSL encrypted payment</p>
-          <p>💳 Processed by Stripe</p>
-          <p>🚚 Fast shipping across Europe</p>
+          <p>🔒 {t.checkout.securePayment}</p>
+          <p>💳 {t.checkout.stripe}</p>
+          <p>🚚 {t.checkout.fastShipping}</p>
         </div>
       </div>
     </div>

@@ -1,18 +1,19 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import { Menu } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { apiFetch } from "@/shared/lib/api";
-import { useAuth } from "@/features/auth/context/AuthContext";
-import { socket } from "@/shared/lib/socket";
+import { useCallback, useEffect, useState } from 'react';
+import { Menu } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/shared/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { socket } from '@/shared/lib/socket';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 
-import AccountSidebar from "./components/AccountSidebar";
-import OrdersTab from "./components/OrdersTab";
-import ProfileTab from "./components/ProfileTab";
-import WishlistTab from "./components/WishlistTab";
-import SecurityTab from "./components/SecurityTab";
-import SettingsTab from "./components/SettingsTab";
+import AccountSidebar from './components/AccountSidebar';
+import OrdersTab from './components/OrdersTab';
+import ProfileTab from './components/ProfileTab';
+import WishlistTab from './components/WishlistTab';
+import SecurityTab from './components/SecurityTab';
+import SettingsTab from './components/SettingsTab';
 
 export type Order = {
   id: string;
@@ -38,33 +39,30 @@ export type Order = {
 
 export default function AccountPage() {
   const { user } = useAuth();
-
   const searchParams = useSearchParams();
-
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "orders",
-  );
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'orders');
+  const { t } = useLanguage();
 
   const loadData = useCallback(async () => {
     try {
-      const authRes = await apiFetch("/auth/me");
+      const authRes = await apiFetch('/auth/me');
 
       if (!authRes) {
-        window.location.href = "/login";
+        window.location.href = '/login';
         return;
       }
 
       const authData = await authRes.json();
 
       if (!authData?.user) {
-        window.location.href = "/login";
+        window.location.href = '/login';
         return;
       }
 
-      const res = await apiFetch("/orders/me");
+      const res = await apiFetch('/orders/me');
 
       if (!res) return;
 
@@ -87,17 +85,17 @@ export default function AccountPage() {
       void loadData();
     };
 
-    socket.on("dashboard:update", refreshOrders);
-    socket.on("orderUpdated", refreshOrders);
+    socket.on('dashboard:update', refreshOrders);
+    socket.on('orderUpdated', refreshOrders);
 
     return () => {
-      socket.off("dashboard:update", refreshOrders);
-      socket.off("orderUpdated", refreshOrders);
+      socket.off('dashboard:update', refreshOrders);
+      socket.off('orderUpdated', refreshOrders);
     };
   }, [loadData]);
 
   useEffect(() => {
-    const tab = searchParams.get("tab");
+    const tab = searchParams.get('tab');
 
     if (tab) {
       setActiveTab(tab);
@@ -107,7 +105,7 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <p className="text-neutral-400">Loading your account...</p>
+        <p className="text-neutral-400">{t.account.loading}</p>
       </div>
     );
   }
@@ -119,18 +117,13 @@ export default function AccountPage() {
 
         {sidebarOpen && (
           <button
-            aria-label="Cerrar sidebar"
+            aria-label={t.account.closeSidebar}
             onClick={() => setSidebarOpen(false)}
             className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
           />
         )}
         <div
-          className={`
-    fixed left-0 top-0 z-50 h-screen w-[85vw] max-w-[340px]
-    transform transition-transform duration-300
-    lg:relative lg:h-auto lg:w-auto lg:translate-x-0
-    ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-  `}
+          className={`fixed top-0 left-0 z-50 h-screen w-[85vw] max-w-[340px] transform transition-transform duration-300 lg:relative lg:h-auto lg:w-auto lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} `}
         >
           <AccountSidebar
             user={user}
@@ -147,19 +140,19 @@ export default function AccountPage() {
             className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-neutral-950/90 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-white/10"
           >
             <Menu size={18} />
-            Account Menu
+            {t.account.menu}
           </button>
         </div>
         <section className="h-full overflow-y-auto pr-1 pb-10">
-          {activeTab === "orders" && <OrdersTab orders={orders} />}
+          {activeTab === 'orders' && <OrdersTab orders={orders} />}
 
-          {activeTab === "profile" && (<ProfileTab user={user} orders={orders} />)}
+          {activeTab === 'profile' && <ProfileTab user={user} orders={orders} />}
 
-          {activeTab === "wishlist" && <WishlistTab />}
+          {activeTab === 'wishlist' && <WishlistTab />}
 
-          {activeTab === "security" && <SecurityTab />}
+          {activeTab === 'security' && <SecurityTab />}
 
-          {activeTab === "settings" && <SettingsTab />}
+          {activeTab === 'settings' && <SettingsTab />}
         </section>
       </div>
     </div>

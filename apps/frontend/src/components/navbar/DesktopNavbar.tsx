@@ -6,10 +6,11 @@ import { useCart } from '@/features/cart/CartContext';
 import { useEffect, useRef, useState } from 'react';
 import { useNavbar } from '@/hooks/useNavbar';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { apiFetch } from '@/shared/lib/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import Image from 'next/image';
+import { apiFetch } from '@/shared/lib/api';
 
-export default function Navbar() {
+export default function DesktopNavbar() {
   const { items, setOpen } = useCart();
   const { user, isAuthenticated, loading } = useAuth();
   const { locale, setLocale, t } = useLanguage();
@@ -18,9 +19,8 @@ export default function Navbar() {
   const [lastScroll, setLastScroll] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const setNavbarVisible = useNavbar((s) => s.setVisible);
 
-  /* ================= SCROLL ================= */
+  const setNavbarVisible = useNavbar((s) => s.setVisible);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,8 +42,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScroll, setNavbarVisible]);
 
-  /* ================= CLICK OUTSIDE ================= */
-
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -56,59 +54,54 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  /* ================= ESC CLOSE ================= */
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpenDropdown(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEsc);
-
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, []);
-
   if (loading) return null;
 
   return (
     <header
-      className={`fixed top-0 left-0 z-50 w-full transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'} border-neutral-800 bg-white`}
+      className={`fixed top-0 left-0 z-50 hidden w-full transition-transform duration-300 md:block ${
+        visible ? 'translate-y-0' : '-translate-y-full'
+      } bg-white`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-3 transition hover:opacity-80">
-          <img
-            src="/brands/camarguette/logo.png"
+        {/* LOGO */}
+
+        <Link href="/">
+          <Image
+            src="/brands/camarguette/CamarguetteLogo.png"
             alt="Camarguette"
-            className="h-16 w-auto object-contain"
+            width={220}
+            height={80}
+            priority
+            className="h-12 w-auto object-contain"
           />
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm text-black md:flex">
+        {/* CENTER */}
+
+        <nav className="flex items-center gap-8 text-sm">
           <Link href="/shop">{t.navbar.shop}</Link>
 
           <Link href="/brands">{t.navbar.brands}</Link>
         </nav>
 
-        <div className="ml-auto flex items-center gap-8 md:ml-0 md:gap-6">
+        {/* RIGHT */}
+
+        <div className="flex items-center gap-6">
+          {/* LANG */}
+
           <div className="flex items-center gap-2 text-sm">
             <button
               onClick={() => setLocale('en')}
-              className={`cursor-pointer transition ${
-                locale === 'en' ? 'font-semibold text-black' : 'text-neutral-400'
-              }`}
+              className={locale === 'en' ? 'font-semibold' : 'text-neutral-400'}
             >
               EN
             </button>
 
-            <span className="text-neutral-300">|</span>
+            <span>|</span>
 
             <button
               onClick={() => setLocale('es')}
-              className={`cursor-pointer transition ${
-                locale === 'es' ? 'font-semibold text-black' : 'text-neutral-400'
-              }`}
+              className={locale === 'es' ? 'font-semibold' : 'text-neutral-400'}
             >
               ES
             </button>
@@ -118,14 +111,9 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setOpenDropdown((prev) => !prev)}
-                className="min-w-[120px] cursor-pointer text-right text-sm text-black transition hover:opacity-70"
-              >
+              <button onClick={() => setOpenDropdown((p) => !p)} className="text-sm">
                 {user?.name || user?.email?.split('@')[0]}
               </button>
-
-              {/* DROPDOWN */}
 
               <div
                 className={`absolute right-0 mt-3 w-72 origin-top-right overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl transition-all duration-200 ${
@@ -157,7 +145,6 @@ export default function Navbar() {
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
                     <span>{t.navbar.myAccount}</span>
-
                     <span className="text-neutral-400">→</span>
                   </Link>
 
@@ -167,7 +154,6 @@ export default function Navbar() {
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
                     <span>{t.navbar.orders}</span>
-
                     <span className="text-neutral-400">→</span>
                   </Link>
 
@@ -177,7 +163,6 @@ export default function Navbar() {
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
                     <span>{t.navbar.addresses}</span>
-
                     <span className="text-neutral-400">→</span>
                   </Link>
 
@@ -187,7 +172,6 @@ export default function Navbar() {
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
                     <span>{t.navbar.wishlist}</span>
-
                     <span className="text-neutral-400">→</span>
                   </Link>
 
@@ -197,7 +181,6 @@ export default function Navbar() {
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
                     <span>{t.navbar.security}</span>
-
                     <span className="text-neutral-400">→</span>
                   </Link>
 
@@ -207,7 +190,6 @@ export default function Navbar() {
                     className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-black transition hover:bg-neutral-100"
                   >
                     <span>{t.navbar.settings}</span>
-
                     <span className="text-neutral-400">→</span>
                   </Link>
 
@@ -253,14 +235,12 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            <Link href="/login" className="text-sm">
-              {t.navbar.login}
-            </Link>
+            <Link href="/login">{t.navbar.login}</Link>
           )}
 
           {/* CART */}
 
-          <button onClick={() => setOpen(true)} className="relative cursor-pointer">
+          <button onClick={() => setOpen(true)} className="relative">
             <ShoppingCart size={24} />
 
             {totalItems > 0 && (

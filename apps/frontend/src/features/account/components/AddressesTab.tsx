@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import AddressAutocomplete from "@/features/checkout/components/AddressAutocomplete";
-import { COUNTRIES } from "@/shared/constants/countries";
-import { MapPin, Pencil, Plus, Star, Trash2, X } from "lucide-react";
-import { apiFetch } from "@/shared/lib/api";
+import { useEffect, useState } from 'react';
+import AddressAutocomplete from '@/features/checkout/components/AddressAutocomplete';
+import { COUNTRIES } from '@/shared/constants/countries';
+import { MapPin, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
+import { apiFetch } from '@/shared/lib/api';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 type Address = {
   id: string;
@@ -19,29 +20,28 @@ type Address = {
 };
 
 const emptyForm = {
-  fullName: "",
-  phone: "",
-  addressLine1: "",
-  addressLine2: "",
-  city: "",
-  postalCode: "",
-  country: "ES",
+  fullName: '',
+  phone: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  postalCode: '',
+  country: 'ES',
 };
 
 export default function AddressesTab() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [openModal, setOpenModal] = useState(false);
   const [editing, setEditing] = useState<Address | null>(null);
-
   const [form, setForm] = useState(emptyForm);
+  const { t } = useLanguage();
 
   /* ================= LOAD ================= */
 
   const loadAddresses = async () => {
     try {
-      const res = await apiFetch("/customers/me/addresses");
+      const res = await apiFetch('/customers/me/addresses');
 
       if (!res) return;
 
@@ -61,9 +61,7 @@ export default function AddressesTab() {
 
   /* ================= INPUT ================= */
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -86,13 +84,13 @@ export default function AddressesTab() {
     setEditing(address);
 
     setForm({
-      fullName: address.fullName || "",
-      phone: address.phone || "",
-      addressLine1: address.addressLine1 || "",
-      addressLine2: address.addressLine2 || "",
-      city: address.city || "",
-      postalCode: address.postalCode || "",
-      country: address.country || "ES",
+      fullName: address.fullName || '',
+      phone: address.phone || '',
+      addressLine1: address.addressLine1 || '',
+      addressLine2: address.addressLine2 || '',
+      city: address.city || '',
+      postalCode: address.postalCode || '',
+      country: address.country || 'ES',
     });
 
     setOpenModal(true);
@@ -102,11 +100,11 @@ export default function AddressesTab() {
 
   const saveAddress = async () => {
     try {
-      const method = editing ? "PUT" : "POST";
+      const method = editing ? 'PUT' : 'POST';
 
       const endpoint = editing
         ? `/customers/me/addresses/${editing.id}`
-        : "/customers/me/addresses";
+        : '/customers/me/addresses';
 
       const res = await apiFetch(endpoint, {
         method,
@@ -121,19 +119,19 @@ export default function AddressesTab() {
 
       await loadAddresses();
     } catch {
-      alert("Unable to save address.");
+      alert(t.addresses.saveError);
     }
   };
 
   /* ================= DELETE ================= */
 
   const deleteAddress = async (id: string) => {
-    const confirmed = confirm("Delete this address?");
+    const confirmed = confirm(t.addresses.deleteConfirm);
 
     if (!confirmed) return;
 
     await apiFetch(`/customers/me/addresses/${id}`, {
-      method: "DELETE",
+      method: 'DELETE',
     });
 
     loadAddresses();
@@ -143,7 +141,7 @@ export default function AddressesTab() {
 
   const setFavorite = async (id: string) => {
     await apiFetch(`/customers/me/addresses/${id}/favorite`, {
-      method: "PATCH",
+      method: 'PATCH',
     });
 
     loadAddresses();
@@ -152,7 +150,7 @@ export default function AddressesTab() {
   if (loading) {
     return (
       <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
-        <p className="text-neutral-400">Loading addresses...</p>
+        <p className="text-neutral-400">{t.addresses.loading}</p>
       </div>
     );
   }
@@ -164,11 +162,9 @@ export default function AddressesTab() {
 
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Addresses</h2>
+            <h2 className="text-2xl font-bold text-white">{t.addresses.title}</h2>
 
-            <p className="mt-2 text-sm text-neutral-500">
-              Manage your shipping addresses.
-            </p>
+            <p className="mt-2 text-sm text-neutral-500">{t.addresses.description}</p>
           </div>
 
           <button
@@ -176,7 +172,7 @@ export default function AddressesTab() {
             className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
             <Plus size={16} />
-            Add Address
+            {t.addresses.add}
           </button>
         </div>
 
@@ -186,9 +182,7 @@ export default function AddressesTab() {
           <div className="mt-8 rounded-2xl border border-dashed border-white/10 p-10 text-center">
             <MapPin size={40} className="mx-auto text-neutral-600" />
 
-            <p className="mt-4 text-neutral-400">
-              You don't have any saved addresses yet.
-            </p>
+            <p className="mt-4 text-neutral-400">{t.addresses.empty}</p>
           </div>
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -199,18 +193,14 @@ export default function AddressesTab() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-white">
-                      {address.fullName}
-                    </h3>
+                    <h3 className="font-semibold text-white">{address.fullName}</h3>
 
-                    <p className="mt-1 text-sm text-neutral-500">
-                      {address.phone}
-                    </p>
+                    <p className="mt-1 text-sm text-neutral-500">{address.phone}</p>
                   </div>
 
                   {address.isDefault && (
-                    <div className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-black">
-                      Default
+                    <div className="rounded-full bg-white px-3 py-1 text-[10px] font-bold tracking-wide text-black uppercase">
+                      {t.addresses.default}
                     </div>
                   )}
                 </div>
@@ -234,13 +224,13 @@ export default function AddressesTab() {
                     onClick={() => setFavorite(address.id)}
                     className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
                       address.isDefault
-                        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
-                        : "border-white/10 text-neutral-300 hover:bg-white/10"
+                        ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300'
+                        : 'border-white/10 text-neutral-300 hover:bg-white/10'
                     }`}
                   >
                     <Star size={15} />
 
-                    {address.isDefault ? "Default" : "Set Default"}
+                    {address.isDefault ? t.addresses.default : t.addresses.setDefault}
                   </button>
 
                   <button
@@ -248,7 +238,7 @@ export default function AddressesTab() {
                     className="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:bg-white/10"
                   >
                     <Pencil size={15} />
-                    Edit
+                    {t.addresses.edit}
                   </button>
 
                   <button
@@ -256,7 +246,7 @@ export default function AddressesTab() {
                     className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
                   >
                     <Trash2 size={15} />
-                    Delete
+                    {t.addresses.delete}
                   </button>
                 </div>
               </div>
@@ -275,12 +265,10 @@ export default function AddressesTab() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-white">
-                  {editing ? "Edit Address" : "Add Address"}
+                  {editing ? t.addresses.editTitle : t.addresses.createTitle}
                 </h3>
 
-                <p className="mt-1 text-sm text-neutral-500">
-                  Save an address for future orders.
-                </p>
+                <p className="mt-1 text-sm text-neutral-500">{t.addresses.saveDescription}</p>
               </div>
 
               <button
@@ -300,8 +288,8 @@ export default function AddressesTab() {
                 name="fullName"
                 value={form.fullName}
                 onChange={handleChange}
-                placeholder="Full Name"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                placeholder={t.addresses.fullName}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
               {/* PHONE */}
@@ -310,8 +298,8 @@ export default function AddressesTab() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="Phone Number"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                placeholder={t.addresses.phone}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
               {/* ADDRESS AUTOCOMPLETE */}
@@ -326,10 +314,10 @@ export default function AddressesTab() {
                 }) =>
                   setForm((prev) => ({
                     ...prev,
-                    addressLine1: data.addressLine1 || "",
-                    city: data.city || "",
-                    postalCode: data.postalCode || "",
-                    country: data.country || "ES",
+                    addressLine1: data.addressLine1 || '',
+                    city: data.city || '',
+                    postalCode: data.postalCode || '',
+                    country: data.country || 'ES',
                   }))
                 }
               />
@@ -340,8 +328,8 @@ export default function AddressesTab() {
                 name="addressLine2"
                 value={form.addressLine2}
                 onChange={handleChange}
-                placeholder="Apartment, Suite, etc."
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                placeholder={t.addresses.apartment}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
               {/* CITY + ZIP */}
@@ -349,18 +337,18 @@ export default function AddressesTab() {
               <div className="grid gap-4 md:grid-cols-2">
                 <input
                   name="city"
-                  value={form.city || ""}
+                  value={form.city || ''}
                   onChange={handleChange}
-                  placeholder="City"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                  placeholder={t.addresses.city}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
                 />
 
                 <input
                   name="postalCode"
-                  value={form.postalCode || ""}
+                  value={form.postalCode || ''}
                   onChange={handleChange}
-                  placeholder="Zip Code"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-500 focus:border-white/30"
+                  placeholder={t.addresses.zipCode}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
                 />
               </div>
 
@@ -370,14 +358,10 @@ export default function AddressesTab() {
                 name="country"
                 value={form.country}
                 onChange={handleChange}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none focus:border-white/30"
               >
                 {COUNTRIES.map((country) => (
-                  <option
-                    key={country.code}
-                    value={country.code}
-                    className="bg-white text-black"
-                  >
+                  <option key={country.code} value={country.code} className="bg-white text-black">
                     {country.name}
                   </option>
                 ))}
@@ -391,14 +375,14 @@ export default function AddressesTab() {
                 onClick={() => setOpenModal(false)}
                 className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-neutral-300 transition hover:bg-white/10"
               >
-                Cancel
+                {t.addresses.cancel}
               </button>
 
               <button
                 onClick={saveAddress}
                 className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
               >
-                {editing ? "Save Changes" : "Create Address"}
+                {editing ? t.addresses.saveChanges : t.addresses.createAddress}
               </button>
             </div>
           </div>

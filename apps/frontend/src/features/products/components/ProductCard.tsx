@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/features/wishlist/WishListContext';
 import type { Product } from '@/types/product';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 type Props = {
   product: Product;
@@ -13,6 +14,7 @@ type Props = {
 
 export default function ProductCard({ product }: Props) {
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { t } = useLanguage();
 
   const wishlisted = isWishlisted(product.id);
 
@@ -30,7 +32,6 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <motion.div
-      whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
       className={`group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 transition-all ${
         outOfStock ? 'opacity-60' : 'hover:border-neutral-600'
@@ -60,7 +61,7 @@ export default function ProductCard({ product }: Props) {
           >
             {outOfStock && (
               <span className="absolute top-3 left-3 z-10 rounded bg-black/80 px-2 py-1 text-xs font-semibold text-red-300">
-                Sold out
+                {t.productCard.soldOut}
               </span>
             )}
             {/* MAIN */}
@@ -103,7 +104,9 @@ export default function ProductCard({ product }: Props) {
           <p className="font-semibold text-white md:text-lg">€{(product.price / 100).toFixed(2)}</p>
 
           {!outOfStock && availableStock <= 5 && (
-            <p className="text-xs text-amber-400">Only {availableStock} left</p>
+            <p className="text-xs text-amber-400">
+              {availableStock} {t.productCard.left}
+            </p>
           )}
         </div>
 
@@ -114,7 +117,7 @@ export default function ProductCard({ product }: Props) {
             transition={{ duration: 0.15 }}
             className="w-full rounded-md bg-white py-1.5 text-center text-xs font-medium text-black hover:bg-neutral-200"
           >
-            View product
+            {t.productCard.viewProduct}
           </motion.div>
         </Link>
       </div>

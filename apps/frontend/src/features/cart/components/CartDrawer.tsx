@@ -1,18 +1,17 @@
 'use client';
 
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/shared/ui/sheet';
-
 import { Button } from '@/shared/ui/button';
 import { useCart, CartItem } from '@/features/cart/CartContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 export default function CartDrawer() {
   const { items, open, setOpen, removeItem, increaseQuantity, decreaseQuantity, totalPrice } =
     useCart();
-
   const router = useRouter();
-
+  const { t } = useLanguage();
   const total = totalPrice / 100;
 
   /* ================= SHIPPING ================= */
@@ -29,12 +28,12 @@ export default function CartDrawer() {
         className="flex w-[420px] flex-col border-l border-white/10 bg-neutral-950 text-white"
       >
         {/* ACCESSIBILITY */}
-        <SheetTitle className="sr-only">Cart</SheetTitle>
-        <SheetDescription className="sr-only">Products in cart</SheetDescription>
+        <SheetTitle className="sr-only">{t.cart.title}</SheetTitle>
+        <SheetDescription className="sr-only">{t.cart.productsInCart}</SheetDescription>
 
         {/* HEADER */}
         <div className="border-b border-white/10 pb-4">
-          <h2 className="text-base font-semibold">Your Cart</h2>
+          <h2 className="text-base font-semibold">{t.cart.title}</h2>
         </div>
 
         {/* SHIPPING BAR */}
@@ -44,8 +43,8 @@ export default function CartDrawer() {
 
             <p className="text-xs text-neutral-400">
               {unlocked
-                ? 'Free shipping unlocked'
-                : `Add €${remaining.toFixed(2)} for free shipping`}
+                ? t.cart.freeShippingUnlocked
+                : `${t.cart.addForFreeShipping} €${remaining.toFixed(2)} ${t.cart.forFreeShipping}`}
             </p>
           </div>
 
@@ -61,7 +60,7 @@ export default function CartDrawer() {
 
         {/* ITEMS */}
         <div className="mt-6 flex-1 space-y-4 overflow-y-auto pr-1">
-          {items.length === 0 && <p className="text-sm text-neutral-500">Your cart is empty</p>}
+          {items.length === 0 && <p className="text-sm text-neutral-500">{t.cart.empty}</p>}
 
           {items.map((item: CartItem) => (
             <div
@@ -82,7 +81,7 @@ export default function CartDrawer() {
                 <p className="truncate text-sm font-medium">{item.name}</p>
                 {(item.size || item.color) && (
                   <p className="mt-1 text-xs text-neutral-400">
-                    {item.size && `Size ${item.size}`}
+                    {item.size && `${t.cart.size} ${item.size}`}
                     {item.size && item.color && ' · '}
                     {item.color}
                   </p>
@@ -116,7 +115,7 @@ export default function CartDrawer() {
                   onClick={() => removeItem(item.id)}
                   className="mt-2 text-xs text-neutral-500 transition hover:text-red-400"
                 >
-                  Remove
+                  {t.cart.remove}
                 </button>
               </div>
 
@@ -131,12 +130,12 @@ export default function CartDrawer() {
         {/* FOOTER */}
         <div className="space-y-3 border-t border-white/10 pt-4">
           <div className="flex justify-between text-sm text-neutral-400">
-            <span>Subtotal</span>
+            <span>{t.cart.subtotal}</span>
             <span>€{total.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between text-lg font-semibold">
-            <span>Total</span>
+            <span>{t.cart.total}</span>
             <span>€{total.toFixed(2)}</span>
           </div>
 
@@ -148,12 +147,12 @@ export default function CartDrawer() {
                 router.push('/checkout');
               }}
             >
-              Checkout →
+              {t.cart.checkout} →
             </Button>
           </motion.div>
 
           <p className="text-center text-[11px] text-neutral-500">
-            Secure payment · Fast delivery · Premium support
+            {t.cart.securePayment} · {t.cart.fastDelivery} · {t.cart.premiumSupport}
           </p>
         </div>
       </SheetContent>
