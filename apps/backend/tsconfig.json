@@ -13,12 +13,12 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
 
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["src/*"]
     },
 
-    "types": ["node", "jest"]
+    "types": ["node"]
   },
   "include": ["src", "tests", "prisma"],
   "exclude": ["node_modules"]
