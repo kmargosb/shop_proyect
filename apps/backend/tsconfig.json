@@ -20,6 +20,6 @@
 
     "types": ["node"]
   },
-  "include": ["src", "tests", "prisma"],
+  "include": ["src", "prisma"],
   "exclude": ["node_modules"]
 }
