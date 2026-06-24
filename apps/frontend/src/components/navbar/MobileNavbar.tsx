@@ -34,14 +34,15 @@ export default function MobileNavbar() {
       }
 
       // bajar
-      if (currentScroll > lastScroll + 15) {
-        setVisible(false);
+      if (currentScroll < 40) {
+        setVisible(true);
+        lastScrollRef.current = currentScroll;
+        return;
       }
 
-      // subir
-      if (currentScroll < lastScroll - 15) {
-        setVisible(true);
-      }
+      setVisible(currentScroll < lastScroll);
+
+      lastScrollRef.current = currentScroll;
 
       lastScrollRef.current = currentScroll;
     };
