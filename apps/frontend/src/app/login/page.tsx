@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import GoogleLoginButton from '@/features/auth/components/GoogleLoginButton';
 import { apiFetch } from '@/shared/lib/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 
-export default function LoginPage() {
+function LoginContent() {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -190,5 +190,13 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

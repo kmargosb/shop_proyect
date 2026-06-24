@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { ShopView } from '@/features/shop/components/ShopView';
 
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ShopView />;
+  return (
+    <Suspense fallback={null}>
+      <ShopView />
+    </Suspense>
+  );
 }
