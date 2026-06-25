@@ -17,6 +17,11 @@ export async function loginWithGoogle(idToken: string) {
   );
   console.log('google-auth-library version =', require('google-auth-library/package.json').version);
 
+  console.log('HTTP_PROXY =', process.env.HTTP_PROXY);
+  console.log('HTTPS_PROXY =', process.env.HTTPS_PROXY);
+  console.log('http_proxy =', process.env.http_proxy);
+  console.log('https_proxy =', process.env.https_proxy);
+
   const ticket = await client.verifyIdToken({
     idToken,
     audience: process.env.GOOGLE_CLIENT_ID,
