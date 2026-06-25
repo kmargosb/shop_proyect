@@ -5,10 +5,6 @@ import { generateAccessToken } from '@/common/utils/generateToken';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function loginWithGoogle(idToken: string) {
-  console.log('google-auth-library version =', require('google-auth-library/package.json').version);
-
-  console.log(client.constructor.name);
-
   const ticket = await client.verifyIdToken({
     idToken,
     audience: process.env.GOOGLE_CLIENT_ID,

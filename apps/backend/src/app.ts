@@ -76,32 +76,26 @@ app.get('/', (_, res) => {
 });
 
 /* TEST GOOGLE */
-app.get('/google-test-2', async (_, res) => {
-  const urls = [
-    'https://www.googleapis.com/oauth2/v1/certs',
-    'https://www.googleapis.com/oauth2/v3/certs',
-    'https://oauth2.googleapis.com/tokeninfo?id_token=fake',
-    'https://accounts.google.com/.well-known/openid-configuration',
-  ];
+app.get('/google-test-3', async (_, res) => {
+  try {
+    const openid = await fetch('https://accounts.google.com/.well-known/openid-configuration');
 
-  const results = await Promise.all(
-    urls.map(async (url) => {
-      try {
-        const r = await fetch(url);
-        return {
-          url,
-          status: r.status,
-        };
-      } catch (e) {
-        return {
-          url,
-          error: String(e),
-        };
-      }
-    }),
-  );
+    const config = await openid.json();
 
-  res.json(results);
+    const jwks = await fetch(config.jwks_uri);
+
+    const text = await jwks.text();
+
+    res.json({
+      jwks_uri: config.jwks_uri,
+      status: jwks.status,
+      body: text.substring(0, 300),
+    });
+  } catch (e) {
+    res.status(500).json({
+      error: String(e),
+    });
+  }
 });
 
 /* ERROR HANDLER */
