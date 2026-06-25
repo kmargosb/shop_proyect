@@ -80,12 +80,12 @@ app.get('/google-test', async (_, res) => {
   try {
     const r = await fetch('https://www.googleapis.com/oauth2/v3/certs');
 
-    const data = await r.json();
+    const text = await r.text();
 
     res.json({
       status: r.status,
       ok: r.ok,
-      keys: data.keys?.length,
+      first200: text.substring(0, 200),
     });
   } catch (e) {
     console.error(e);
