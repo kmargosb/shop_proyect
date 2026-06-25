@@ -77,26 +77,32 @@ app.get('/', (_, res) => {
 
 /* TEST GOOGLE */
 app.get('/google-test', async (_, res) => {
-  try {
-    const google = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+  const urls = [
+    'https://www.googleapis.com/oauth2/v1/certs',
+    'https://www.googleapis.com/oauth2/v3/certs',
+    'https://oauth2.googleapis.com/tokeninfo?id_token=fake',
+    'https://accounts.google.com/.well-known/openid-configuration',
+  ];
 
-    const oauth2 = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=fake');
+  const results = [];
 
-    const googleText = await google.text();
-    const oauth2Text = await oauth2.text();
+  for (const url of urls) {
+    try {
+      const r = await fetch(url);
 
-    res.json({
-      google_status: google.status,
-      oauth2_status: oauth2.status,
-
-      google_body: googleText.substring(0, 200),
-      oauth2_body: oauth2Text.substring(0, 200),
-    });
-  } catch (e) {
-    res.status(500).json({
-      error: String(e),
-    });
+      results.push({
+        url,
+        status: r.status,
+      });
+    } catch (e) {
+      results.push({
+        url,
+        error: String(e),
+      });
+    }
   }
+
+  res.json(results);
 });
 
 /* ERROR HANDLER */

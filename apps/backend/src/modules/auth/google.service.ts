@@ -9,16 +9,7 @@ export async function loginWithGoogle(idToken: string) {
      VERIFY TOKEN
   ========================= */
 
-  console.log('GOOGLE_CLIENT_ID =', process.env.GOOGLE_CLIENT_ID);
-  console.log('NODE_ENV =', process.env.NODE_ENV);
-
   const pkg = require('google-auth-library/package.json');
-
-  console.log('google-auth-library version =', pkg.version);
-
-  console.log('google-auth-library path =', require.resolve('google-auth-library/package.json'));
-
-  console.log('oauth2client file =', require.resolve('google-auth-library'));
 
   const ticket = await client.verifyIdToken({
     idToken,
