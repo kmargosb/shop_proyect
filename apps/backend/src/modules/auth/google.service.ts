@@ -2,9 +2,6 @@ import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '@/lib/prisma';
 import { generateAccessToken } from '@/common/utils/generateToken';
 
-console.log('GOOGLE_CLIENT_ID =', process.env.GOOGLE_CLIENT_ID);
-console.log('NODE_ENV =', process.env.NODE_ENV);
-
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function loginWithGoogle(idToken: string) {
@@ -14,6 +11,10 @@ export async function loginWithGoogle(idToken: string) {
 
   console.log('GOOGLE_CLIENT_ID =', process.env.GOOGLE_CLIENT_ID);
   console.log('NODE_ENV =', process.env.NODE_ENV);
+  console.log(
+    'Default cert url:',
+    (OAuth2Client as any).GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_,
+  );
   console.log('google-auth-library version =', require('google-auth-library/package.json').version);
 
   const ticket = await client.verifyIdToken({

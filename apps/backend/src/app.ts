@@ -78,18 +78,22 @@ app.get('/', (_, res) => {
 /* TEST GOOGLE */
 app.get('/google-test', async (_, res) => {
   try {
-    const r = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+    const v1 = await fetch('https://www.googleapis.com/oauth2/v1/certs');
 
-    const text = await r.text();
+    const v3 = await fetch('https://www.googleapis.com/oauth2/v3/certs');
 
     res.json({
-      status: r.status,
-      ok: r.ok,
-      first200: text.substring(0, 200),
+      v1_status: v1.status,
+      v3_status: v3.status,
+      v1_url: v1.url,
+      v3_url: v3.url,
     });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: String(e) });
+
+    res.status(500).json({
+      error: String(e),
+    });
   }
 });
 
