@@ -2,19 +2,33 @@
 
 import Link from 'next/link';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import { useEffect, useRef } from 'react';
 
 export default function BrandsShowcase() {
   const { t } = useLanguage();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) return;
+
+    video.play().catch((err) => {
+      console.log('Autoplay blocked:', err);
+    });
+  }, []);
 
   return (
     <section className="relative h-[80vh] overflow-hidden bg-black text-white">
       {/* VIDEO */}
 
       <video
+        ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
+        preload="auto"
         className="absolute inset-0 h-full w-full object-cover"
       >
         <source src="https://res.cloudinary.com/dhybf1y2t/video/upload/v1782318467/videos/Camarguette2_lo1ptb.mp4" />

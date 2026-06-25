@@ -91,13 +91,13 @@ export default function Footer() {
 
           {/* LINKS */}
 
-          <div className="grid grid-cols-2 gap-x-10 gap-y-10 md:col-span-3 md:grid-cols-3">
+          <div className="grid grid-cols-3 gap-x-4 gap-y-8 md:col-span-3 md:grid-cols-3 md:gap-x-10">
             {/* SHOP */}
 
             <div>
               <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">Shop</h3>
 
-              <ul className="mt-5 space-y-3 text-[15px]">
+              <ul className="mt-5 space-y-3 text-sm md:text-[15px]">
                 {footerLinks.shop.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="transition hover:text-white">
@@ -115,7 +115,7 @@ export default function Footer() {
                 Support
               </h3>
 
-              <ul className="mt-5 space-y-3 text-[15px]">
+              <ul className="mt-5 space-y-3 text-sm md:text-[15px]">
                 {footerLinks.support.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="transition hover:text-white">
@@ -133,7 +133,7 @@ export default function Footer() {
                 Legal
               </h3>
 
-              <ul className="mt-5 space-y-3 text-[15px]">
+              <ul className="mt-5 space-y-3 text-sm md:text-[15px]">
                 {footerLinks.legal.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="transition hover:text-white">

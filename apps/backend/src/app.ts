@@ -105,6 +105,28 @@ app.get('/google-test', async (_, res) => {
   }
 });
 
+app.get('/google-test-jwks', async (_, res) => {
+  try {
+    const openid = await fetch('https://accounts.google.com/.well-known/openid-configuration');
+
+    const config = await openid.json();
+
+    const jwks = await fetch(config.jwks_uri);
+
+    const text = await jwks.text();
+
+    res.json({
+      jwks_uri: config.jwks_uri,
+      status: jwks.status,
+      body: text.substring(0, 300),
+    });
+  } catch (e) {
+    res.status(500).json({
+      error: String(e),
+    });
+  }
+});
+
 /* ERROR HANDLER */
 app.use(errorHandler);
 
