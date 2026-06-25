@@ -67,30 +67,13 @@ app.use('/wishlist', wishlistRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 
-/* HEALTH CHECK */
-app.get('/', (_, res) => {
-  res.json({
-    status: 'OK',
-    message: 'Backend funcionando correctamente',
-  });
-});
-
 /* TEST GOOGLE */
-app.get('/google-test-3', async (_, res) => {
+app.get('/render-ip-test', async (_, res) => {
   try {
-    const openid = await fetch('https://accounts.google.com/.well-known/openid-configuration');
+    const r = await fetch('https://api.ipify.org?format=json');
+    const data = await r.json();
 
-    const config = await openid.json();
-
-    const jwks = await fetch(config.jwks_uri);
-
-    const text = await jwks.text();
-
-    res.json({
-      jwks_uri: config.jwks_uri,
-      status: jwks.status,
-      body: text.substring(0, 300),
-    });
+    res.json(data);
   } catch (e) {
     res.status(500).json({
       error: String(e),
