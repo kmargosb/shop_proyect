@@ -78,22 +78,16 @@ app.get('/', (_, res) => {
 /* TEST GOOGLE */
 app.get('/google-test', async (_, res) => {
   try {
-    const v1 = await fetch('https://www.googleapis.com/oauth2/v1/certs');
-
-    const v3 = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+    const google = await fetch('https://www.google.com');
+    const github = await fetch('https://api.github.com');
 
     res.json({
-      v1_status: v1.status,
-      v3_status: v3.status,
-      v1_url: v1.url,
-      v3_url: v3.url,
+      google: google.status,
+      github: github.status,
     });
   } catch (e) {
     console.error(e);
-
-    res.status(500).json({
-      error: String(e),
-    });
+    res.status(500).json({ error: String(e) });
   }
 });
 
