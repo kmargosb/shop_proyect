@@ -11,28 +11,14 @@ export async function loginWithGoogle(idToken: string) {
 
   console.log('GOOGLE_CLIENT_ID =', process.env.GOOGLE_CLIENT_ID);
   console.log('NODE_ENV =', process.env.NODE_ENV);
-  console.log(
-    'Default cert url:',
-    (OAuth2Client as any).GOOGLE_OAUTH2_FEDERATED_SIGNON_PEM_CERTS_URL_,
-  );
-  console.log('google-auth-library version =', require('google-auth-library/package.json').version);
 
-  console.log('HTTP_PROXY =', process.env.HTTP_PROXY);
-  console.log('HTTPS_PROXY =', process.env.HTTPS_PROXY);
-  console.log('http_proxy =', process.env.http_proxy);
-  console.log('https_proxy =', process.env.https_proxy);
+  const pkg = require('google-auth-library/package.json');
 
-  const r = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
-    headers: {
-      'User-Agent': 'Mozilla/5.0',
-    },
-  });
+  console.log('google-auth-library version =', pkg.version);
 
-  console.log('MANUAL GOOGLE STATUS =', r.status);
+  console.log('google-auth-library path =', require.resolve('google-auth-library/package.json'));
 
-  const txt = await r.text();
-
-  console.log('MANUAL GOOGLE BODY =', txt.substring(0, 300));
+  console.log('oauth2client file =', require.resolve('google-auth-library'));
 
   const ticket = await client.verifyIdToken({
     idToken,
