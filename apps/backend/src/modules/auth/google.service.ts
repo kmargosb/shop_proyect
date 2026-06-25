@@ -22,6 +22,18 @@ export async function loginWithGoogle(idToken: string) {
   console.log('http_proxy =', process.env.http_proxy);
   console.log('https_proxy =', process.env.https_proxy);
 
+  const r = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0',
+    },
+  });
+
+  console.log('MANUAL GOOGLE STATUS =', r.status);
+
+  const txt = await r.text();
+
+  console.log('MANUAL GOOGLE BODY =', txt.substring(0, 300));
+
   const ticket = await client.verifyIdToken({
     idToken,
     audience: process.env.GOOGLE_CLIENT_ID,
