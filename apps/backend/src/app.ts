@@ -139,6 +139,17 @@ app.get('/debug-cookies', (req, res) => {
   });
 });
 
+app.get('/debug-auth', (req, res) => {
+  res.json({
+    cookies: req.cookies,
+    accessToken: !!req.cookies.accessToken,
+    refreshToken: !!req.cookies.refreshToken,
+    origin: req.headers.origin,
+    referer: req.headers.referer,
+    userAgent: req.headers['user-agent'],
+  });
+});
+
 /* ERROR HANDLER */
 app.use(errorHandler);
 
