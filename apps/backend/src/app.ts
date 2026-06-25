@@ -76,7 +76,7 @@ app.get('/', (_, res) => {
 });
 
 /* TEST GOOGLE */
-app.get('/google-test', async (_, res) => {
+app.get('/google-test-2', async (_, res) => {
   const urls = [
     'https://www.googleapis.com/oauth2/v1/certs',
     'https://www.googleapis.com/oauth2/v3/certs',
@@ -84,23 +84,22 @@ app.get('/google-test', async (_, res) => {
     'https://accounts.google.com/.well-known/openid-configuration',
   ];
 
-  const results = [];
-
-  for (const url of urls) {
-    try {
-      const r = await fetch(url);
-
-      results.push({
-        url,
-        status: r.status,
-      });
-    } catch (e) {
-      results.push({
-        url,
-        error: String(e),
-      });
-    }
-  }
+  const results = await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const r = await fetch(url);
+        return {
+          url,
+          status: r.status,
+        };
+      } catch (e) {
+        return {
+          url,
+          error: String(e),
+        };
+      }
+    }),
+  );
 
   res.json(results);
 });
