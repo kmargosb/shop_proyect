@@ -67,13 +67,37 @@ app.use('/wishlist', wishlistRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 
-/* TEST GOOGLE */
-app.get('/render-ip-test', async (_, res) => {
+/* TEST GOOGLE CERTS */
+app.get('/google-test', async (_, res) => {
   try {
-    const r = await fetch('https://api.ipify.org?format=json');
-    const data = await r.json();
+    const urls = [
+      'https://www.googleapis.com/oauth2/v1/certs',
+      'https://www.googleapis.com/oauth2/v3/certs',
+      'https://accounts.google.com/.well-known/openid-configuration',
+    ];
 
-    res.json(data);
+    const results = [];
+
+    for (const url of urls) {
+      try {
+        const r = await fetch(url);
+
+        const body = await r.text();
+
+        results.push({
+          url,
+          status: r.status,
+          body: body.substring(0, 200),
+        });
+      } catch (e) {
+        results.push({
+          url,
+          error: String(e),
+        });
+      }
+    }
+
+    res.json(results);
   } catch (e) {
     res.status(500).json({
       error: String(e),
