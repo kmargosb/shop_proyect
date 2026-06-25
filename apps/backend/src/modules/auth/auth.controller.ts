@@ -1,18 +1,15 @@
-import { sendPasswordResetEmail } from "@/modules/email/sendOrderEmail";
-import { Request, Response } from "express";
-import { loginWithGoogle } from "./google.service";
-import { asyncHandler } from "@/common/utils/asyncHandler";
-import { AuthRequest } from "@/common/middleware/auth.middleware";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import type { JwtPayload } from "jsonwebtoken";
-import * as authService from "./auth.service";
-import crypto from "crypto";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "@/common/utils/generateToken";
+import { sendPasswordResetEmail } from '@/modules/email/sendOrderEmail';
+import { Request, Response } from 'express';
+import { loginWithGoogle } from './google.service';
+import { asyncHandler } from '@/common/utils/asyncHandler';
+import { AuthRequest } from '@/common/middleware/auth.middleware';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
+import * as authService from './auth.service';
+import crypto from 'crypto';
+import { generateAccessToken, generateRefreshToken } from '@/common/utils/generateToken';
 
 /**
  * 🔐 Opciones de cookie CONSISTENTES
@@ -27,24 +24,24 @@ import {
  *   COOKIE_SAMESITE=none y COOKIE_SECURE=true desde variables de entorno.
  * - COOKIE_DOMAIN es opcional; si no se define, el navegador usa el host de la API.
  */
-type CookieSameSite = "lax" | "strict" | "none";
+type CookieSameSite = 'lax' | 'strict' | 'none';
 
 function getCookieSameSite(): CookieSameSite {
   const value = process.env.COOKIE_SAMESITE?.toLowerCase();
 
-  if (value === "strict" || value === "none") {
+  if (value === 'strict' || value === 'none') {
     return value;
   }
 
-  return "lax";
+  return 'lax';
 }
 
 function getCookieSecure(sameSite: CookieSameSite): boolean {
   if (process.env.COOKIE_SECURE) {
-    return process.env.COOKIE_SECURE === "true";
+    return process.env.COOKIE_SECURE === 'true';
   }
 
-  return process.env.NODE_ENV === "production" || sameSite === "none";
+  return process.env.NODE_ENV === 'production' || sameSite === 'none';
 }
 
 const cookieSameSite = getCookieSameSite();
@@ -53,7 +50,7 @@ const cookieOptions = {
   httpOnly: true,
   secure: getCookieSecure(cookieSameSite),
   sameSite: cookieSameSite,
-  path: "/",
+  path: '/',
   ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN }),
 };
 
@@ -65,7 +62,7 @@ export const me = asyncHandler(async (req: AuthRequest, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const user = await prisma.user.findUnique({
@@ -92,12 +89,12 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
 
   const result = await authService.loginUser(email, password);
 
-  res.cookie("accessToken", result.accessToken, {
+  res.cookie('accessToken', result.accessToken, {
     ...cookieOptions,
     maxAge: 2 * 60 * 60 * 1000, // 2 hours
   });
 
-  res.cookie("refreshToken", result.refreshToken, {
+  res.cookie('refreshToken', result.refreshToken, {
     ...cookieOptions,
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
@@ -110,7 +107,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   if (!email || !password || password.length < 8) {
     return res.status(400).json({
-      error: "Invalid registration data",
+      error: 'Invalid registration data',
     });
   }
 
@@ -120,7 +117,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   if (existingUser) {
     return res.status(400).json({
-      error: "An account already exists with this email",
+      error: 'An account already exists with this email',
     });
   }
 
@@ -131,7 +128,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       name: name || null,
-      provider: "LOCAL",
+      provider: 'LOCAL',
     },
   });
 
@@ -165,12 +162,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 
-  res.cookie("accessToken", accessToken, {
+  res.cookie('accessToken', accessToken, {
     ...cookieOptions,
     maxAge: 2 * 60 * 60 * 1000,
   });
 
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie('refreshToken', refreshToken, {
     ...cookieOptions,
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
@@ -197,238 +194,220 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
     });
   }
 
-  res.clearCookie("accessToken", cookieOptions);
-  res.clearCookie("refreshToken", cookieOptions);
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
 
-  res.json({ message: "Successfully signed out" });
+  res.json({ message: 'Successfully signed out' });
 });
 
 /* ============================
    LOGOUT ALL
 ============================ */
 
-export const logoutAll = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const logoutAll = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-    await prisma.refreshToken.deleteMany({
-      where: { userId },
+  await prisma.refreshToken.deleteMany({
+    where: { userId },
+  });
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      tokenVersion: { increment: 1 },
+    },
+  });
+
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+
+  res.json({ message: 'Signed out from all devices' });
+});
+
+export const deactivateAccount = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
     });
+  }
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        tokenVersion: { increment: 1 },
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      isActive: false,
+      marketingEmails: false,
+      tokenVersion: {
+        increment: 1,
       },
-    });
+    },
+  });
 
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+  await prisma.refreshToken.deleteMany({
+    where: {
+      userId,
+    },
+  });
 
-    res.json({ message: "Signed out from all devices" });
-  },
-);
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
 
-export const deactivateAccount = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        isActive: false,
-        marketingEmails: false,
-        tokenVersion: {
-          increment: 1,
-        },
-      },
-    });
-
-    await prisma.refreshToken.deleteMany({
-      where: {
-        userId,
-      },
-    });
-
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
-
-    res.json({
-      success: true,
-    });
-  },
-);
+  res.json({
+    success: true,
+  });
+});
 
 /* ============================
    CHANGE PASSWORD
 ============================ */
 
 function isString(value: unknown): value is string {
-  return typeof value === "string";
+  return typeof value === 'string';
 }
 
-export const changePassword = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const changePassword = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-    const { currentPassword, newPassword } = req.body as {
-      currentPassword?: unknown;
-      newPassword?: unknown;
-    };
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword?: unknown;
+    newPassword?: unknown;
+  };
 
-    if (
-      !isString(currentPassword) ||
-      !isString(newPassword) ||
-      newPassword.length < 8
-    ) {
-      return res.status(400).json({ error: "Invalid password" });
-    }
+  if (!isString(currentPassword) || !isString(newPassword) || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Invalid password' });
+  }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user?.password) {
-      return res
-        .status(400)
-        .json({ error: "This account does not have a local password" });
-    }
+  if (!user?.password) {
+    return res.status(400).json({ error: 'This account does not have a local password' });
+  }
 
-    const validPassword = await bcrypt.compare(currentPassword, user.password);
+  const validPassword = await bcrypt.compare(currentPassword, user.password);
 
-    if (!validPassword) {
-      return res.status(400).json({ error: "Current password is incorrect" });
-    }
+  if (!validPassword) {
+    return res.status(400).json({ error: 'Current password is incorrect' });
+  }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { password: hashedPassword, tokenVersion: { increment: 1 } },
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword, tokenVersion: { increment: 1 } },
+  });
+
+  await prisma.refreshToken.deleteMany({ where: { userId } });
+
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+  res.json({ message: 'Password updated successfully' });
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      error: 'Email is required',
     });
+  }
 
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
-    res.json({ message: "Password updated successfully" });
-  },
-);
-
-export const forgotPassword = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        error: "Email is required",
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email },
+  // No revelar si existe o no
+  if (!user) {
+    return res.json({
+      message: 'If an account exists with this email, a reset link has been sent.',
     });
+  }
 
-    // No revelar si existe o no
-    if (!user) {
-      return res.json({
-        message:
-          "If an account exists with this email, a reset link has been sent.",
-      });
-    }
+  const token = crypto.randomBytes(32).toString('hex');
 
-    const token = crypto.randomBytes(32).toString("hex");
+  await prisma.passwordResetToken.deleteMany({
+    where: {
+      userId: user.id,
+    },
+  });
 
-    await prisma.passwordResetToken.deleteMany({
-      where: {
-        userId: user.id,
+  await prisma.passwordResetToken.create({
+    data: {
+      token,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hora
+    },
+  });
+
+  await sendPasswordResetEmail(user.email, user.name || user.email, token);
+
+  res.json({
+    message: 'If an account exists with this email, a reset link has been sent.',
+  });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+
+  if (!token || !password || password.length < 8) {
+    return res.status(400).json({
+      error: 'Invalid password',
+    });
+  }
+
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: {
+      token,
+    },
+  });
+
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    return res.status(400).json({
+      error: 'Invalid or expired token',
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  await prisma.user.update({
+    where: {
+      id: resetToken.userId,
+    },
+    data: {
+      password: hashedPassword,
+      tokenVersion: {
+        increment: 1,
       },
-    });
+    },
+  });
 
-    await prisma.passwordResetToken.create({
-      data: {
-        token,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hora
-      },
-    });
+  await prisma.refreshToken.deleteMany({
+    where: {
+      userId: resetToken.userId,
+    },
+  });
 
-    await sendPasswordResetEmail(user.email, user.name || user.email, token);
+  await prisma.passwordResetToken.deleteMany({
+    where: {
+      userId: resetToken.userId,
+    },
+  });
 
-    res.json({
-      message:
-        "If an account exists with this email, a reset link has been sent.",
-    });
-  },
-);
-
-export const resetPassword = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { token, password } = req.body;
-
-    if (!token || !password || password.length < 8) {
-      return res.status(400).json({
-        error: "Invalid password",
-      });
-    }
-
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: {
-        token,
-      },
-    });
-
-    if (!resetToken || resetToken.expiresAt < new Date()) {
-      return res.status(400).json({
-        error: "Invalid or expired token",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    await prisma.user.update({
-      where: {
-        id: resetToken.userId,
-      },
-      data: {
-        password: hashedPassword,
-        tokenVersion: {
-          increment: 1,
-        },
-      },
-    });
-
-    await prisma.refreshToken.deleteMany({
-      where: {
-        userId: resetToken.userId,
-      },
-    });
-
-    await prisma.passwordResetToken.deleteMany({
-      where: {
-        userId: resetToken.userId,
-      },
-    });
-
-    res.json({
-      message: "Password reset successfully",
-    });
-  },
-);
+  res.json({
+    message: 'Password reset successfully',
+  });
+});
 
 /* ============================
    REFRESH
@@ -438,7 +417,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
 
   if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   let decoded: JwtPayload & { id: string };
@@ -446,15 +425,15 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   try {
     const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
 
-    if (typeof payload === "string" || typeof payload.id !== "string") {
-      return res.status(403).json({ error: "Invalid refresh token" });
+    if (typeof payload === 'string' || typeof payload.id !== 'string') {
+      return res.status(403).json({ error: 'Invalid refresh token' });
     }
 
     decoded = payload as JwtPayload & { id: string };
   } catch {
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
-    return res.status(403).json({ error: "Invalid refresh token" });
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+    return res.status(403).json({ error: 'Invalid refresh token' });
   }
 
   const storedTokens = await prisma.refreshToken.findMany({
@@ -473,11 +452,11 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (!matchedToken) {
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     return res.status(403).json({
-      error: "Session expired. Please sign in again.",
+      error: 'Session expired. Please sign in again.',
     });
   }
 
@@ -486,11 +465,11 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
       where: { id: matchedToken.id },
     });
 
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     return res.status(403).json({
-      error: "Refresh token expired",
+      error: 'Refresh token expired',
     });
   }
 
@@ -520,18 +499,18 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     tokenVersion: decoded.tokenVersion,
   });
 
-  res.cookie("accessToken", newAccessToken, {
+  res.cookie('accessToken', newAccessToken, {
     ...cookieOptions,
     maxAge: 2 * 60 * 60 * 1000,
   });
 
-  res.cookie("refreshToken", newRefreshToken, {
+  res.cookie('refreshToken', newRefreshToken, {
     ...cookieOptions,
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.json({
-    message: "Tokens refreshed successfully",
+    message: 'Tokens refreshed successfully',
   });
 });
 
@@ -539,72 +518,70 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
    GOOGLE AUTH (PRO VERSION)
 ============================ */
 
-export const googleAuthController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { idToken } = req.body;
+export const googleAuthController = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken } = req.body;
 
-    if (!idToken) {
-      return res.status(400).json({
-        error: "Google token is required",
-      });
-    }
+  if (!idToken) {
+    return res.status(400).json({
+      error: 'Google token is required',
+    });
+  }
 
-    /* =========================
+  /* =========================
        GOOGLE LOGIN
     ========================= */
 
-    const { user } = await loginWithGoogle(idToken);
+  const { user } = await loginWithGoogle(idToken);
 
-    /* =========================
+  /* =========================
        GENERATE TOKENS
     ========================= */
 
-    const accessToken = generateAccessToken({
-      id: user.id,
-      role: user.role,
-      tokenVersion: user.tokenVersion,
-    });
+  const accessToken = generateAccessToken({
+    id: user.id,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  });
 
-    const refreshToken = generateRefreshToken({
-      id: user.id,
-      role: user.role,
-      tokenVersion: user.tokenVersion,
-    });
+  const refreshToken = generateRefreshToken({
+    id: user.id,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  });
 
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-    /* =========================
+  /* =========================
        SAVE REFRESH TOKEN
     ========================= */
 
-    await prisma.refreshToken.create({
-      data: {
-        token: hashedRefreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
-    });
+  await prisma.refreshToken.create({
+    data: {
+      token: hashedRefreshToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
 
-    /* =========================
+  /* =========================
        🍪 SET COOKIES (CLAVE)
     ========================= */
 
-    res.cookie("accessToken", accessToken, {
-      ...cookieOptions,
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours
-    });
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
+    maxAge: 2 * 60 * 60 * 1000, // 2 hours
+  });
 
-    res.cookie("refreshToken", refreshToken, {
-      ...cookieOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
 
-    /* =========================
+  /* =========================
        RESPONSE
     ========================= */
 
-    return res.json({
-      user,
-    });
-  },
-);
+  return res.json({
+    user,
+  });
+});

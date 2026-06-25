@@ -127,6 +127,21 @@ app.get('/google-test-jwks', async (_, res) => {
   }
 });
 
+/* DEBUG COOKIES */
+app.get('/debug-cookies', (req, res) => {
+  res.json({
+    cookies: req.cookies,
+    headers: {
+      cookie: req.headers.cookie ?? null,
+      origin: req.headers.origin ?? null,
+      userAgent: req.headers['user-agent'],
+    },
+  });
+});
+
+/* ERROR HANDLER */
+app.use(errorHandler);
+
 /* ERROR HANDLER */
 app.use(errorHandler);
 
