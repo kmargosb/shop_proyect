@@ -76,7 +76,7 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
       // Espera un momento para que el navegador termine de guardar las cookies
       setTimeout(() => {
         window.location.href = redirect;
-      }, 3000);
+      }, 30000);
     }
   };
 
