@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { apiFetch } from "@/shared/lib/api";
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/shared/lib/api';
 
 declare global {
   interface Window {
@@ -11,13 +11,9 @@ declare global {
   }
 }
 
-export default function GoogleLoginButton({
-  onSuccess,
-}: {
-  onSuccess?: () => void;
-}) {
+export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => void }) {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     const initGoogle = () => {
@@ -34,14 +30,11 @@ export default function GoogleLoginButton({
       }
 
       // 🔥 render SIEMPRE
-      window.google.accounts.id.renderButton(
-        document.getElementById("google-btn"),
-        {
-          theme: "outline",
-          size: "large",
-          width: 300,
-        }
-      );
+      window.google.accounts.id.renderButton(document.getElementById('google-btn'), {
+        theme: 'outline',
+        size: 'large',
+        width: 300,
+      });
     };
 
     // ya cargado
@@ -51,17 +44,15 @@ export default function GoogleLoginButton({
     }
 
     // cargar script UNA vez
-    const existing = document.querySelector(
-      'script[src="https://accounts.google.com/gsi/client"]'
-    );
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
 
     if (existing) {
       initGoogle();
       return;
     }
 
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
     script.onload = initGoogle;
@@ -72,8 +63,8 @@ export default function GoogleLoginButton({
   const handleCredentialResponse = async (response: any) => {
     const idToken = response.credential;
 
-    const res = await apiFetch("/auth/google", {
-      method: "POST",
+    const res = await apiFetch('/auth/google', {
+      method: 'POST',
       body: JSON.stringify({ idToken }),
     });
 
@@ -82,12 +73,15 @@ export default function GoogleLoginButton({
     if (onSuccess) {
       onSuccess();
     } else {
-      window.location.href = redirect;
+      // Espera un momento para que el navegador termine de guardar las cookies
+      setTimeout(() => {
+        window.location.href = redirect;
+      }, 3000);
     }
   };
 
   return (
-    <div className="h-[44px] flex items-center justify-center">
+    <div className="flex h-[44px] items-center justify-center">
       <div id="google-btn" />
     </div>
   );

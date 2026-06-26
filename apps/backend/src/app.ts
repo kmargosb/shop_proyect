@@ -150,6 +150,24 @@ app.get('/debug-auth', (req, res) => {
   });
 });
 
+app.get('/debug-headers', (_, res) => {
+  res.json({
+    frontend: process.env.FRONTEND_URL,
+    sameSite: process.env.COOKIE_SAMESITE,
+    secure: process.env.COOKIE_SECURE,
+    domain: process.env.COOKIE_DOMAIN ?? null,
+  });
+});
+app.get('/debug-config', (_, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    COOKIE_SAMESITE: process.env.COOKIE_SAMESITE,
+    COOKIE_SECURE: process.env.COOKIE_SECURE,
+    COOKIE_DOMAIN: process.env.COOKIE_DOMAIN ?? null,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+  });
+});
+
 /* ERROR HANDLER */
 app.use(errorHandler);
 
