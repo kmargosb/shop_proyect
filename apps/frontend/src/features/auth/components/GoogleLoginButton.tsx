@@ -68,16 +68,26 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
       body: JSON.stringify({ idToken }),
     });
 
-    if (!res || !res.ok) return;
+    console.log('LOGIN RESPONSE:', res?.status);
 
-    if (onSuccess) {
-      onSuccess();
-    } else {
-      // Espera un momento para que el navegador termine de guardar las cookies
-      setTimeout(() => {
-        window.location.href = redirect;
-      }, 30000);
+    if (!res || !res.ok) {
+      console.log('LOGIN FAILED');
+      return;
     }
+
+    // 🔥 COMPROBAR SI LA COOKIE YA EXISTE
+    const me = await apiFetch('/auth/me');
+
+    console.log('ME STATUS:', me?.status);
+
+    if (me?.ok) {
+      const data = await me.json();
+      console.log('ME DATA:', data);
+    } else {
+      console.log('SESSION NOT CREATED');
+    }
+
+    // 🔥 NO REDIRECCIONAR
   };
 
   return (
