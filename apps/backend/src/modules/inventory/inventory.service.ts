@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 
 const RESERVATION_TIME_MINUTES = 1;
 
@@ -7,26 +7,27 @@ export const InventoryService = {
      RESERVE STOCK (RACE CONDITION SAFE)
   ========================================================= */
 
-  async reserveStock(
-    tx: any,
-    variantId: string,
-    orderId: string,
-    quantity: number,
-  ) {
+  async reserveStock(tx: any, variantId: string, orderId: string, quantity: number) {
+    const start = Date.now();
+
+    console.log('📦 reserveStock START');
+
     const variant = await tx.productVariant.findUnique({
       where: {
         id: variantId,
       },
     });
 
+    console.log('📦 findUnique', Date.now() - start, 'ms');
+
     if (!variant) {
-      throw new Error("Variant not found");
+      throw new Error('Variant not found');
     }
 
     const availableStock = variant.stock - variant.reservedStock;
 
     if (availableStock < quantity) {
-      throw new Error("Not enough stock available");
+      throw new Error('Not enough stock available');
     }
 
     await tx.inventoryReservation.create({
@@ -38,6 +39,8 @@ export const InventoryService = {
       },
     });
 
+    console.log('📦 reservation created', Date.now() - start, 'ms');
+
     await tx.productVariant.update({
       where: {
         id: variantId,
@@ -48,6 +51,8 @@ export const InventoryService = {
         },
       },
     });
+
+    console.log('📦 stock updated', Date.now() - start, 'ms');
   },
 
   /* =========================================================
@@ -90,9 +95,7 @@ export const InventoryService = {
       const reserved = aggregate._sum.quantity ?? 0;
 
       if (reserved > reservation.variant.stock) {
-        throw new Error(
-          `Stock mismatch detected for variant ${reservation.variantId}`,
-        );
+        throw new Error(`Stock mismatch detected for variant ${reservation.variantId}`);
       }
     }
   },
@@ -108,8 +111,7 @@ export const InventoryService = {
 
     if (reservations.length === 0) return;
 
-    const { InventoryCache } =
-      await import("@/modules/inventory/inventory.cache");
+    const { InventoryCache } = await import('@/modules/inventory/inventory.cache');
 
     await prisma.$transaction(async (tx) => {
       for (const reservation of reservations) {
@@ -125,7 +127,7 @@ export const InventoryService = {
         });
 
         if (!variant || variant.reservedStock < reservation.quantity) {
-          throw new Error("Inventory inconsistency detected");
+          throw new Error('Inventory inconsistency detected');
         }
 
         await tx.productVariant.update({
@@ -145,12 +147,9 @@ export const InventoryService = {
         });
 
         try {
-          await InventoryCache.decrementStock(
-            reservation.variantId,
-            reservation.quantity,
-          );
+          await InventoryCache.decrementStock(reservation.variantId, reservation.quantity);
         } catch (error) {
-          console.error("Redis stock sync error:", error);
+          console.error('Redis stock sync error:', error);
         }
       }
 
@@ -277,6 +276,6 @@ export const InventoryService = {
       });
     }
 
-    console.log("🔧 Inventory consistency repaired");
+    console.log('🔧 Inventory consistency repaired');
   },
 };
