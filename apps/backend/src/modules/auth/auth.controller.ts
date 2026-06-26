@@ -567,14 +567,6 @@ export const googleAuthController = asyncHandler(async (req: Request, res: Respo
        🍪 SET COOKIES (CLAVE)
     ========================= */
 
-  console.log('Cookie options:', cookieOptions);
-  console.log('SameSite:', cookieSameSite);
-  console.log('Secure:', getCookieSecure(cookieSameSite));
-  console.log('Origin:', req.headers.origin);
-  console.log('Referer:', req.headers.referer);
-  console.log('Host:', req.headers.host);
-  console.log('Cookie options:', cookieOptions);
-
   res.cookie('accessToken', accessToken, {
     ...cookieOptions,
     maxAge: 2 * 60 * 60 * 1000, // 2 hours
@@ -585,16 +577,9 @@ export const googleAuthController = asyncHandler(async (req: Request, res: Respo
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
-  res.cookie('loginTest', 'ok', {
-    ...cookieOptions,
-    maxAge: 600000,
-  });
-
   /* =========================
        RESPONSE
     ========================= */
-
-  console.log('HEADERS:', res.getHeader('set-cookie'));
 
   return res.json({
     user,

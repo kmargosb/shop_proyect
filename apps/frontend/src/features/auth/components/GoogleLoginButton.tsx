@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/shared/lib/api';
 
 declare global {
   interface Window {
     google: any;
-    __googleInitialized?: boolean;
   }
 }
 
@@ -15,89 +14,109 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
 
-  useEffect(() => {
-    const initGoogle = () => {
-      if (!window.google) return;
+  const containerRef = useRef<HTMLDivElement>(null);
 
-      if (!window.__googleInitialized) {
+  const initialized = useRef(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const handleCredentialResponse = useCallback(
+    async (response: any) => {
+      if (loading) return;
+
+      setLoading(true);
+
+      try {
+        const res = await apiFetch('/auth/google', {
+          method: 'POST',
+          body: JSON.stringify({
+            idToken: response.credential,
+          }),
+        });
+
+        if (!res || !res.ok) {
+          setLoading(false);
+          return;
+        }
+
+        if (onSuccess) {
+          onSuccess();
+          return;
+        }
+
+        window.location.replace(redirect);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    },
+    [loading, onSuccess, redirect],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const waitForGoogle = () => {
+      if (cancelled) return;
+
+      if (!window.google?.accounts?.id) {
+        setTimeout(waitForGoogle, 100);
+        return;
+      }
+
+      if (!containerRef.current) {
+        setTimeout(waitForGoogle, 100);
+        return;
+      }
+
+      if (!initialized.current) {
         window.google.accounts.id.initialize({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
           callback: handleCredentialResponse,
         });
 
-        window.__googleInitialized = true;
+        initialized.current = true;
       }
 
-      window.google.accounts.id.renderButton(document.getElementById('google-btn'), {
+      containerRef.current.innerHTML = '';
+
+      window.google.accounts.id.renderButton(containerRef.current, {
         theme: 'outline',
         size: 'large',
         width: 300,
       });
     };
 
-    if (window.google?.accounts?.id) {
-      initGoogle();
-      return;
+    const script = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+
+    if (!script) {
+      const s = document.createElement('script');
+
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+
+      s.onload = waitForGoogle;
+
+      document.body.appendChild(s);
+    } else {
+      waitForGoogle();
     }
 
-    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-
-    if (existing) {
-      initGoogle();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = initGoogle;
-
-    document.body.appendChild(script);
-  }, []);
-
-  const handleCredentialResponse = async (response: any) => {
-    const idToken = response.credential;
-
-    const res = await apiFetch('/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ idToken }),
-    });
-
-    if (!res) {
-      alert('LOGIN: apiFetch devolvió null');
-      return;
-    }
-
-    alert(`LOGIN STATUS: ${res.status}`);
-
-    if (!res.ok) {
-      alert('LOGIN FAILED');
-      return;
-    }
-
-    // 🔥 IMPORTANTE: usar fetch nativo, NO apiFetch
-    try {
-      const me = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      alert(`ME FETCH STATUS: ${me.status}`);
-
-      const text = await me.text();
-
-      alert(text);
-
-      // ⚠️ NO REDIRECCIONAR
-    } catch (err: any) {
-      alert(`FETCH ERROR: ${err?.message ?? 'Unknown error'}`);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [handleCredentialResponse]);
 
   return (
     <div className="flex h-[44px] items-center justify-center">
-      <div id="google-btn" />
+      {loading ? (
+        <div className="flex h-[44px] w-[300px] items-center justify-center rounded-md border border-white/10 bg-neutral-900 text-sm text-neutral-400">
+          Iniciando sesión...
+        </div>
+      ) : (
+        <div ref={containerRef} id="google-btn" />
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@
     "build": "tsc && tsc-alias",
     "start": "node -r module-alias/register dist/src/server.js",
     "test": "jest",
+    "create:admin": "ts-node -r tsconfig-paths/register src/scripts/createAdmin.ts",
     "test:watch": "vitest",
     "reset:orders": "ts-node -r tsconfig-paths/register src/scripts/resetOrders.ts",
     "clear:db": "ts-node -r tsconfig-paths/register src/scripts/clearDatabase.ts",

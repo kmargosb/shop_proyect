@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import GoogleLoginButton from '@/features/auth/components/GoogleLoginButton';
 import { apiFetch } from '@/shared/lib/api';
@@ -20,6 +20,18 @@ function LoginContent() {
   ========================= */
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const res = await apiFetch('/auth/me');
+
+      if (res?.ok) {
+        window.location.replace(redirect);
+      }
+    };
+
+    checkSession();
+  }, [redirect]);
 
   /* =========================
      EMAIL LOGIN
@@ -54,7 +66,7 @@ function LoginContent() {
     /* =========================
        🔥 REDIRECT + REFRESH APP
     ========================= */
-    window.location.href = redirect;
+    window.location.replace(redirect);
   };
 
   return (
@@ -195,7 +207,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div>Cargando...</div>}>
       <LoginContent />
     </Suspense>
   );

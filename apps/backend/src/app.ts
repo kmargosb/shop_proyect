@@ -6,8 +6,6 @@ import productRoutes from './modules/products/product.routes';
 import orderRoutes from './modules/orders/order.routes';
 import invoiceRoutes from '@/modules/invoices/invoice.routes';
 import paymentRouter from './modules/payment/payment.router';
-import { stripeWebhook } from './modules/payment/webhook.controller';
-import { errorHandler } from './common/middleware/error.middleware';
 import refundRoutes from './modules/refunds/refund.routes';
 import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 import customerRoutes from '@/modules/customers/customer.routes';
@@ -18,9 +16,11 @@ import couponRoutes from '@/modules/coupon/coupon.routes';
 import cartRoutes from '@/modules/cart/cart.routes';
 import checkoutRoutes from '@/modules/checkout/checkout.routes';
 import brandRoutes from '@/modules/brands/brands.routes';
-import { allowedOrigins } from '@/config/origins';
 import wishlistRoutes from '@/modules/wishlist/wishlist.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
+import { stripeWebhook } from './modules/payment/webhook.controller';
+import { errorHandler } from './common/middleware/error.middleware';
+import { allowedOrigins } from '@/config/origins';
 
 const app = express();
 
@@ -31,7 +31,20 @@ app.post('/api/payments/webhook', stripeWebhook);
 /* GLOBAL MIDDLEWARE */
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      // Peticiones sin Origin (Postman, health checks, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.error(`❌ CORS blocked: ${origin}`);
+
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   }),
 );
@@ -66,113 +79,6 @@ app.use('/checkout', checkoutRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
-
-/* TEST GOOGLE CERTS */
-app.get('/google-test', async (_, res) => {
-  try {
-    const urls = [
-      'https://www.googleapis.com/oauth2/v1/certs',
-      'https://www.googleapis.com/oauth2/v3/certs',
-      'https://accounts.google.com/.well-known/openid-configuration',
-    ];
-
-    const results = [];
-
-    for (const url of urls) {
-      try {
-        const r = await fetch(url);
-
-        const body = await r.text();
-
-        results.push({
-          url,
-          status: r.status,
-          body: body.substring(0, 200),
-        });
-      } catch (e) {
-        results.push({
-          url,
-          error: String(e),
-        });
-      }
-    }
-
-    res.json(results);
-  } catch (e) {
-    res.status(500).json({
-      error: String(e),
-    });
-  }
-});
-
-app.get('/google-test-jwks', async (_, res) => {
-  try {
-    const openid = await fetch('https://accounts.google.com/.well-known/openid-configuration');
-
-    const config = await openid.json();
-
-    const jwks = await fetch(config.jwks_uri);
-
-    const text = await jwks.text();
-
-    res.json({
-      jwks_uri: config.jwks_uri,
-      status: jwks.status,
-      body: text.substring(0, 300),
-    });
-  } catch (e) {
-    res.status(500).json({
-      error: String(e),
-    });
-  }
-});
-
-/* DEBUG COOKIES */
-app.get('/debug-auth', (req, res) => {
-  res.json({
-    cookies: req.cookies,
-    accessToken: !!req.cookies.accessToken,
-    refreshToken: !!req.cookies.refreshToken,
-    origin: req.headers.origin,
-    referer: req.headers.referer,
-    userAgent: req.headers['user-agent'],
-  });
-});
-
-app.get('/test-cookie', (req, res) => {
-  res.cookie('testCookie', '123456', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    path: '/',
-  });
-
-  res.json({
-    ok: true,
-  });
-});
-
-app.get('/read-test-cookie', (req, res) => {
-  res.json({
-    cookies: req.cookies,
-  });
-});
-
-app.post('/test-login-cookie', (req, res) => {
-  console.log('🔥 TEST LOGIN COOKIE CALLED');
-
-  res.cookie('loginTest', 'ok', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    path: '/',
-  });
-
-  res.json({ ok: true });
-});
-
-/* ERROR HANDLER */
-app.use(errorHandler);
 
 /* ERROR HANDLER */
 app.use(errorHandler);
