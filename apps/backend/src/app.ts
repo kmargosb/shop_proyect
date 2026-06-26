@@ -168,6 +168,25 @@ app.get('/debug-config', (_, res) => {
   });
 });
 
+app.get('/test-cookie', (req, res) => {
+  res.cookie('testCookie', '123456', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+  });
+
+  res.json({
+    ok: true,
+  });
+});
+
+app.get('/read-test-cookie', (req, res) => {
+  res.json({
+    cookies: req.cookies,
+  });
+});
+
 /* ERROR HANDLER */
 app.use(errorHandler);
 
