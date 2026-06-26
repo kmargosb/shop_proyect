@@ -256,59 +256,63 @@ export async function getRelatedProducts(productId: string) {
 =============================== */
 
 export async function createProduct(data: any, files: Express.Multer.File[]) {
-  return prisma.$transaction(async (tx) => {
-    const variants = typeof data.variants === 'string' ? JSON.parse(data.variants) : data.variants;
+  const variants = typeof data.variants === 'string' ? JSON.parse(data.variants) : data.variants;
 
-    const product = await tx.product.create({
+  /* =========================
+     CREATE PRODUCT + VARIANTS
+  ========================= */
+
+  const product = await prisma.$transaction(async (tx) => {
+    const created = await tx.product.create({
       data: {
         name: data.name,
-
         description: data.description,
-
         price: Number(data.price),
-
         gender: data.gender,
-
         brandId: data.brandId || null,
-
         category: data.category,
       },
     });
 
-    /* VARIANTS */
-
     if (variants?.length) {
       await tx.productVariant.createMany({
         data: variants.map((variant: any) => ({
-          productId: product.id,
-
+          productId: created.id,
           size: variant.size,
-
           color: variant.color,
-
           stock: Number(variant.stock),
         })),
       });
     }
 
-    /* IMAGES */
+    return created;
+  });
 
-    if (files?.length) {
-      const images = await uploadImages(files, product.id, true);
+  /* =========================
+     UPLOAD IMAGES
+     (OUTSIDE TRANSACTION)
+  ========================= */
 
-      await tx.productImage.createMany({
-        data: images,
-      });
-    }
+  if (files?.length) {
+    const images = await uploadImages(files, product.id, true);
 
-    return tx.product.findUnique({
-      where: { id: product.id },
-
-      include: {
-        images: true,
-        variants: true,
-      },
+    await prisma.productImage.createMany({
+      data: images,
     });
+  }
+
+  /* =========================
+     RETURN COMPLETE PRODUCT
+  ========================= */
+
+  return prisma.product.findUnique({
+    where: {
+      id: product.id,
+    },
+    include: {
+      images: true,
+      variants: true,
+    },
   });
 }
 
