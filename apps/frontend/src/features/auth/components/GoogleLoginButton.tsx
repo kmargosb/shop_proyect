@@ -11,8 +11,8 @@ declare global {
 }
 
 type GoogleLoginButtonProps = {
-  loading: boolean;
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  loading?: boolean;
+  setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   onSuccess?: () => void;
 };
 
@@ -31,7 +31,7 @@ export default function GoogleLoginButton({
     async (response: any) => {
       if (loading) return;
 
-      setLoading(true);
+      setLoading?.(true);
 
       try {
         const res = await apiFetch('/auth/google', {
@@ -42,7 +42,7 @@ export default function GoogleLoginButton({
         });
 
         if (!res || !res.ok) {
-          setLoading(false);
+          setLoading?.(false);
           return;
         }
 
@@ -54,7 +54,7 @@ export default function GoogleLoginButton({
         window.location.replace(redirect);
       } catch (err) {
         console.error(err);
-        setLoading(false);
+        setLoading?.(false);
       }
     },
     [loading, onSuccess, redirect, setLoading],
