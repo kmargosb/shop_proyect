@@ -128,17 +128,6 @@ app.get('/google-test-jwks', async (_, res) => {
 });
 
 /* DEBUG COOKIES */
-app.get('/debug-cookies', (req, res) => {
-  res.json({
-    cookies: req.cookies,
-    headers: {
-      cookie: req.headers.cookie ?? null,
-      origin: req.headers.origin ?? null,
-      userAgent: req.headers['user-agent'],
-    },
-  });
-});
-
 app.get('/debug-auth', (req, res) => {
   res.json({
     cookies: req.cookies,
@@ -147,24 +136,6 @@ app.get('/debug-auth', (req, res) => {
     origin: req.headers.origin,
     referer: req.headers.referer,
     userAgent: req.headers['user-agent'],
-  });
-});
-
-app.get('/debug-headers', (_, res) => {
-  res.json({
-    frontend: process.env.FRONTEND_URL,
-    sameSite: process.env.COOKIE_SAMESITE,
-    secure: process.env.COOKIE_SECURE,
-    domain: process.env.COOKIE_DOMAIN ?? null,
-  });
-});
-app.get('/debug-config', (_, res) => {
-  res.json({
-    NODE_ENV: process.env.NODE_ENV,
-    COOKIE_SAMESITE: process.env.COOKIE_SAMESITE,
-    COOKIE_SECURE: process.env.COOKIE_SECURE,
-    COOKIE_DOMAIN: process.env.COOKIE_DOMAIN ?? null,
-    FRONTEND_URL: process.env.FRONTEND_URL,
   });
 });
 
@@ -185,6 +156,17 @@ app.get('/read-test-cookie', (req, res) => {
   res.json({
     cookies: req.cookies,
   });
+});
+
+app.post('/test-login-cookie', (req, res) => {
+  res.cookie('loginTest', 'ok', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+  });
+
+  res.json({ ok: true });
 });
 
 /* ERROR HANDLER */
