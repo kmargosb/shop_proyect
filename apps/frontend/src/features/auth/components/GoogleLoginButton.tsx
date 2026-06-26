@@ -76,26 +76,23 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
       return;
     }
 
-    // 🔥 Comprobar si la sesión existe inmediatamente
-    const me = await apiFetch('/auth/me');
+    // 🔥 IMPORTANTE: usar fetch nativo, NO apiFetch
+    try {
+      const me = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        method: 'GET',
+        credentials: 'include',
+      });
 
-    if (!me) {
-      alert('ME: apiFetch devolvió null');
-      return;
+      alert(`ME FETCH STATUS: ${me.status}`);
+
+      const text = await me.text();
+
+      alert(text);
+
+      // ⚠️ NO REDIRECCIONAR
+    } catch (err: any) {
+      alert(`FETCH ERROR: ${err?.message ?? 'Unknown error'}`);
     }
-
-    alert(`ME STATUS: ${me.status}`);
-
-    if (me.ok) {
-      const data = await me.json();
-
-      alert(`SESSION OK\n\nUsuario: ${data.user?.email ?? 'sin email'}`);
-
-      // ⚠️ NO REDIRECCIONAR TODAVÍA
-      return;
-    }
-
-    alert('SESSION NOT CREATED');
   };
 
   return (
