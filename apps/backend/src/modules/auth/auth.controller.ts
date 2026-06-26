@@ -585,9 +585,16 @@ export const googleAuthController = asyncHandler(async (req: Request, res: Respo
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
+  res.cookie('loginTest', 'ok', {
+    ...cookieOptions,
+    maxAge: 600000,
+  });
+
   /* =========================
        RESPONSE
     ========================= */
+
+  console.log('HEADERS:', res.getHeader('set-cookie'));
 
   return res.json({
     user,
