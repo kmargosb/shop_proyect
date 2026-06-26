@@ -19,7 +19,6 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
     const initGoogle = () => {
       if (!window.google) return;
 
-      // 🔥 INIT SOLO UNA VEZ
       if (!window.__googleInitialized) {
         window.google.accounts.id.initialize({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
@@ -29,7 +28,6 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
         window.__googleInitialized = true;
       }
 
-      // 🔥 render SIEMPRE
       window.google.accounts.id.renderButton(document.getElementById('google-btn'), {
         theme: 'outline',
         size: 'large',
@@ -37,13 +35,11 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
       });
     };
 
-    // ya cargado
     if (window.google?.accounts?.id) {
       initGoogle();
       return;
     }
 
-    // cargar script UNA vez
     const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
 
     if (existing) {
@@ -68,26 +64,38 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
       body: JSON.stringify({ idToken }),
     });
 
-    console.log('LOGIN RESPONSE:', res?.status);
-
-    if (!res || !res.ok) {
-      console.log('LOGIN FAILED');
+    if (!res) {
+      alert('LOGIN: apiFetch devolvió null');
       return;
     }
 
-    // 🔥 COMPROBAR SI LA COOKIE YA EXISTE
-    const me = await apiFetch('/auth/me');
+    alert(`LOGIN STATUS: ${res.status}`);
 
-    console.log('ME STATUS:', me?.status);
-
-    if (me?.ok) {
-      const data = await me.json();
-      console.log('ME DATA:', data);
-    } else {
-      console.log('SESSION NOT CREATED');
+    if (!res.ok) {
+      alert('LOGIN FAILED');
+      return;
     }
 
-    // 🔥 NO REDIRECCIONAR
+    // 🔥 Comprobar si la sesión existe inmediatamente
+    const me = await apiFetch('/auth/me');
+
+    if (!me) {
+      alert('ME: apiFetch devolvió null');
+      return;
+    }
+
+    alert(`ME STATUS: ${me.status}`);
+
+    if (me.ok) {
+      const data = await me.json();
+
+      alert(`SESSION OK\n\nUsuario: ${data.user?.email ?? 'sin email'}`);
+
+      // ⚠️ NO REDIRECCIONAR TODAVÍA
+      return;
+    }
+
+    alert('SESSION NOT CREATED');
   };
 
   return (
