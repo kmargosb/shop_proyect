@@ -5,12 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import GoogleLoginButton from '@/features/auth/components/GoogleLoginButton';
 import { apiFetch } from '@/shared/lib/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import LoadingOverlay from '@/components/loader/LoadingOverlay';
 
 function LoginContent() {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { t } = useLanguage();
@@ -23,10 +25,15 @@ function LoginContent() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const res = await apiFetch('/auth/me');
+      try {
+        const res = await apiFetch('/auth/me');
 
-      if (res?.ok) {
-        window.location.replace(redirect);
+        if (res?.ok) {
+          window.location.replace(redirect);
+          return;
+        }
+      } finally {
+        setCheckingSession(false);
       }
     };
 
@@ -69,8 +76,17 @@ function LoginContent() {
     window.location.replace(redirect);
   };
 
+  if (checkingSession) {
+    return <LoadingOverlay open text="Comprobando sesión..." />;
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] px-6 text-white">
+      <LoadingOverlay
+        open={loading}
+        text={mode === 'login' ? t.auth.signingIn : t.auth.creatingAccount}
+      />
+
       <div className="w-full max-w-md space-y-8 text-center">
         <h1 className="text-3xl font-semibold">
           {showEmailLogin
@@ -89,7 +105,7 @@ function LoginContent() {
         </p>
 
         {/* GOOGLE LOGIN */}
-        {!showEmailLogin && <GoogleLoginButton />}
+        {!showEmailLogin && <GoogleLoginButton loading={loading} setLoading={setLoading} />}
 
         {/* DIVIDER */}
         {!showEmailLogin && (
@@ -135,7 +151,10 @@ function LoginContent() {
             {mode === 'login' && (
               <div className="flex justify-end">
                 <a
-                  href="/login/forgot-password"
+                  href={loading ? '#' : '/login/forgot-password'}
+                  onClick={(e) => {
+                    if (loading) e.preventDefault();
+                  }}
                   className="text-xs text-neutral-400 hover:text-white"
                 >
                   {t.auth.forgotPassword}

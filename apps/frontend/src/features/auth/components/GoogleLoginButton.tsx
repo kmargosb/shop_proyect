@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/shared/lib/api';
 
@@ -10,15 +10,22 @@ declare global {
   }
 }
 
-export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => void }) {
+type GoogleLoginButtonProps = {
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  onSuccess?: () => void;
+};
+
+export default function GoogleLoginButton({
+  loading,
+  setLoading,
+  onSuccess,
+}: GoogleLoginButtonProps) {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
 
   const containerRef = useRef<HTMLDivElement>(null);
-
   const initialized = useRef(false);
-
-  const [loading, setLoading] = useState(false);
 
   const handleCredentialResponse = useCallback(
     async (response: any) => {
@@ -50,22 +57,22 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
         setLoading(false);
       }
     },
-    [loading, onSuccess, redirect],
+    [loading, onSuccess, redirect, setLoading],
   );
 
   useEffect(() => {
     let cancelled = false;
 
-    const waitForGoogle = () => {
+    const renderButton = () => {
       if (cancelled) return;
 
       if (!window.google?.accounts?.id) {
-        setTimeout(waitForGoogle, 100);
+        setTimeout(renderButton, 100);
         return;
       }
 
       if (!containerRef.current) {
-        setTimeout(waitForGoogle, 100);
+        setTimeout(renderButton, 100);
         return;
       }
 
@@ -87,20 +94,19 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
       });
     };
 
-    const script = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
 
-    if (!script) {
-      const s = document.createElement('script');
+    if (!existing) {
+      const script = document.createElement('script');
 
-      s.src = 'https://accounts.google.com/gsi/client';
-      s.async = true;
-      s.defer = true;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = renderButton;
 
-      s.onload = waitForGoogle;
-
-      document.body.appendChild(s);
+      document.body.appendChild(script);
     } else {
-      waitForGoogle();
+      renderButton();
     }
 
     return () => {
@@ -110,13 +116,7 @@ export default function GoogleLoginButton({ onSuccess }: { onSuccess?: () => voi
 
   return (
     <div className="flex h-[44px] items-center justify-center">
-      {loading ? (
-        <div className="flex h-[44px] w-[300px] items-center justify-center rounded-md border border-white/10 bg-neutral-900 text-sm text-neutral-400">
-          Iniciando sesión...
-        </div>
-      ) : (
-        <div ref={containerRef} id="google-btn" />
-      )}
+      <div ref={containerRef} />
     </div>
   );
 }
