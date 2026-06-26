@@ -340,60 +340,63 @@ export const CartService = {
   async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
     await this.validateCart(cartId);
 
-    return prisma.$transaction(async (tx) => {
-      const cart = await tx.cart.findUnique({
-        where: { id: cartId },
-        include: CART_INCLUDE,
-      });
-
-      if (!cart) {
-        throw new Error('Cart not found');
-      }
-
-      if (cart.status !== 'ACTIVE') {
-        throw new Error('Cart already converted');
-      }
-
-      if (cart.expiresAt < new Date()) {
-        throw new Error('Cart expired');
-      }
-
-      if (cart.items.length === 0) {
-        throw new Error('Cart empty');
-      }
-
-      const { createOrderTx } = await import('@/modules/orders/order.service');
-
-      /* create order */
-
-      const order = await createOrderTx(tx, {
-        userId: checkoutData.userId ?? undefined,
-        ...checkoutData,
-
-        items: cart.items.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId ?? undefined,
-          quantity: item.quantity,
-        })),
-      });
-
-      /* mark cart converted */
-
-      await tx.cart.update({
-        where: { id: cartId },
-        data: {
-          status: 'CONVERTED',
-        },
-      });
-
-      /* cleanup items */
-
-      await tx.cartItem.deleteMany({
-        where: { cartId },
-      });
-
-      return order;
+    const cart = await prisma.cart.findUnique({
+      where: { id: cartId },
+      include: CART_INCLUDE,
     });
+
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    if (cart.status !== 'ACTIVE') {
+      throw new Error('Cart already converted');
+    }
+
+    if (cart.expiresAt < new Date()) {
+      throw new Error('Cart expired');
+    }
+
+    if (cart.items.length === 0) {
+      throw new Error('Cart empty');
+    }
+
+    const { createOrder } = await import('@/modules/orders/order.service');
+
+    /* =========================
+     CREATE ORDER
+  ========================= */
+
+    const order = await createOrder({
+      userId: checkoutData.userId ?? undefined,
+      ...checkoutData,
+      items: cart.items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId ?? undefined,
+        quantity: item.quantity,
+      })),
+    });
+
+    /* =========================
+     MARK CART CONVERTED
+  ========================= */
+
+    await prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        status: 'CONVERTED',
+      },
+    });
+
+    /* =========================
+     CLEANUP CART
+  ========================= */
+
+    await prisma.cartItem.deleteMany({
+      where: { cartId },
+    });
+
+    return order;
   },
 
   /* =========================================================
