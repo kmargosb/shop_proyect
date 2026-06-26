@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
-import { getIO } from "@/lib/socket";
-import { Prisma, OrderStatus } from "@prisma/client";
-import { RefundService } from "@/modules/refunds/refund.service";
-import Stripe from "stripe";
+import { prisma } from '@/lib/prisma';
+import { getIO } from '@/lib/socket';
+import { Prisma, OrderStatus } from '@prisma/client';
+import { RefundService } from '@/modules/refunds/refund.service';
+import Stripe from 'stripe';
 
 type CreateOrderInput = {
   userId?: string;
@@ -24,14 +24,13 @@ type CreateOrderInput = {
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-02-25.clover",
+  apiVersion: '2026-02-25.clover',
 });
 
 /* =========================================================
    CREATE ORDER
 ========================================================= */
-
-export async function createOrder(data: CreateOrderInput) {
+export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOrderInput) {
   const {
     userId,
     items,
@@ -46,160 +45,158 @@ export async function createOrder(data: CreateOrderInput) {
   } = data;
 
   if (!items || items.length === 0) {
-    throw new Error("La orden debe contener productos");
+    throw new Error('La orden debe contener productos');
   }
 
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    let totalAmount = 0;
+  let totalAmount = 0;
 
-    const orderItemsData: {
-      productId: string;
-      variantId?: string;
+  const orderItemsData: {
+    productId: string;
+    variantId?: string;
 
-      productName: string;
-      productSku?: string | null;
+    productName: string;
+    productSku?: string | null;
 
-      size?: any;
-      color?: any;
+    size?: any;
+    color?: any;
 
-      quantity: number;
-      price: number;
-    }[] = [];
+    quantity: number;
+    price: number;
+  }[] = [];
 
-    /* =========================
+  /* =========================
        VALIDATE STOCK
     ========================= */
 
-    for (const item of items) {
-      const variant = await tx.productVariant.findUnique({
-        where: {
-          id: item.variantId,
-        },
-        include: {
-          product: true,
-        },
-      });
+  for (const item of items) {
+    const variant = await tx.productVariant.findUnique({
+      where: {
+        id: item.variantId,
+      },
+      include: {
+        product: true,
+      },
+    });
 
-      if (!variant) {
-        throw new Error("Variante no encontrada");
-      }
-
-      const availableStock = variant.stock - variant.reservedStock;
-
-      if (item.quantity > availableStock) {
-        throw new Error(`Stock insuficiente para ${variant.product.name}`);
-      }
-
-      totalAmount += variant.product.price * item.quantity;
-
-      orderItemsData.push({
-        productId: variant.product.id,
-        variantId: variant.id,
-
-        productName: variant.product.name,
-        productSku: variant.sku ?? null,
-
-        size: variant.size,
-        color: variant.color,
-
-        quantity: item.quantity,
-        price: variant.product.price,
-      });
+    if (!variant) {
+      throw new Error('Variante no encontrada');
     }
 
-    /* =========================
+    const availableStock = variant.stock - variant.reservedStock;
+
+    if (item.quantity > availableStock) {
+      throw new Error(`Stock insuficiente para ${variant.product.name}`);
+    }
+
+    totalAmount += variant.product.price * item.quantity;
+
+    orderItemsData.push({
+      productId: variant.product.id,
+      variantId: variant.id,
+
+      productName: variant.product.name,
+      productSku: variant.sku ?? null,
+
+      size: variant.size,
+      color: variant.color,
+
+      quantity: item.quantity,
+      price: variant.product.price,
+    });
+  }
+
+  /* =========================
        CREATE ORDER
     ========================= */
 
-    const order = await tx.order.create({
-      data: {
-        userId: userId ?? null,
-        fullName,
-        email,
-        phone,
-        addressLine1,
-        addressLine2,
-        city,
-        postalCode,
-        country,
-        totalAmount,
-        currency: "eur",
-        status: OrderStatus.PENDING,
-        items: {
-          create: orderItemsData,
-        },
+  const order = await tx.order.create({
+    data: {
+      userId: userId ?? null,
+      fullName,
+      email,
+      phone,
+      addressLine1,
+      addressLine2,
+      city,
+      postalCode,
+      country,
+      totalAmount,
+      currency: 'eur',
+      status: OrderStatus.PENDING,
+      items: {
+        create: orderItemsData,
       },
-      include: {
-        items: true,
-      },
-    });
+    },
+    include: {
+      items: true,
+    },
+  });
 
-    const normalize = (str?: string) => str?.trim().toLowerCase();
+  const normalize = (str?: string) => str?.trim().toLowerCase();
 
-    /* =========================
+  /* =========================
    SAVE ADDRESS (AUTO)
    ========================= */
 
-    if (userId) {
-      const existing = await tx.address.findFirst({
-        where: {
-          userId,
-          addressLine1: normalize(addressLine1),
-          city: normalize(city),
-          postalCode: normalize(postalCode),
-          country,
-        },
-      });
-
-      if (!existing) {
-        await tx.address.create({
-          data: {
-            userId,
-            fullName,
-            phone,
-            addressLine1: normalize(addressLine1) || "",
-            addressLine2,
-            city: normalize(city) || "",
-            postalCode: normalize(postalCode) || "",
-            country,
-          },
-        });
-      }
-    }
-
-    /* =========================
-       RESERVE INVENTORY
-    ========================= */
-
-    const { InventoryService } =
-      await import("@/modules/inventory/inventory.service");
-
-    for (const item of order.items) {
-      if (!item.variantId) {
-        throw new Error("Order item sin variantId");
-      }
-
-      await InventoryService.reserveStock(
-        tx,
-        item.variantId,
-        order.id,
-        item.quantity,
-      );
-    }
-
-    /* =========================
-       ORDER TIMELINE
-    ========================= */
-
-    await tx.orderEvent.create({
-      data: {
-        orderId: order.id,
-        type: "ORDER_CREATED",
-        message: "Order created",
+  if (userId) {
+    const existing = await tx.address.findFirst({
+      where: {
+        userId,
+        addressLine1: normalize(addressLine1),
+        city: normalize(city),
+        postalCode: normalize(postalCode),
+        country,
       },
     });
 
-    return order;
+    if (!existing) {
+      await tx.address.create({
+        data: {
+          userId,
+          fullName,
+          phone,
+          addressLine1: normalize(addressLine1) || '',
+          addressLine2,
+          city: normalize(city) || '',
+          postalCode: normalize(postalCode) || '',
+          country,
+        },
+      });
+    }
+  }
+
+  /* =========================
+       RESERVE INVENTORY
+    ========================= */
+
+  const { InventoryService } = await import('@/modules/inventory/inventory.service');
+
+  for (const item of order.items) {
+    if (!item.variantId) {
+      throw new Error('Order item sin variantId');
+    }
+
+    await InventoryService.reserveStock(tx, item.variantId, order.id, item.quantity);
+  }
+
+  /* =========================
+       ORDER TIMELINE
+    ========================= */
+
+  await tx.orderEvent.create({
+    data: {
+      orderId: order.id,
+      type: 'ORDER_CREATED',
+      message: 'Order created',
+    },
+  });
+
+  return order;
+}
+
+export async function createOrder(data: CreateOrderInput) {
+  return prisma.$transaction(async (tx) => {
+    return createOrderTx(tx, data);
   });
 }
 
@@ -207,11 +204,7 @@ export async function createOrder(data: CreateOrderInput) {
    GET ORDERS (ADMIN)
 ========================================================= */
 
-export async function getOrders(params: {
-  page?: number;
-  limit?: number;
-  status?: string;
-}) {
+export async function getOrders(params: { page?: number; limit?: number; status?: string }) {
   const page = params.page ?? 1;
   const limit = params.limit ?? 10;
   const skip = (page - 1) * limit;
@@ -251,7 +244,7 @@ export async function getOrders(params: {
         transactions: true,
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
       skip,
       take: limit,
@@ -275,10 +268,7 @@ export async function getOrders(params: {
    UPDATE ORDER STATUS
 ========================================================= */
 
-export async function updateOrderStatus(
-  orderId: string,
-  newStatus: OrderStatus,
-) {
+export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -289,23 +279,23 @@ export async function updateOrderStatus(
     });
 
     if (!order) {
-      throw new Error("Orden no encontrada");
+      throw new Error('Orden no encontrada');
     }
 
     const currentStatus = order.status;
 
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      PENDING: ["PAYMENT_PROCESSING", "PAID", "CANCELLED"],
+      PENDING: ['PAYMENT_PROCESSING', 'PAID', 'CANCELLED'],
 
-      PAYMENT_PROCESSING: ["PAID", "FAILED", "CANCELLED"],
+      PAYMENT_PROCESSING: ['PAID', 'FAILED', 'CANCELLED'],
 
-      PAID: ["SHIPPED", "PARTIALLY_REFUNDED", "REFUNDED", "CANCELLED"],
+      PAID: ['SHIPPED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CANCELLED'],
 
-      PARTIALLY_REFUNDED: ["REFUNDED"],
+      PARTIALLY_REFUNDED: ['REFUNDED'],
 
-      FAILED: ["PAYMENT_PROCESSING", "CANCELLED"],
+      FAILED: ['PAYMENT_PROCESSING', 'CANCELLED'],
 
-      SHIPPED: ["DELIVERED"],
+      SHIPPED: ['DELIVERED'],
 
       DELIVERED: [],
 
@@ -315,9 +305,7 @@ export async function updateOrderStatus(
     };
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
-      throw new Error(
-        `No se puede cambiar estado de ${currentStatus} a ${newStatus}`,
-      );
+      throw new Error(`No se puede cambiar estado de ${currentStatus} a ${newStatus}`);
     }
 
     /* =========================
@@ -337,11 +325,11 @@ export async function updateOrderStatus(
       data: {
         orderId: order.id,
         type:
-          newStatus === "SHIPPED"
-            ? "ORDER_SHIPPED"
-            : newStatus === "CANCELLED"
-              ? "ORDER_CANCELLED"
-              : "ORDER_UPDATED",
+          newStatus === 'SHIPPED'
+            ? 'ORDER_SHIPPED'
+            : newStatus === 'CANCELLED'
+              ? 'ORDER_CANCELLED'
+              : 'ORDER_UPDATED',
         message: `Order status changed to ${newStatus}`,
       },
     });
@@ -350,12 +338,10 @@ export async function updateOrderStatus(
        INVOICE + EMAIL
     ========================= */
 
-    if (newStatus === "PAID" && !order.invoice) {
-      const { createInvoiceFromOrder } =
-        await import("@/modules/invoices/invoice.service");
+    if (newStatus === 'PAID' && !order.invoice) {
+      const { createInvoiceFromOrder } = await import('@/modules/invoices/invoice.service');
 
-      const { sendOrderConfirmationEmail } =
-        await import("@/modules/email/sendOrderEmail");
+      const { sendOrderConfirmationEmail } = await import('@/modules/email/sendOrderEmail');
 
       await createInvoiceFromOrder(orderId);
 
@@ -388,23 +374,23 @@ export async function cancelOrder(orderId: string, reason?: string) {
   });
 
   if (!order) {
-    throw new Error("Order not found");
+    throw new Error('Order not found');
   }
 
   /* =========================
      BLOCK SHIPPED
   ========================= */
 
-  if (order.status === "SHIPPED") {
-    throw new Error("Shipped orders cannot be cancelled");
+  if (order.status === 'SHIPPED') {
+    throw new Error('Shipped orders cannot be cancelled');
   }
 
   /* =========================
      ALREADY CANCELLED
   ========================= */
 
-  if (order.status === "CANCELLED" || order.status === "REFUNDED") {
-    throw new Error("Order already cancelled");
+  if (order.status === 'CANCELLED' || order.status === 'REFUNDED') {
+    throw new Error('Order already cancelled');
   }
 
   /* =========================
@@ -412,12 +398,11 @@ export async function cancelOrder(orderId: string, reason?: string) {
   ========================= */
 
   if (
-    order.status === "PENDING" ||
-    order.status === "PAYMENT_PROCESSING" ||
-    order.status === "FAILED"
+    order.status === 'PENDING' ||
+    order.status === 'PAYMENT_PROCESSING' ||
+    order.status === 'FAILED'
   ) {
-    const { InventoryService } =
-      await import("@/modules/inventory/inventory.service");
+    const { InventoryService } = await import('@/modules/inventory/inventory.service');
 
     await InventoryService.releaseReservation(order.id);
 
@@ -425,7 +410,7 @@ export async function cancelOrder(orderId: string, reason?: string) {
       where: { id: order.id },
 
       data: {
-        status: "CANCELLED",
+        status: 'CANCELLED',
       },
     });
 
@@ -433,11 +418,11 @@ export async function cancelOrder(orderId: string, reason?: string) {
       data: {
         orderId: order.id,
 
-        type: "ORDER_CANCELLED",
+        type: 'ORDER_CANCELLED',
 
         message: reason
           ? `Order cancelled before payment (${reason})`
-          : "Order cancelled before payment",
+          : 'Order cancelled before payment',
       },
     });
 
@@ -448,7 +433,7 @@ export async function cancelOrder(orderId: string, reason?: string) {
      PAID → FULL REFUND
   ========================= */
 
-  if (order.status === "PAID") {
+  if (order.status === 'PAID') {
     const refund = await RefundService.createRefund(
       order.id,
 
@@ -457,7 +442,7 @@ export async function cancelOrder(orderId: string, reason?: string) {
         quantity: item.quantity,
       })),
 
-      "ORDER_CANCELLED",
+      'ORDER_CANCELLED',
 
       reason,
     );
@@ -487,15 +472,15 @@ export async function cancelOrder(orderId: string, reason?: string) {
     await prisma.orderEvent.create({
       data: {
         orderId: order.id,
-        type: "ORDER_CANCELLED",
+        type: 'ORDER_CANCELLED',
         message: reason
           ? `Order cancelled and refunded (${reason})`
-          : "Order cancelled and refunded",
+          : 'Order cancelled and refunded',
       },
     });
     return;
   }
-  throw new Error("Order cannot be cancelled");
+  throw new Error('Order cannot be cancelled');
 }
 
 /* =========================================================
@@ -523,21 +508,21 @@ export async function searchOrders(params: {
       {
         id: {
           contains: params.query,
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       },
 
       {
         email: {
           contains: params.query,
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       },
 
       {
         fullName: {
           contains: params.query,
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       },
     ];
@@ -554,7 +539,7 @@ export async function searchOrders(params: {
         invoice: true,
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
       skip,
       take: limit,
@@ -601,7 +586,7 @@ export async function updateOrderAdmin(
     });
 
     if (!order) {
-      throw new Error("Order not found");
+      throw new Error('Order not found');
     }
     const oldTotal = order.totalAmount;
 
@@ -610,12 +595,12 @@ export async function updateOrderAdmin(
     ========================= */
 
     if (
-      order.status === "SHIPPED" ||
-      order.status === "DELIVERED" ||
-      order.status === "REFUNDED" ||
-      order.status === "CANCELLED"
+      order.status === 'SHIPPED' ||
+      order.status === 'DELIVERED' ||
+      order.status === 'REFUNDED' ||
+      order.status === 'CANCELLED'
     ) {
-      throw new Error("This order can no longer be edited");
+      throw new Error('This order can no longer be edited');
     }
 
     /* =========================
@@ -678,7 +663,7 @@ export async function updateOrderAdmin(
         });
 
         if (!newVariant) {
-          throw new Error("Variant not found");
+          throw new Error('Variant not found');
         }
 
         const availableStock = newVariant.stock - newVariant.reservedStock;
@@ -686,9 +671,7 @@ export async function updateOrderAdmin(
         const quantityDiff = item.quantity - currentItem.quantity;
 
         if (quantityDiff > 0 && availableStock < quantityDiff) {
-          throw new Error(
-            `Not enough stock for ${newVariant.size} ${newVariant.color}`,
-          );
+          throw new Error(`Not enough stock for ${newVariant.size} ${newVariant.color}`);
         }
 
         /* =========================
@@ -702,10 +685,7 @@ export async function updateOrderAdmin(
      PENDING / PAYMENT_PROCESSING
   ========================= */
 
-          if (
-            order.status === "PENDING" ||
-            order.status === "PAYMENT_PROCESSING"
-          ) {
+          if (order.status === 'PENDING' || order.status === 'PAYMENT_PROCESSING') {
             if (diff > 0) {
               await tx.productVariant.update({
                 where: {
@@ -737,7 +717,7 @@ export async function updateOrderAdmin(
      PAID
   ========================= */
 
-          if (order.status === "PAID") {
+          if (order.status === 'PAID') {
             if (diff > 0) {
               await tx.productVariant.update({
                 where: {
@@ -768,10 +748,7 @@ export async function updateOrderAdmin(
           const oldQty = currentItem.quantity;
           const newQty = item.quantity;
 
-          if (
-            order.status === "PENDING" ||
-            order.status === "PAYMENT_PROCESSING"
-          ) {
+          if (order.status === 'PENDING' || order.status === 'PAYMENT_PROCESSING') {
             if (oldVariant) {
               await tx.productVariant.update({
                 where: {
@@ -797,7 +774,7 @@ export async function updateOrderAdmin(
             });
           }
 
-          if (order.status === "PAID") {
+          if (order.status === 'PAID') {
             if (oldVariant) {
               await tx.productVariant.update({
                 where: {
@@ -852,10 +829,7 @@ export async function updateOrderAdmin(
       },
     });
 
-    const newTotal = updatedItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
+    const newTotal = updatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const refundAmount = oldTotal - newTotal;
 
@@ -873,7 +847,7 @@ export async function updateOrderAdmin(
    PAID ORDER ADJUSTMENT
 ========================= */
 
-    if (order.status === "PAID" && refundAmount > 0) {
+    if (order.status === 'PAID' && refundAmount > 0) {
       const stripeRefund = await stripe.refunds.create({
         payment_intent: order.stripePaymentIntentId!,
         amount: refundAmount,
@@ -887,11 +861,11 @@ export async function updateOrderAdmin(
 
           stripeRefundId: stripeRefund.id,
 
-          type: "ORDER_ADJUSTMENT",
+          type: 'ORDER_ADJUSTMENT',
 
-          status: "SUCCEEDED",
+          status: 'SUCCEEDED',
 
-          note: "Automatic refund generated from admin order adjustment",
+          note: 'Automatic refund generated from admin order adjustment',
         },
       });
     }
@@ -900,7 +874,7 @@ export async function updateOrderAdmin(
        TIMELINE
     ========================= */
 
-    if (order.status === "PAID" && refundAmount > 0) {
+    if (order.status === 'PAID' && refundAmount > 0) {
       console.log(`💰 Auto refund required: ${refundAmount}`);
     }
 
@@ -908,19 +882,16 @@ export async function updateOrderAdmin(
       data: {
         orderId,
 
-        type:
-          order.status === "PAID" && refundAmount > 0
-            ? "ORDER_ADJUSTED"
-            : "ORDER_UPDATED",
+        type: order.status === 'PAID' && refundAmount > 0 ? 'ORDER_ADJUSTED' : 'ORDER_UPDATED',
 
         message:
-          order.status === "PAID" && refundAmount > 0
+          order.status === 'PAID' && refundAmount > 0
             ? `Automatic refund issued: €${(refundAmount / 100).toFixed(2)}`
-            : "Order edited by admin",
+            : 'Order edited by admin',
       },
     });
 
-    getIO().emit("orderUpdated", {
+    getIO().emit('orderUpdated', {
       orderId,
     });
 

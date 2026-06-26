@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 
 const CART_EXPIRATION_HOURS = 24;
 
@@ -45,9 +45,7 @@ export const CartService = {
   ========================================================= */
 
   async getOrCreateCart(userId?: string) {
-    const expiresAt = new Date(
-      Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000);
 
     /* guest cart */
 
@@ -63,7 +61,7 @@ export const CartService = {
     let cart = await prisma.cart.findFirst({
       where: {
         userId,
-        status: "ACTIVE",
+        status: 'ACTIVE',
         expiresAt: {
           gt: new Date(),
         },
@@ -90,14 +88,9 @@ export const CartService = {
      ADD ITEM
   ========================================================= */
 
-  async addItem(
-    cartId: string,
-    productId: string,
-    variantId: string,
-    quantity: number,
-  ) {
+  async addItem(cartId: string, productId: string, variantId: string, quantity: number) {
     if (quantity === 0) {
-      throw new Error("Invalid quantity");
+      throw new Error('Invalid quantity');
     }
 
     return prisma.$transaction(async (tx) => {
@@ -106,17 +99,17 @@ export const CartService = {
       });
 
       if (!cart) {
-        throw new Error("Cart not found");
+        throw new Error('Cart not found');
       }
 
       /* prevent invalid carts */
 
-      if (cart.status !== "ACTIVE") {
-        throw new Error("Cart is no longer active");
+      if (cart.status !== 'ACTIVE') {
+        throw new Error('Cart is no longer active');
       }
 
       if (cart.expiresAt < new Date()) {
-        throw new Error("Cart expired");
+        throw new Error('Cart expired');
       }
 
       const variant = await tx.productVariant.findUnique({
@@ -129,7 +122,7 @@ export const CartService = {
       });
 
       if (!variant || !variant.product.isActive) {
-        throw new Error("Product not available");
+        throw new Error('Product not available');
       }
 
       const existingItem = await tx.cartItem.findFirst({
@@ -146,7 +139,7 @@ export const CartService = {
       /* removing non-existing item */
 
       if (quantity < 0 && !existingItem) {
-        throw new Error("Cart item not found");
+        throw new Error('Cart item not found');
       }
 
       /* real available stock */
@@ -154,7 +147,7 @@ export const CartService = {
       const availableStock = variant.stock - variant.reservedStock;
 
       if (nextQty > availableStock) {
-        throw new Error("Not enough stock available");
+        throw new Error('Not enough stock available');
       }
 
       /* remove item */
@@ -242,7 +235,7 @@ export const CartService = {
 
     /* invalid cart → regenerate */
 
-    if (!cart || cart.status !== "ACTIVE" || cart.expiresAt < new Date()) {
+    if (!cart || cart.status !== 'ACTIVE' || cart.expiresAt < new Date()) {
       cart = await this.getOrCreateCart(userId);
     }
 
@@ -318,13 +311,10 @@ export const CartService = {
     });
 
     if (!cart) {
-      throw new Error("Cart not found");
+      throw new Error('Cart not found');
     }
 
-    const subtotal = cart.items.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0,
-    );
+    const subtotal = cart.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
     const discount = 0;
 
@@ -357,26 +347,26 @@ export const CartService = {
       });
 
       if (!cart) {
-        throw new Error("Cart not found");
+        throw new Error('Cart not found');
       }
 
-      if (cart.status !== "ACTIVE") {
-        throw new Error("Cart already converted");
+      if (cart.status !== 'ACTIVE') {
+        throw new Error('Cart already converted');
       }
 
       if (cart.expiresAt < new Date()) {
-        throw new Error("Cart expired");
+        throw new Error('Cart expired');
       }
 
       if (cart.items.length === 0) {
-        throw new Error("Cart empty");
+        throw new Error('Cart empty');
       }
 
-      const { createOrder } = await import("@/modules/orders/order.service");
+      const { createOrderTx } = await import('@/modules/orders/order.service');
 
       /* create order */
 
-      const order = await createOrder({
+      const order = await createOrderTx(tx, {
         userId: checkoutData.userId ?? undefined,
         ...checkoutData,
 
@@ -392,7 +382,7 @@ export const CartService = {
       await tx.cart.update({
         where: { id: cartId },
         data: {
-          status: "CONVERTED",
+          status: 'CONVERTED',
         },
       });
 
@@ -425,19 +415,19 @@ export const CartService = {
     });
 
     if (!cart) {
-      throw new Error("Cart not found");
+      throw new Error('Cart not found');
     }
 
-    if (cart.status !== "ACTIVE") {
-      throw new Error("Cart already converted");
+    if (cart.status !== 'ACTIVE') {
+      throw new Error('Cart already converted');
     }
 
     if (cart.expiresAt < new Date()) {
-      throw new Error("Cart expired");
+      throw new Error('Cart expired');
     }
 
     if (cart.items.length === 0) {
-      throw new Error("Cart empty");
+      throw new Error('Cart empty');
     }
 
     for (const item of cart.items) {
@@ -518,7 +508,7 @@ export const CartService = {
       where: { id: guestCartId },
 
       data: {
-        status: "MERGED",
+        status: 'MERGED',
       },
     });
 
@@ -542,7 +532,7 @@ export const CartService = {
       return this.getOrCreateCart(userId);
     }
 
-    if (cart.status !== "ACTIVE") {
+    if (cart.status !== 'ACTIVE') {
       return this.getOrCreateCart(userId);
     }
 

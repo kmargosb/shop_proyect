@@ -317,7 +317,11 @@ export async function createProduct(data: any, files: Express.Multer.File[]) {
 }
 
 export async function updateProduct(id: string, data: any, files: Express.Multer.File[]) {
-  return prisma.$transaction(async (tx) => {
+  let cloudinaryImagesToDelete: {
+    id: string;
+    publicId: string;
+  }[] = [];
+  const updated = await prisma.$transaction(async (tx) => {
     const variants = typeof data.variants === 'string' ? JSON.parse(data.variants) : data.variants;
 
     const seen = new Set<string>();
@@ -345,23 +349,15 @@ export async function updateProduct(id: string, data: any, files: Express.Multer
 
     const imagesToDelete = data.imagesToDelete ? JSON.parse(data.imagesToDelete) : [];
 
-    /* DELETE IMAGES */
+    cloudinaryImagesToDelete = product.images.filter((img) => imagesToDelete.includes(img.id));
 
-    for (const image of product.images.filter((img) => imagesToDelete.includes(img.id))) {
-      await cloudinary.uploader.destroy(image.publicId);
+    /* DELETE IMAGE RECORDS */
 
+    for (const image of cloudinaryImagesToDelete) {
       await tx.productImage.delete({
-        where: { id: image.id },
-      });
-    }
-
-    /* UPLOAD IMAGES */
-
-    if (files?.length) {
-      const images = await uploadImages(files, id);
-
-      await tx.productImage.createMany({
-        data: images,
+        where: {
+          id: image.id,
+        },
       });
     }
 
@@ -481,37 +477,75 @@ export async function updateProduct(id: string, data: any, files: Express.Multer
 
     return updated;
   });
+
+  /* ===== DELETE FROM CLOUDINARY ===== */
+
+  for (const image of cloudinaryImagesToDelete) {
+    try {
+      await cloudinary.uploader.destroy(image.publicId);
+    } catch (err) {
+      console.error('Cloudinary delete failed:', image.publicId, err);
+    }
+  }
+
+  /* ===== UPLOAD NEW IMAGES ===== */
+
+  if (files?.length) {
+    const images = await uploadImages(files, id);
+
+    await prisma.productImage.createMany({
+      data: images,
+    });
+  }
+  return updated;
 }
 
 export async function deleteProduct(id: string) {
-  return prisma.$transaction(async (tx) => {
-    const product = await tx.product.findUnique({
-      where: { id },
+  let imagesToDelete: {
+    publicId: string;
+  }[] = [];
 
+  const product = await prisma.$transaction(async (tx) => {
+    const existing = await tx.product.findUnique({
+      where: { id },
       include: {
         images: true,
       },
     });
 
-    if (!product) throw new Error('Producto no encontrado');
-
-    for (const image of product.images) {
-      await cloudinary.uploader.destroy(image.publicId);
+    if (!existing) {
+      throw new Error('Producto no encontrado');
     }
+
+    imagesToDelete = existing.images.map((img) => ({
+      publicId: img.publicId,
+    }));
 
     return tx.product.update({
       where: { id },
-
       data: {
         isActive: false,
       },
-
       include: {
         images: true,
         variants: true,
       },
     });
   });
+
+  /* =========================
+     DELETE CLOUDINARY IMAGES
+  ========================= */
+
+  for (const image of imagesToDelete) {
+    try {
+      await cloudinary.uploader.destroy(image.publicId);
+    } catch (err) {
+      console.error('Cloudinary delete failed:', image.publicId, err);
+    }
+  }
+
+  return product;
 }
 
 export async function restoreProduct(id: string) {
