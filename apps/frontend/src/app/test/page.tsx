@@ -4,12 +4,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function TestPage() {
   const test = async () => {
-    await fetch(`${API_URL}/test-login-cookie`, {
+    const res = await fetch(`${API_URL}/test-login-cookie`, {
       method: 'POST',
       credentials: 'include',
     });
 
-    alert('Petición enviada');
+    alert(`STATUS ${res.status}`);
   };
 
   return (

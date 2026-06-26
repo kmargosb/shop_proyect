@@ -159,6 +159,8 @@ app.get('/read-test-cookie', (req, res) => {
 });
 
 app.post('/test-login-cookie', (req, res) => {
+  console.log('🔥 TEST LOGIN COOKIE CALLED');
+
   res.cookie('loginTest', 'ok', {
     httpOnly: true,
     secure: true,
