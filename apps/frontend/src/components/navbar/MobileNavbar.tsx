@@ -24,25 +24,23 @@ export default function MobileNavbar() {
       if (sheetOpen) return;
 
       const currentScroll = window.scrollY;
+
+      // Siempre visible cerca del inicio
+      if (currentScroll < 40) {
+        setVisible(true);
+        lastScrollRef.current = currentScroll;
+        return;
+      }
+
       const lastScroll = lastScrollRef.current;
+      const delta = currentScroll - lastScroll;
 
-      // siempre visible arriba del todo
-      if (currentScroll < 40) {
-        setVisible(true);
-        lastScrollRef.current = currentScroll;
+      // Ignorar movimientos muy pequeños
+      if (Math.abs(delta) < 12) {
         return;
       }
 
-      // bajar
-      if (currentScroll < 40) {
-        setVisible(true);
-        lastScrollRef.current = currentScroll;
-        return;
-      }
-
-      setVisible(currentScroll < lastScroll);
-
-      lastScrollRef.current = currentScroll;
+      setVisible(delta < 0);
 
       lastScrollRef.current = currentScroll;
     };
@@ -57,7 +55,7 @@ export default function MobileNavbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 z-50 w-full bg-white transition-transform duration-300 md:hidden ${
+        className={`fixed top-0 left-0 z-50 w-full transform-gpu bg-white transition-transform duration-300 will-change-transform md:hidden ${
           visible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >

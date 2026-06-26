@@ -1,6 +1,6 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@plugin "tailwindcss-animate";
+@plugin 'tailwindcss-animate';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -133,36 +133,36 @@
 
 @layer components {
   .dashboard-input {
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.04);
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  color: white;
-  outline: none;
+    width: 100%;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: rgb(255 255 255 / 0.04);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: white;
+    outline: none;
 
-  transition:
-    border-color 150ms ease,
-    background-color 150ms ease,
-    box-shadow 150ms ease,
-    opacity 150ms ease;
-}
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease,
+      box-shadow 150ms ease,
+      opacity 150ms ease;
+  }
 
-.dashboard-input option {
-  background-color: #0a0a0a;
-  color: white;
-}
+  .dashboard-input option {
+    background-color: #0a0a0a;
+    color: white;
+  }
 
-select.dashboard-input {
-  cursor: pointer;
-  height: 52px;
-}
+  select.dashboard-input {
+    cursor: pointer;
+    height: 52px;
+  }
 
   .dashboard-input::placeholder {
-  color: rgb(163 163 163);
-}
+    color: rgb(163 163 163);
+  }
 
   .dashboard-input:focus {
     border-color: rgb(255 255 255 / 0.25);
@@ -212,15 +212,13 @@ select.dashboard-input {
     display: none;
   }
 
- 
-
   .premium-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
 }
 
- .no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-outer-spin-button,
 .no-spinner::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
@@ -228,4 +226,21 @@ select.dashboard-input {
 
 .no-spinner {
   -moz-appearance: textfield;
+}
+
+/* =====================================
+   iOS SCROLL IMPROVEMENTS
+===================================== */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+html {
+  overscroll-behavior-y: none;
+}
+
+body {
+  -webkit-overflow-scrolling: touch;
 }
