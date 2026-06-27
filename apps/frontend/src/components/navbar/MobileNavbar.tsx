@@ -19,55 +19,66 @@ export default function MobileNavbar() {
   const lastScrollRef = useRef(0);
   const tickingRef = useRef(false);
   const visibleRef = useRef(true);
+  const latestScrollRef = useRef(0);
 
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (sheetOpen) return;
+      latestScrollRef.current = Math.max(0, window.scrollY);
 
-      const currentScroll = Math.max(0, window.scrollY);
-      const documentHeight = document.documentElement.scrollHeight;
-      const viewportHeight = window.innerHeight;
+      if (tickingRef.current) return;
 
-      // Distancia desde el final del documento
-      const distanceToBottom = documentHeight - (currentScroll + viewportHeight);
+      tickingRef.current = true;
 
-      // Ignorar el rebote de Safari cerca del final
-      if (distanceToBottom < 120) {
-        lastScrollRef.current = currentScroll;
-        return;
-      }
-
-      // Mantener siempre visible cerca del inicio
-      if (currentScroll <= 40) {
-        if (!visible) {
-          setVisible(true);
+      requestAnimationFrame(() => {
+        if (sheetOpen) {
+          tickingRef.current = false;
+          return;
         }
 
-        lastScrollRef.current = currentScroll;
-        return;
-      }
+        const currentScroll = latestScrollRef.current;
 
-      const delta = currentScroll - lastScrollRef.current;
+        const documentHeight = document.documentElement.scrollHeight;
+        const viewportHeight = window.innerHeight;
 
-      // Ignorar movimientos pequeños y rebotes
-      if (Math.abs(delta) < 20) {
-        lastScrollRef.current = currentScroll;
-        return;
-      }
+        const distanceToBottom = documentHeight - (currentScroll + viewportHeight);
 
-      if (delta > 0 && visible) {
-        setVisible(false);
-      }
+        // Siempre visible arriba
+        if (currentScroll <= 40) {
+          if (!visibleRef.current) {
+            visibleRef.current = true;
+            setVisible(true);
+          }
 
-      if (delta < 0 && !visible) {
-        setVisible(true);
-      }
+          lastScrollRef.current = currentScroll;
+          tickingRef.current = false;
+          return;
+        }
 
-      lastScrollRef.current = currentScroll;
+        // Ignorar el rebote inferior de Safari
+        if (distanceToBottom < 120) {
+          lastScrollRef.current = currentScroll;
+          tickingRef.current = false;
+          return;
+        }
+
+        const delta = currentScroll - lastScrollRef.current;
+
+        if (Math.abs(delta) >= 20) {
+          const nextVisible = delta < 0;
+
+          if (nextVisible !== visibleRef.current) {
+            visibleRef.current = nextVisible;
+            setVisible(nextVisible);
+          }
+
+          lastScrollRef.current = currentScroll;
+        }
+
+        tickingRef.current = false;
+      });
     };
-
     handleScroll();
 
     window.addEventListener('scroll', handleScroll, {
