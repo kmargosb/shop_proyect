@@ -37,6 +37,7 @@ type CartContextType = {
   items: CartItem[];
   open: boolean;
   loading: boolean;
+  hydrated: boolean;
   setOpen: (value: boolean) => void;
 
   addItem: (
@@ -71,6 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   /**
    * Cache en memoria del carrito activo.
@@ -243,9 +245,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const init = async () => {
       const cartId = await ensureCart();
-      if (!cartId) return;
+
+      if (!cartId) {
+        setHydrated(true);
+        return;
+      }
 
       await fetchCart(cartId);
+
+      setHydrated(true);
     };
 
     init();
@@ -480,6 +488,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items,
         open,
         loading,
+        hydrated,
         setOpen,
         addItem,
         removeItem,

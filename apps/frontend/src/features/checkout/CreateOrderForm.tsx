@@ -92,8 +92,13 @@ export default function CreateOrderForm() {
   /* ================= LOAD USER + ADDRESSES ================= */
 
   const loadAddresses = async () => {
+    console.time('loadAddresses');
+
     try {
-      const meRes = await apiFetch('/auth/me');
+      const [meRes, res] = await Promise.all([
+        apiFetch('/auth/me'),
+        apiFetch('/customers/me/addresses'),
+      ]);
 
       if (!meRes || !meRes.ok) {
         setIsLogged(false);
@@ -104,7 +109,6 @@ export default function CreateOrderForm() {
 
       const meData = await meRes.json();
 
-      const res = await apiFetch('/customers/me/addresses');
       if (!res || !res.ok) return;
 
       const data: Address[] = await res.json();
@@ -137,6 +141,8 @@ export default function CreateOrderForm() {
           email: meData.user?.email || prev.email,
         }));
       }
+
+      console.timeEnd('loadAddresses');
     } catch (e) {
       console.error(e);
     }

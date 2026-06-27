@@ -7,30 +7,21 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 export default function CheckoutView() {
-  const { items } = useCart();
+  console.time('Checkout render');
+
+  const { items, hydrated } = useCart();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
   const { t } = useLanguage();
 
-  /* =======================================================
-     WAIT STORE HYDRATION (FIX REAL)
-  ======================================================= */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 150); // 🔥 clave para evitar redirect prematuro
+    if (!hydrated) return;
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  /* =======================================================
-     PROTECT EMPTY CART
-  ======================================================= */
-  useEffect(() => {
-    if (isReady && items.length === 0) {
+    if (items.length === 0) {
       router.replace('/shop');
     }
-  }, [isReady, items, router]);
+  }, [hydrated, items, router]);
+
+  console.timeEnd('Checkout render');
 
   return (
     <main className="min-h-screen bg-black px-4 py-10 text-white md:px-10">
