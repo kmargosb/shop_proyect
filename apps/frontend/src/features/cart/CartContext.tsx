@@ -2,7 +2,7 @@
 
 import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 const CART_KEY = 'cartId';
 
@@ -62,6 +62,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
 
+  /**
+   * Cache en memoria del carrito activo.
+   * Evita consultar localStorage constantemente.
+   */
+  const cartIdRef = React.useRef<string | null>(null);
+
   /* ================= HELPERS ================= */
 
   const mapItems = (cart: any): CartItem[] =>
@@ -90,7 +96,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!res || !res.ok) return null;
 
     const cart = await res.json();
+
     localStorage.setItem(CART_KEY, cart.id);
+    cartIdRef.current = cart.id;
 
     return cart.id;
   };
@@ -98,7 +106,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /* ================= ENSURE VALID CART ================= */
 
   const ensureCart = async (): Promise<string | null> => {
-    let cartId = localStorage.getItem(CART_KEY);
+    let cartId = cartIdRef.current ?? localStorage.getItem(CART_KEY);
+
+    if (cartId && !cartIdRef.current) {
+      cartIdRef.current = cartId;
+    }
 
     /* no cart */
 
@@ -124,6 +136,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (cart.id !== cartId) {
       localStorage.setItem(CART_KEY, cart.id);
+      cartIdRef.current = cart.id;
     }
 
     return cart.id;
@@ -177,6 +190,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     openDrawer = true,
     optimisticItem?: OptimisticCartItem,
   ) => {
+    if (openDrawer) {
+      setOpen(true);
+    }
+
     const cartId = await ensureCart();
     if (!cartId) return;
 
@@ -190,21 +207,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res) {
+      if (openDrawer) {
+        setOpen(false);
+      }
+
       throw new Error('Connection error');
     }
 
     if (!res.ok) {
+      if (openDrawer) {
+        setOpen(false);
+      }
+
       const data = await res.json().catch(() => null);
 
       throw new Error(data?.error || 'No se pudo añadir al carrito');
     }
 
     const cart = await res.json();
-    setItems(mapItems(cart));
 
-    if (openDrawer) {
-      setOpen(true);
-    }
+    setItems(mapItems(cart));
   };
 
   /* ================= REMOVE ITEM ================= */
@@ -275,6 +297,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
+    cartIdRef.current = null;
     localStorage.removeItem(CART_KEY);
   };
 
