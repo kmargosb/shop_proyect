@@ -214,7 +214,9 @@ export default function ProductPage() {
 
       await addItem(product.id, selectedVariant.id, quantity);
 
-      await apiFetch('/analytics/track', {
+      toast.success(t.toast.addedToCart);
+
+      void apiFetch('/analytics/track', {
         method: 'POST',
         body: JSON.stringify({
           event: 'ADD_TO_CART',
@@ -225,8 +227,6 @@ export default function ProductPage() {
           },
         }),
       });
-
-      toast.success(t.toast.addedToCart);
     } catch (error: any) {
       toast.error(error?.message || t.toast.stockError);
     }
@@ -241,7 +241,9 @@ export default function ProductPage() {
 
       await addItem(product.id, selectedVariant.id, quantity, false);
 
-      await apiFetch('/analytics/track', {
+      toast.success(t.toast.addedToCart);
+
+      void apiFetch('/analytics/track', {
         method: 'POST',
         body: JSON.stringify({
           event: 'ADD_TO_CART',
@@ -253,8 +255,6 @@ export default function ProductPage() {
           },
         }),
       });
-
-      toast.success(t.toast.addedToCart);
 
       router.push('/checkout');
     } catch (error: any) {
