@@ -20,6 +20,17 @@ export type CartItem = {
   color?: string | null;
 };
 
+export type OptimisticCartItem = {
+  productId: string;
+  variantId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string | null;
+  size?: string | null;
+  color?: string | null;
+};
+
 type CartContextType = {
   items: CartItem[];
   open: boolean;
@@ -30,6 +41,7 @@ type CartContextType = {
     variantId: string,
     quantity?: number,
     openDrawer?: boolean,
+    optimisticItem?: OptimisticCartItem,
   ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
 
@@ -158,7 +170,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   /* ================= ADD ITEM ================= */
 
-  const addItem = async (productId: string, variantId: string, quantity = 1, openDrawer = true) => {
+  const addItem = async (
+    productId: string,
+    variantId: string,
+    quantity = 1,
+    openDrawer = true,
+    optimisticItem?: OptimisticCartItem,
+  ) => {
     const cartId = await ensureCart();
     if (!cartId) return;
 
