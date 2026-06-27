@@ -332,8 +332,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /* ================= REMOVE ITEM ================= */
 
   const removeItem = async (itemId: string) => {
-    // UI optimista
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    const updated = itemsRef.current.filter((i) => i.id !== itemId);
+
+    itemsRef.current = updated;
+    setItems(updated);
+
+    if (updated.length === 0) {
+      setTimeout(() => setOpen(false), 180);
+    }
 
     await apiFetch(`/cart/items/${itemId}`, {
       method: 'DELETE',

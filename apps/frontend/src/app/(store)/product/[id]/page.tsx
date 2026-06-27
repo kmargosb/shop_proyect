@@ -214,8 +214,11 @@ export default function ProductPage() {
         toast.error(t.toast.selectVariant);
         return;
       }
+      toast.success(t.toast.addedToCart);
 
       setAddingToCart(true);
+
+      setAddedToCart(true);
 
       await addItem(product.id, selectedVariant.id, quantity, true, {
         productId: product.id,
@@ -231,10 +234,6 @@ export default function ProductPage() {
         size: selectedVariant.size,
         color: selectedVariant.color,
       });
-
-      setAddedToCart(true);
-
-      toast.success(t.toast.addedToCart);
 
       void apiFetch('/analytics/track', {
         method: 'POST',
@@ -252,6 +251,10 @@ export default function ProductPage() {
         setAddedToCart(false);
       }, 900);
     } catch (error: any) {
+      setAddedToCart(false);
+
+      toast.dismiss();
+
       toast.error(error?.message || t.toast.stockError);
     } finally {
       setAddingToCart(false);
@@ -264,6 +267,7 @@ export default function ProductPage() {
         toast.error(t.toast.selectVariant);
         return;
       }
+      toast.success(t.toast.addedToCart);
 
       await addItem(product.id, selectedVariant.id, quantity, false, {
         productId: product.id,
@@ -280,8 +284,6 @@ export default function ProductPage() {
         color: selectedVariant.color,
       });
 
-      toast.success(t.toast.addedToCart);
-
       void apiFetch('/analytics/track', {
         method: 'POST',
         body: JSON.stringify({
@@ -297,6 +299,8 @@ export default function ProductPage() {
 
       router.push('/checkout');
     } catch (error: any) {
+      toast.dismiss();
+
       toast.error(error?.message || t.toast.stockError);
     }
   };

@@ -77,72 +77,94 @@ export default function CartDrawer() {
         </div>
 
         {/* ITEMS */}
-        <div className="mt-6 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
-          {items.length === 0 && <p className="text-sm text-neutral-500">{t.cart.empty}</p>}
+        <div className="mt-6 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
+          {items.length === 0 && (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="mb-5 text-5xl">🛍️</div>
 
-          {items.map((item: CartItem) => (
-            <div
-              key={item.id}
-              className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.05]"
-            >
-              {/* IMAGE */}
-              <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-white/10">
-                {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full bg-white/5" />
-                )}
-              </div>
+              <h3 className="text-xl font-semibold text-white">{t.cart.empty}</h3>
 
-              {/* INFO */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-medium">{item.name}</p>
-                {(item.size || item.color) && (
-                  <p className="mt-2 text-sm text-neutral-400">
-                    {item.size && `${t.cart.size} ${item.size}`}
-                    {item.size && item.color && ' · '}
-                    {item.color}
-                  </p>
-                )}
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-400">
+                Discover our latest collection.
+              </p>
 
-                <p className="mt-1 text-xs text-neutral-400">€{(item.price / 100).toFixed(2)}</p>
+              <Button
+                className="mt-8 rounded-2xl bg-white px-8 text-black hover:bg-neutral-200"
+                onClick={() => {
+                  setOpen(false);
+                  router.push('/shop');
+                }}
+              >
+                Continue shopping
+              </Button>
+            </div>
+          )}
 
-                {/* CONTROLS */}
-                <div className="mt-3 flex items-center gap-2">
-                  <motion.button
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => decreaseQuantity(item.id)}
-                    className="h-9 w-9 rounded-md bg-white/10 transition hover:bg-white/20"
-                  >
-                    −
-                  </motion.button>
-
-                  <span className="w-6 text-center text-sm">{item.quantity}</span>
-
-                  <motion.button
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => increaseQuantity(item.id)}
-                    className="h-9 w-9 rounded-md bg-white/10 transition hover:bg-white/20"
-                  >
-                    +
-                  </motion.button>
+          {items.length > 0 &&
+            items.map((item: CartItem) => (
+              <div
+                key={item.id}
+                className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                {/* IMAGE */}
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
+                  {item.image ? (
+                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full bg-white/5" />
+                  )}
                 </div>
 
-                {/* REMOVE */}
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="mt-2 text-xs text-neutral-500 transition hover:text-red-400"
-                >
-                  {t.cart.remove}
-                </button>
-              </div>
+                {/* LEFT */}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-medium">{item.name}</p>
+                  {(item.size || item.color) && (
+                    <p className="mt-1 text-xs text-neutral-400">
+                      {item.size && `${t.cart.size} ${item.size}`}
+                      {item.size && item.color && ' · '}
+                      {item.color}
+                    </p>
+                  )}
+                  <div className="mt-1 flex items-center gap-3">
+                    <p className="text-[11px] text-neutral-400">€{(item.price / 100).toFixed(2)}</p>
 
-              {/* PRICE */}
-              <div className="text-[15px] font-semibold whitespace-nowrap">
-                €{((item.price * item.quantity) / 100).toFixed(2)}
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-[11px] text-neutral-500 transition hover:text-red-400"
+                    >
+                      {t.cart.remove}
+                    </button>
+                  </div>
+                </div>
+
+                {/* RIGHT */}
+                <div className="flex flex-col items-end">
+                  <p className="text-[14px] font-semibold whitespace-nowrap">
+                    €{((item.price * item.quantity) / 100).toFixed(2)}
+                  </p>
+
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <motion.button
+                      whileTap={{ scale: 0.85 }}
+                      onClick={() => decreaseQuantity(item.id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 transition hover:bg-white/20"
+                    >
+                      −
+                    </motion.button>
+
+                    <span className="w-5 text-center text-xs">{item.quantity}</span>
+
+                    <motion.button
+                      whileTap={{ scale: 0.85 }}
+                      onClick={() => increaseQuantity(item.id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md bg-white/10 transition hover:bg-white/20"
+                    >
+                      +
+                    </motion.button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         {/* FOOTER */}
