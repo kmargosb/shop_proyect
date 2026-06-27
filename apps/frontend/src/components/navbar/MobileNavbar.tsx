@@ -27,6 +27,17 @@ export default function MobileNavbar() {
       if (sheetOpen) return;
 
       const currentScroll = Math.max(0, window.scrollY);
+      const documentHeight = document.documentElement.scrollHeight;
+      const viewportHeight = window.innerHeight;
+
+      // Distancia desde el final del documento
+      const distanceToBottom = documentHeight - (currentScroll + viewportHeight);
+
+      // Ignorar el rebote de Safari cerca del final
+      if (distanceToBottom < 120) {
+        lastScrollRef.current = currentScroll;
+        return;
+      }
 
       // Mantener siempre visible cerca del inicio
       if (currentScroll <= 40) {
@@ -42,6 +53,7 @@ export default function MobileNavbar() {
 
       // Ignorar movimientos pequeños y rebotes
       if (Math.abs(delta) < 20) {
+        lastScrollRef.current = currentScroll;
         return;
       }
 
