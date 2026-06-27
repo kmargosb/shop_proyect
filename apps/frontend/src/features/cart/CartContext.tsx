@@ -27,6 +27,7 @@ export type OptimisticCartItem = {
   name: string;
   price: number;
   quantity: number;
+  stock: number;
   image?: string | null;
   size?: string | null;
   color?: string | null;
@@ -280,6 +281,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setOpen(true);
     }
 
+    if (optimisticItem) {
+      addLocalItem(productId, variantId, quantity, optimisticItem);
+    }
+
     const cartId = await getActiveCartId();
 
     if (!cartId) {
@@ -302,6 +307,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setOpen(false);
       }
 
+      await fetchCart(cartId);
+
       throw new Error('Connection error');
     }
 
@@ -314,12 +321,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const data = await res.json().catch(() => null);
 
+      await fetchCart(cartId);
+
       throw new Error(data?.error || 'No se pudo añadir al carrito');
     }
-
-    const cart = await res.json();
-
-    setItems(mapItems(cart));
+    await res.json();
     setLoading(false);
   };
 
@@ -352,6 +358,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     itemsRef.current = updated;
 
+    setItems(updated);
+  };
+
+  const addLocalItem = (
+    productId: string,
+    variantId: string,
+    quantity: number,
+    optimisticItem: OptimisticCartItem,
+  ) => {
+    const existing = itemsRef.current.find(
+      (i) => i.productId === productId && i.variantId === variantId,
+    );
+
+    let updated: CartItem[];
+
+    if (existing) {
+      updated = itemsRef.current.map((i) =>
+        i.id === existing.id
+          ? {
+              ...i,
+              quantity: Math.min(i.stock, i.quantity + quantity),
+            }
+          : i,
+      );
+    } else {
+      updated = [
+        ...itemsRef.current,
+        {
+          id: `optimistic-${Date.now()}`,
+          ...optimisticItem,
+        },
+      ];
+    }
+
+    itemsRef.current = updated;
     setItems(updated);
   };
 

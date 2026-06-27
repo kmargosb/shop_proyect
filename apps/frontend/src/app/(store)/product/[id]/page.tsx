@@ -12,6 +12,7 @@ import { socket } from '@/shared/lib/socket';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/features/wishlist/WishListContext';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import type { ProductImage } from '@/types/product';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -216,7 +217,20 @@ export default function ProductPage() {
 
       setAddingToCart(true);
 
-      await addItem(product.id, selectedVariant.id, quantity);
+      await addItem(product.id, selectedVariant.id, quantity, true, {
+        productId: product.id,
+        variantId: selectedVariant.id,
+        quantity,
+        stock: selectedVariant.stock,
+        name: product.name,
+        price: product.price,
+        image:
+          product.images?.find((i: ProductImage) => i.isPrimary)?.url ??
+          product.images?.[0]?.url ??
+          null,
+        size: selectedVariant.size,
+        color: selectedVariant.color,
+      });
 
       setAddedToCart(true);
 
@@ -251,7 +265,20 @@ export default function ProductPage() {
         return;
       }
 
-      await addItem(product.id, selectedVariant.id, quantity, false);
+      await addItem(product.id, selectedVariant.id, quantity, false, {
+        productId: product.id,
+        variantId: selectedVariant.id,
+        quantity,
+        stock: selectedVariant.stock,
+        name: product.name,
+        price: product.price,
+        image:
+          product.images?.find((i: ProductImage) => i.isPrimary)?.url ??
+          product.images?.[0]?.url ??
+          null,
+        size: selectedVariant.size,
+        color: selectedVariant.color,
+      });
 
       toast.success(t.toast.addedToCart);
 
