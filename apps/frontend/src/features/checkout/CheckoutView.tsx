@@ -9,17 +9,17 @@ import { useLanguage } from '@/shared/i18n/LanguageContext';
 export default function CheckoutView() {
   console.time('Checkout render');
 
-  const { items, hydrated } = useCart();
+  const { items, hydrated, cartBusy } = useCart();
   const router = useRouter();
   const { t } = useLanguage();
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || cartBusy) return;
 
     if (items.length === 0) {
       router.replace('/shop');
     }
-  }, [hydrated, items, router]);
+  }, [hydrated, cartBusy, items, router]);
 
   console.timeEnd('Checkout render');
 

@@ -38,6 +38,7 @@ type CartContextType = {
   open: boolean;
   loading: boolean;
   hydrated: boolean;
+  cartBusy: boolean;
   setOpen: (value: boolean) => void;
 
   addItem: (
@@ -73,6 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [cartBusy, setCartBusy] = useState(false);
 
   /**
    * Cache en memoria del carrito activo.
@@ -333,25 +335,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       throw new Error(data?.error || 'No se pudo añadir al carrito');
     }
-    await res.json();
+    const cart = await res.json();
+
+    const synced = mapItems(cart);
+
+    itemsRef.current = synced;
+    setItems(synced);
+
     setLoading(false);
   };
 
   /* ================= REMOVE ITEM ================= */
 
   const removeItem = async (itemId: string) => {
-    const updated = itemsRef.current.filter((i) => i.id !== itemId);
-
+    setCartBusy(true);
+    const previous = itemsRef.current;
+    const updated = previous.filter((i) => i.id !== itemId);
     itemsRef.current = updated;
+
     setItems(updated);
 
     if (updated.length === 0) {
       setTimeout(() => setOpen(false), 180);
     }
 
-    await apiFetch(`/cart/items/${itemId}`, {
-      method: 'DELETE',
-    });
+    try {
+      const res = await apiFetch(`/cart/items/${itemId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res || !res.ok) {
+        itemsRef.current = previous;
+        setItems(previous);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data?.cart) {
+        const synced = mapItems(data.cart);
+
+        itemsRef.current = synced;
+        setItems(synced);
+      }
+    } catch {
+      itemsRef.current = previous;
+      setItems(previous);
+    } finally {
+      setCartBusy(false);
+    }
   };
 
   const applyLocalChange = (itemId: string, delta: number) => {
@@ -371,7 +403,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
     itemsRef.current = updated;
-
     setItems(updated);
   };
 
@@ -489,6 +520,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         open,
         loading,
         hydrated,
+        cartBusy,
         setOpen,
         addItem,
         removeItem,
