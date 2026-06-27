@@ -15,7 +15,10 @@ export default function MobileNavbar() {
   const { user, isAuthenticated } = useAuth();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [visible, setVisible] = useState(true);
+
   const lastScrollRef = useRef(0);
+  const tickingRef = useRef(false);
+  const visibleRef = useRef(true);
 
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 

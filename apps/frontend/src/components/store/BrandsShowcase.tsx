@@ -19,7 +19,7 @@ export default function BrandsShowcase() {
   }, []);
 
   return (
-    <section className="relative h-[80vh] overflow-hidden bg-black text-white">
+    <section className="relative min-h-[650px] overflow-hidden bg-black text-white">
       {/* VIDEO */}
 
       <video
