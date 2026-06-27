@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { apiFetch } from '@/shared/lib/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 type MobileAccountSheetProps = {
   open: boolean;
@@ -16,17 +17,7 @@ export default function MobileAccountSheet({ open, onClose }: MobileAccountSheet
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
     <>

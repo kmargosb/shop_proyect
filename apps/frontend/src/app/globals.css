@@ -237,10 +237,6 @@ body {
   overflow-x: hidden;
 }
 
-html {
-  overscroll-behavior-y: none;
-}
-
 body {
   -webkit-overflow-scrolling: touch;
 }

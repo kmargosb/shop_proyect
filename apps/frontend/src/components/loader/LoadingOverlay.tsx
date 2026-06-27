@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 type LoadingOverlayProps = {
   open: boolean;
@@ -13,17 +13,7 @@ export default function LoadingOverlay({
   text = 'Cargando...',
   children,
 }: LoadingOverlayProps) {
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
+  useBodyScrollLock(open);
 
   if (!open) return null;
 
