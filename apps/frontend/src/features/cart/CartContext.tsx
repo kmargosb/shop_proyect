@@ -34,6 +34,7 @@ export type OptimisticCartItem = {
 type CartContextType = {
   items: CartItem[];
   open: boolean;
+  loading: boolean;
   setOpen: (value: boolean) => void;
 
   addItem: (
@@ -61,6 +62,7 @@ const CartContext = createContext<CartContextType | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   /**
    * Cache en memoria del carrito activo.
@@ -142,6 +144,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return cart.id;
   };
 
+  /* ================= GET ACTIVE CART ID ================= */
+
+  const getActiveCartId = async (): Promise<string | null> => {
+    if (cartIdRef.current) {
+      return cartIdRef.current;
+    }
+
+    const storedCartId = localStorage.getItem(CART_KEY);
+
+    if (storedCartId) {
+      cartIdRef.current = storedCartId;
+      return storedCartId;
+    }
+
+    return await createCart();
+  };
+
   /* ================= FETCH CART ================= */
 
   const fetchCart = async (cartId: string) => {
@@ -191,11 +210,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     optimisticItem?: OptimisticCartItem,
   ) => {
     if (openDrawer) {
+      setLoading(true);
       setOpen(true);
     }
 
-    const cartId = await ensureCart();
-    if (!cartId) return;
+    const cartId = await getActiveCartId();
+
+    if (!cartId) {
+      throw new Error('No active cart');
+    }
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
       method: 'POST',
@@ -207,6 +230,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res) {
+      setLoading(false);
+
       if (openDrawer) {
         setOpen(false);
       }
@@ -215,6 +240,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     if (!res.ok) {
+      setLoading(false);
+
       if (openDrawer) {
         setOpen(false);
       }
@@ -227,6 +254,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const cart = await res.json();
 
     setItems(mapItems(cart));
+    setLoading(false);
   };
 
   /* ================= REMOVE ITEM ================= */
@@ -246,8 +274,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const item = items.find((i) => i.id === itemId);
     if (!item) return;
 
-    const cartId = await ensureCart();
-    if (!cartId) return;
+    const cartId = await getActiveCartId();
+
+    if (!cartId) {
+      return;
+    }
 
     const res = await apiFetch(`/cart/${cartId}/items`, {
       method: 'POST',
@@ -270,8 +301,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const item = items.find((i) => i.id === itemId);
     if (!item) return;
 
-    const cartId = await ensureCart();
-    if (!cartId) return;
+    const cartId = await getActiveCartId();
+
+    if (!cartId) {
+      return;
+    }
 
     if (item.quantity === 1) {
       await removeItem(itemId);
@@ -315,6 +349,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         items,
         open,
+        loading,
         setOpen,
         addItem,
         removeItem,
