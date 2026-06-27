@@ -28,6 +28,7 @@ export default function ProductPage() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const [buyingNow, setBuyingNow] = useState(false);
   const { t } = useLanguage();
 
   /* ===============================
@@ -249,15 +250,13 @@ export default function ProductPage() {
 
       setTimeout(() => {
         setAddedToCart(false);
+        setAddingToCart(false);
       }, 900);
     } catch (error: any) {
       setAddedToCart(false);
-
-      toast.dismiss();
-
-      toast.error(error?.message || t.toast.stockError);
-    } finally {
       setAddingToCart(false);
+      toast.dismiss();
+      toast.error(error?.message || t.toast.stockError);
     }
   };
 
@@ -267,6 +266,7 @@ export default function ProductPage() {
         toast.error(t.toast.selectVariant);
         return;
       }
+      setBuyingNow(true);
       toast.success(t.toast.addedToCart);
 
       await addItem(product.id, selectedVariant.id, quantity, false, {
@@ -284,6 +284,8 @@ export default function ProductPage() {
         color: selectedVariant.color,
       });
 
+      router.push('/checkout');
+
       void apiFetch('/analytics/track', {
         method: 'POST',
         body: JSON.stringify({
@@ -296,11 +298,9 @@ export default function ProductPage() {
           },
         }),
       });
-
-      router.push('/checkout');
     } catch (error: any) {
       toast.dismiss();
-
+      setBuyingNow(false);
       toast.error(error?.message || t.toast.stockError);
     }
   };
