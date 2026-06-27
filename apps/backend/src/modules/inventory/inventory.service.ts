@@ -10,15 +10,11 @@ export const InventoryService = {
   async reserveStock(tx: any, variantId: string, orderId: string, quantity: number) {
     const start = Date.now();
 
-    console.log('📦 reserveStock START');
-
     const variant = await tx.productVariant.findUnique({
       where: {
         id: variantId,
       },
     });
-
-    console.log('📦 findUnique', Date.now() - start, 'ms');
 
     if (!variant) {
       throw new Error('Variant not found');
@@ -39,8 +35,6 @@ export const InventoryService = {
       },
     });
 
-    console.log('📦 reservation created', Date.now() - start, 'ms');
-
     await tx.productVariant.update({
       where: {
         id: variantId,
@@ -51,8 +45,6 @@ export const InventoryService = {
         },
       },
     });
-
-    console.log('📦 stock updated', Date.now() - start, 'ms');
   },
 
   /* =========================================================

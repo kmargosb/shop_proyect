@@ -50,8 +50,6 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
 
   const start = Date.now();
 
-  console.log('⏱️ createOrderTx START');
-
   let totalAmount = 0;
 
   const orderItemsData: {
@@ -71,8 +69,6 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
   /* =========================
        VALIDATE STOCK
     ========================= */
-
-  console.log('⏱️ Before validate stock', Date.now() - start, 'ms');
 
   for (const item of items) {
     const variant = await tx.productVariant.findUnique({
@@ -111,8 +107,6 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     });
   }
 
-  console.log('⏱️ After validate stock', Date.now() - start, 'ms');
-
   /* =========================
        CREATE ORDER
     ========================= */
@@ -140,15 +134,11 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     },
   });
 
-  console.log('⏱️ Order created', Date.now() - start, 'ms');
-
   const normalize = (str?: string) => str?.trim().toLowerCase();
 
   /* =========================
    SAVE ADDRESS (AUTO)
    ========================= */
-
-  console.log('⏱️ Before address', Date.now() - start, 'ms');
 
   if (userId) {
     const existing = await tx.address.findFirst({
@@ -177,19 +167,11 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     }
   }
 
-  console.log('⏱️ After address', Date.now() - start, 'ms');
-
   /* =========================
        RESERVE INVENTORY
     ========================= */
 
-  console.log('⏱️ Before inventory import', Date.now() - start, 'ms');
-
   const { InventoryService } = await import('@/modules/inventory/inventory.service');
-
-  console.log('⏱️ After inventory import', Date.now() - start, 'ms');
-
-  console.log('⏱️ Before reserve loop', Date.now() - start, 'ms');
 
   for (const item of order.items) {
     if (!item.variantId) {
@@ -199,13 +181,9 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     await InventoryService.reserveStock(tx, item.variantId, order.id, item.quantity);
   }
 
-  console.log('⏱️ After reserve loop', Date.now() - start, 'ms');
-
   /* =========================
        ORDER TIMELINE
     ========================= */
-
-  console.log('⏱️ Before order event', Date.now() - start, 'ms');
 
   await tx.orderEvent.create({
     data: {
@@ -214,10 +192,6 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
       message: 'Order created',
     },
   });
-
-  console.log('⏱️ After order event', Date.now() - start, 'ms');
-
-  console.log('⏱️ createOrderTx FINISHED', Date.now() - start, 'ms');
 
   return order;
 }
