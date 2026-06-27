@@ -148,7 +148,7 @@ export default function Footer() {
 
         {/* BOTTOM */}
 
-        <div className="mt-14 border-t border-white/10 pt-6 pb-10 md:pb-6">
+        <div className="mt-14 border-t border-white/10 pt-6 pb-12 md:pb-8">
           <div className="flex flex-col gap-3 text-sm text-neutral-500 md:flex-row md:items-center md:justify-between">
             <p>© {new Date().getFullYear()} Camarguette. All rights reserved.</p>
 

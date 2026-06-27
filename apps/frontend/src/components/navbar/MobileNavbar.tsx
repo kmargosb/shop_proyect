@@ -57,7 +57,7 @@ export default function MobileNavbar() {
         }
 
         // Ignorar el rebote inferior de Safari
-        if (distanceToBottom < 120) {
+        if (distanceToBottom < 180) {
           lastScrollRef.current = currentScroll;
           tickingRef.current = false;
           return;
