@@ -45,7 +45,7 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/5 bg-black text-neutral-400">
+    <footer className="border-t border-white/5 bg-black pb-[env(safe-area-inset-bottom)] text-neutral-400">
       <div className="mx-auto max-w-7xl px-5 py-14 md:px-6 md:py-10">
         {/* TOP */}
 
@@ -148,7 +148,7 @@ export default function Footer() {
 
         {/* BOTTOM */}
 
-        <div className="mt-14 border-t border-white/10 pt-6">
+        <div className="mt-14 border-t border-white/10 pt-6 pb-10 md:pb-6">
           <div className="flex flex-col gap-3 text-sm text-neutral-500 md:flex-row md:items-center md:justify-between">
             <p>© {new Date().getFullYear()} Camarguette. All rights reserved.</p>
 
