@@ -353,9 +353,10 @@ export default function ProductPage() {
             <h1 className="text-3xl font-bold">{product.name}</h1>
 
             <button
+              disabled={buyingNow}
               onClick={() => toggleWishlist(product.id)}
               title={isWishlisted(product.id) ? t.wishlist.saved : t.wishlist.save}
-              className="rounded-full p-2 transition hover:bg-white/5"
+              className="rounded-full p-2 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Heart
                 size={22}
@@ -380,6 +381,7 @@ export default function ProductPage() {
                 {sizes.map((size) => (
                   <button
                     key={size}
+                    disabled={buyingNow}
                     onClick={() => {
                       setSelectedSize(size);
                       setQuantity(1);
@@ -423,6 +425,7 @@ export default function ProductPage() {
                   return (
                     <button
                       key={color}
+                      disabled={buyingNow}
                       onClick={() => {
                         if (selectedColor === color) return;
                         setSelectedColor(color);
@@ -479,7 +482,7 @@ export default function ProductPage() {
 
             <div className="flex items-center rounded-md border border-neutral-700">
               <button
-                disabled={outOfStock}
+                disabled={outOfStock || buyingNow}
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 className="cursor-pointer px-3 py-1 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -489,7 +492,7 @@ export default function ProductPage() {
               <span className="px-4">{quantity}</span>
 
               <button
-                disabled={outOfStock}
+                disabled={outOfStock || buyingNow}
                 onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
                 className="cursor-pointer px-3 py-1 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -505,7 +508,7 @@ export default function ProductPage() {
           <div className="flex gap-4">
             <Button
               onClick={handleAddToCart}
-              disabled={outOfStock || addingToCart}
+              disabled={outOfStock || addingToCart || buyingNow}
               className="min-w-[170px] cursor-pointer bg-white text-black shadow-sm transition-all duration-300 hover:bg-neutral-200 hover:shadow-md disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
             >
               <span className="flex items-center gap-2">
@@ -521,11 +524,11 @@ export default function ProductPage() {
 
             <Button
               onClick={handleBuyNow}
-              disabled={outOfStock}
+              disabled={outOfStock || buyingNow}
               variant="outline"
               className="cursor-pointer shadow-sm transition-all hover:shadow-md"
             >
-              {t.product.buyNow}
+              {buyingNow ? 'Loading...' : t.product.buyNow}
             </Button>
           </div>
         </div>
