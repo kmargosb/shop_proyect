@@ -38,22 +38,17 @@ export async function getActiveCartId(
   return cart?.id ?? null;
 }
 
-export async function fetchCart(setItems: React.Dispatch<React.SetStateAction<CartItem[]>>) {
+export async function fetchCart() {
   const cart = await getCart();
 
   if (!cart) {
-    return;
+    return [];
   }
 
-  setItems(mapItems(cart));
+  return mapItems(cart);
 }
 
-export async function addItemRequest(
-  cartId: string,
-  productId: string,
-  variantId: string,
-  quantity: number,
-) {
+export async function addItemRequest(productId: string, variantId: string, quantity: number) {
   return apiFetch('/cart/items', {
     method: 'POST',
     body: JSON.stringify({
@@ -71,7 +66,6 @@ export async function removeItemRequest(itemId: string) {
 }
 
 export async function updateQuantityRequest(
-  _cartId: string,
   productId: string,
   variantId: string,
   quantity: number,
