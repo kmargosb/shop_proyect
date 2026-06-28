@@ -55,7 +55,7 @@ export async function ensureCart(
     return createCart(cartIdRef);
   }
 
-  const res = await apiFetch(`/cart/${cartId}`);
+  const res = await apiFetch('/cart');
 
   if (!res || !res.ok) {
     localStorage.removeItem(CART_KEY);
@@ -94,7 +94,7 @@ export async function fetchCart(
   cartId: string,
   setItems: React.Dispatch<React.SetStateAction<CartItem[]>>,
 ) {
-  const res = await apiFetch(`/cart/${cartId}`);
+  const res = await apiFetch('/cart');
 
   if (!res || !res.ok) {
     return;

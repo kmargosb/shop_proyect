@@ -25,6 +25,35 @@ export const createCartController = async (req: AuthRequest, res: Response) => {
 };
 
 /* =========================================================
+   GET ACTIVE CART
+========================================================= */
+
+export const getActiveCartController = async (req: AuthRequest, res: Response) => {
+  try {
+    const cartId = req.cookies?.cartId;
+
+    const cart = await CartService.getActiveCart(cartId, req.user?.id);
+
+    if (!cartId || cart.id !== cartId) {
+      res.cookie('cartId', cart.id, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24 * 30,
+      });
+    }
+
+    return res.json(cart);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: 'Failed to get cart',
+    });
+  }
+};
+
+/* =========================================================
    GET CART
 ========================================================= */
 

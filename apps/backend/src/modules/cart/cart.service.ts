@@ -85,6 +85,52 @@ export const CartService = {
   },
 
   /* =========================================================
+   GET ACTIVE CART
+========================================================= */
+
+  async getActiveCart(cartId?: string, userId?: string) {
+    const expiresAt = {
+      gt: new Date(),
+    };
+
+    // Usuario autenticado
+    if (userId) {
+      const cart = await prisma.cart.findFirst({
+        where: {
+          userId,
+          status: 'ACTIVE',
+          expiresAt,
+        },
+        include: CART_INCLUDE,
+      });
+
+      if (cart) {
+        return cart;
+      }
+
+      return this.getOrCreateCart(userId);
+    }
+
+    // Invitado
+    if (cartId) {
+      const cart = await prisma.cart.findFirst({
+        where: {
+          id: cartId,
+          status: 'ACTIVE',
+          expiresAt,
+        },
+        include: CART_INCLUDE,
+      });
+
+      if (cart) {
+        return cart;
+      }
+    }
+
+    return this.getOrCreateCart();
+  },
+
+  /* =========================================================
      ADD ITEM
   ========================================================= */
 

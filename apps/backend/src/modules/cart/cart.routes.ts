@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router } from 'express';
 
 import {
   createCartController,
@@ -8,24 +8,27 @@ import {
   mergeCartController,
   checkoutCartController,
   getCartTotalsController,
-} from "./cart.controller";
+  getActiveCartController,
+} from './cart.controller';
 
-import { attachUserIfExists } from "@/common/middleware/auth.middleware"; // 🔥 IMPORTANTE
+import { attachUserIfExists } from '@/common/middleware/auth.middleware'; // 🔥 IMPORTANTE
 
 const router = Router();
 
-router.post("/", createCartController);
+router.post('/', createCartController);
 
-router.get("/:cartId", getCartController);
+router.get('/', attachUserIfExists, getActiveCartController);
 
-router.post("/:cartId/items", addItemController);
+router.get('/:cartId', getCartController);
 
-router.delete("/items/:itemId", removeItemController);
+router.post('/:cartId/items', addItemController);
 
-router.get("/:cartId/totals", getCartTotalsController);
+router.delete('/items/:itemId', removeItemController);
 
-router.post("/merge", mergeCartController);
+router.get('/:cartId/totals', getCartTotalsController);
 
-router.post("/:cartId/checkout", attachUserIfExists, checkoutCartController);
+router.post('/merge', mergeCartController);
+
+router.post('/:cartId/checkout', attachUserIfExists, checkoutCartController);
 
 export default router;
