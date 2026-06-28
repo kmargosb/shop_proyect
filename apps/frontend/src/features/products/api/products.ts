@@ -1,12 +1,8 @@
+import { serverFetch } from '../../../shared/server/client';
 import type { Product } from '@/types/product';
-import { serverFetch } from '../client';
 
 export async function getProducts() {
   return serverFetch<Product[]>('/products');
-}
-
-export async function getProduct(productId: string) {
-  return serverFetch<Product>(`/products/${productId}`);
 }
 
 export async function getProductsByBrand(brand: string) {

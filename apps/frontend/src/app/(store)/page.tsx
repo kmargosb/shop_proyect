@@ -6,6 +6,7 @@ import FeaturedBrands from '@/components/store/FeaturedBrands';
 import HomeCTA from '@/components/store/HomeCTA';
 import Footer from '@/components/store/Footer';
 import BrandsShowcase from '@/components/store/BrandsShowcase';
+import { getProducts } from '@/shared/server/api/products';
 
 export const metadata: Metadata = {
   title: 'Contemporary Clothing',
@@ -13,11 +14,12 @@ export const metadata: Metadata = {
     'Contemporary clothing inspired by skateboarding, craftsmanship and timeless design.',
 };
 
-export default function Home() {
+export default async function Home() {
+  const products = await getProducts();
   return (
     <main>
       <HeroCarousel />
-      <ProductsView />
+      <ProductsView initialProducts={products} />
       <BrandsShowcase />
       <HomeCTA />
       <Footer />

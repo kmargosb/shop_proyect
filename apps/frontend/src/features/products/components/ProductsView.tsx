@@ -4,21 +4,25 @@ import { useEffect, useRef, useState } from 'react';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { productsApi } from '@/features/products/api/products.api';
 import { socket } from '@/shared/lib/socket';
-import type { Product } from '@/types/product';
 import ProductCard from './ProductCard';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import type { Product } from '@/types/product';
 
 interface Props {
   brand?: string;
+  initialProducts?: Product[];
 }
 
-export default function ProductsView({ brand }: Props) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ProductsView({ brand, initialProducts }: Props) {
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(!initialProducts);
   const carouselRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   const loadProducts = async () => {
+    if (initialProducts && !brand) {
+      return;
+    }
     try {
       const data = brand ? await productsApi.getByBrand(brand) : await productsApi.getAll();
 
@@ -31,10 +35,18 @@ export default function ProductsView({ brand }: Props) {
   };
 
   useEffect(() => {
+    if (initialProducts && !brand) {
+      return;
+    }
+
     loadProducts();
-  }, [brand]);
+  }, [brand, initialProducts]);
 
   useEffect(() => {
+    if (initialProducts && !brand) {
+      return;
+    }
+
     const handleProductUpdated = () => {
       loadProducts();
     };
@@ -44,7 +56,7 @@ export default function ProductsView({ brand }: Props) {
     return () => {
       socket.off('productUpdated', handleProductUpdated);
     };
-  }, [brand]);
+  }, [brand, initialProducts]);
 
   useEffect(() => {
     if (window.innerWidth >= 768) return;

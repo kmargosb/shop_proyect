@@ -1,4 +1,4 @@
-import { apiFetch } from "@/shared/lib/api";
+import { apiFetch } from '@/shared/lib/api';
 
 export const productsApi = {
   async search(queryString: string) {
@@ -10,7 +10,7 @@ export const productsApi = {
   },
 
   async getAll() {
-    const res = await apiFetch("/products");
+    const res = await apiFetch('/products');
 
     if (!res || !res.ok) return [];
 
