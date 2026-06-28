@@ -123,6 +123,43 @@ export const addItemController = async (req: AuthRequest, res: Response) => {
 };
 
 /* =========================================================
+   ADD ITEM (ACTIVE CART)
+========================================================= */
+
+export const addItemToActiveCartController = async (req: AuthRequest, res: Response) => {
+  try {
+    const cartId = req.cookies?.cartId;
+
+    const activeCart = await CartService.getActiveCart(cartId, req.user?.id);
+
+    const { productId, variantId, quantity } = req.body;
+
+    const cart = await CartService.addItem(activeCart.id, productId, variantId, quantity);
+
+    if (!cart) {
+      return res.status(500).json({
+        error: 'Failed to update cart',
+      });
+    }
+
+    if (cart.id !== cartId) {
+      res.cookie('cartId', cart.id, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24 * 30,
+      });
+    }
+
+    return res.json(cart);
+  } catch (error: any) {
+    return res.status(400).json({
+      error: error?.message || 'Failed to update cart item',
+    });
+  }
+};
+
+/* =========================================================
    REMOVE ITEM
 ========================================================= */
 

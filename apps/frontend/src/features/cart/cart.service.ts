@@ -111,7 +111,7 @@ export async function addItemRequest(
   variantId: string,
   quantity: number,
 ) {
-  return apiFetch(`/cart/${cartId}/items`, {
+  return apiFetch('/cart/items', {
     method: 'POST',
     body: JSON.stringify({
       productId,

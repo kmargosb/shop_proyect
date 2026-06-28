@@ -9,6 +9,7 @@ import {
   checkoutCartController,
   getCartTotalsController,
   getActiveCartController,
+  addItemToActiveCartController,
 } from './cart.controller';
 
 import { attachUserIfExists } from '@/common/middleware/auth.middleware'; // 🔥 IMPORTANTE
@@ -19,9 +20,11 @@ router.post('/', createCartController);
 
 router.get('/', attachUserIfExists, getActiveCartController);
 
-router.get('/:cartId', getCartController);
+router.post('/items', attachUserIfExists, addItemToActiveCartController);
 
 router.post('/:cartId/items', addItemController);
+
+router.get('/:cartId', getCartController);
 
 router.delete('/items/:itemId', removeItemController);
 
