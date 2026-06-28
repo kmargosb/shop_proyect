@@ -1,68 +1,45 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/features/cart/CartContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { apiFetch } from '@/shared/lib/api';
-import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { COUNTRIES } from '@/shared/constants/countries';
 import LoginInline from '@/features/auth/components/LoginInline';
 import AddressAutocomplete from './components/AddressAutocomplete';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-import { toast } from 'sonner';
-
-/* ================= TYPES ================= */
-
-type Address = {
-  id: string;
-  fullName: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  isDefault?: boolean;
-};
-
-type AddressData = {
-  addressLine1: string;
-  city: string;
-  postalCode: string;
-  country: string;
-};
-
-type CheckoutResponse = {
-  orderId: string;
-  payment: { clientSecret: string };
-};
+import CheckoutSummary from './components/CheckoutSummary';
+import { useCheckout } from './hooks/useCheckout';
+import CheckoutForm from './components/CheckoutForm';
 
 export default function CreateOrderForm() {
   const { items, clearCart, totalPrice, increaseQuantity, decreaseQuantity, removeItem } =
     useCart();
   const { refreshUser } = useAuth();
-
-  const [loading, setLoading] = useState(false);
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-
-  const [isLogged, setIsLogged] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
   const { t } = useLanguage();
 
-  const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    postalCode: '',
-    country: 'ES',
-  });
+  const {
+    loading,
+    setLoading,
+    form,
+    setForm,
+    addresses,
+    setAddresses,
+    selectedAddressId,
+    setSelectedAddressId,
+    isLogged,
+    setIsLogged,
+    showLogin,
+    setShowLogin,
+    handleChange,
+    handleAddressChange,
+    isValid,
+    deleteAddress,
+    setFavorite,
+    handleSubmit,
+    loadAddresses,
+  } = useCheckout();
 
   /* ================= AUTOFILL ================= */
 
@@ -89,177 +66,11 @@ export default function CreateOrderForm() {
     }
   }, []);
 
-  /* ================= LOAD USER + ADDRESSES ================= */
-
-  const loadAddresses = async () => {
-    console.time('loadAddresses');
-
-    try {
-      const [meRes, res] = await Promise.all([
-        apiFetch('/auth/me'),
-        apiFetch('/customers/me/addresses'),
-      ]);
-
-      if (!meRes || !meRes.ok) {
-        setIsLogged(false);
-        return;
-      }
-
-      setIsLogged(true);
-
-      const meData = await meRes.json();
-
-      if (!res || !res.ok) return;
-
-      const data: Address[] = await res.json();
-      setAddresses(data);
-
-      if (data.length > 0) {
-        const first = data[0];
-
-        setSelectedAddressId(first.id);
-
-        const [firstName = '', ...lastParts] = (first.fullName ?? '').split(' ');
-
-        setForm((prev) => ({
-          ...prev,
-          email: meData.user?.email || prev.email,
-
-          firstName,
-          lastName: lastParts.join(' '),
-
-          phone: first.phone,
-          addressLine1: first.addressLine1,
-          addressLine2: first.addressLine2 || '',
-          city: first.city,
-          postalCode: first.postalCode,
-          country: first.country,
-        }));
-      } else {
-        setForm((prev) => ({
-          ...prev,
-          email: meData.user?.email || prev.email,
-        }));
-      }
-
-      console.timeEnd('loadAddresses');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    loadAddresses();
-  }, []);
-
   /* ================= AUTO SAVE ================= */
 
   useEffect(() => {
     localStorage.setItem('checkoutData', JSON.stringify(form));
   }, [form]);
-
-  /* ================= INPUT ================= */
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  /* ================= ADDRESS AUTOCOMPLETE ================= */
-
-  const handleAddressChange = (data: AddressData) => {
-    setForm((prev) => ({
-      ...prev,
-      ...data,
-    }));
-  };
-
-  /* ================= ADDRESS ACTIONS ================= */
-
-  const deleteAddress = async (id: string) => {
-    await apiFetch(`/customers/me/addresses/${id}`, {
-      method: 'DELETE',
-    });
-
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const setFavorite = async (id: string) => {
-    await apiFetch(`/customers/me/addresses/${id}/favorite`, {
-      method: 'PATCH',
-    });
-
-    loadAddresses();
-  };
-
-  /* ================= VALID ================= */
-
-  const isValid =
-    form.firstName &&
-    form.lastName &&
-    form.email &&
-    form.phone &&
-    form.addressLine1 &&
-    form.city &&
-    form.postalCode &&
-    form.country;
-
-  /* ================= SUBMIT ================= */
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!isValid) return alert('Please complete all required fields');
-
-    setLoading(true);
-
-    try {
-      const res = await apiFetch('/cart/checkout', {
-        method: 'POST',
-        body: JSON.stringify({
-          method: 'CARD',
-
-          fullName: `${form.firstName} ${form.lastName}`.trim(),
-
-          email: form.email,
-          phone: form.phone,
-          addressLine1: form.addressLine1,
-          addressLine2: form.addressLine2,
-          city: form.city,
-          postalCode: form.postalCode,
-          country: form.country,
-        }),
-      });
-
-      if (!res) {
-        throw new Error('Connection error');
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-
-        throw new Error(data?.error || 'Unable to process checkout');
-      }
-
-      const data: CheckoutResponse = await res.json();
-
-      localStorage.setItem('orderEmail', form.email);
-
-      localStorage.setItem('orderEmailOrderId', data.orderId);
-
-      window.location.href = `/orders/${data.orderId}/pay?clientSecret=${encodeURIComponent(
-        data.payment.clientSecret,
-      )}&email=${encodeURIComponent(form.email)}`;
-    } catch (error: any) {
-      toast.error(error?.message || 'Unable to process checkout');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
@@ -406,196 +217,23 @@ export default function CreateOrderForm() {
             })}
           </div>
         )}
-
-        {/* FORM */}
-        <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              name="firstName"
-              value={form.firstName}
-              onChange={handleChange}
-              placeholder={t.checkout.firstName}
-            />
-
-            <Input
-              name="lastName"
-              value={form.lastName}
-              onChange={handleChange}
-              placeholder={t.checkout.lastName}
-            />
-          </div>
-          <Input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Email"
-          />
-          <Input
-            type="tel"
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            placeholder={t.checkout.phone}
-          />
-
-          <AddressAutocomplete value={form.addressLine1} onChange={handleAddressChange} />
-
-          <Input
-            name="addressLine2"
-            value={form.addressLine2}
-            onChange={handleChange}
-            placeholder="Door / Apartment number"
-          />
-          <Input
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-            placeholder={t.checkout.city}
-          />
-          <Input
-            name="postalCode"
-            value={form.postalCode}
-            onChange={handleChange}
-            placeholder={t.checkout.postalCode}
-          />
-
-          <select
-            name="country"
-            value={form.country}
-            onChange={handleChange}
-            className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3"
-          >
-            {COUNTRIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </form>
+        <CheckoutForm
+          form={form}
+          handleChange={handleChange}
+          handleAddressChange={handleAddressChange}
+          handleSubmit={handleSubmit}
+          clearCart={clearCart}
+        />
       </div>
-
-      {/* RIGHT */}
-      <div className="space-y-6 rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6">
-        {/* HEADER */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t.checkout.orderSummary}</h2>
-          <span className="text-xs text-neutral-400">
-            {items.length} {items.length === 1 ? t.checkout.item : t.checkout.items}
-          </span>
-        </div>
-
-        {/* ITEMS */}
-        <div className="space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                {/* IMAGE  */}
-                <div className="h-16 w-16 overflow-hidden rounded-lg bg-neutral-800">
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-500">
-                      IMG
-                    </div>
-                  )}
-                </div>
-
-                {/* INFO */}
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{item.name}</span>
-
-                  {(item.size || item.color) && (
-                    <span className="mt-1 text-xs text-neutral-400">
-                      {item.size && `${t.product.size} ${item.size}`}
-                      {item.size && item.color && ' · '}
-                      {item.color}
-                    </span>
-                  )}
-
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => decreaseQuantity(item.id)}
-                      className="h-6 w-6 rounded border border-neutral-700 transition hover:border-white"
-                    >
-                      -
-                    </button>
-
-                    <span className="min-w-[24px] text-center text-xs text-neutral-300">
-                      {item.quantity}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => increaseQuantity(item.id)}
-                      className="h-6 w-6 rounded border border-neutral-700 transition hover:border-white"
-                    >
-                      +
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.id)}
-                      className="ml-2 text-xs text-neutral-500 transition hover:text-red-400"
-                    >
-                      {t.checkout.remove}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* PRICE */}
-              <span className="text-sm font-medium">
-                €{((item.price * item.quantity) / 100).toFixed(2)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* DIVIDER */}
-        <div className="border-t border-white/10" />
-
-        {/* COST BREAKDOWN */}
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between text-neutral-400">
-            <span>{t.checkout.subtotal}</span>
-            <span>€{(totalPrice / 100).toFixed(2)}</span>
-          </div>
-
-          <div className="flex justify-between text-neutral-400">
-            <span>{t.checkout.shipping}</span>
-            <span className="text-green-400">{t.checkout.free}</span>
-          </div>
-
-          <div className="flex justify-between text-neutral-400">
-            <span>{t.checkout.taxes}</span>
-            <span>{t.checkout.included}</span>
-          </div>
-        </div>
-
-        {/* TOTAL */}
-        <div className="flex items-center justify-between border-t border-white/10 pt-4">
-          <span className="text-base font-semibold">{t.checkout.total}</span>
-          <span className="text-xl font-bold">€{(totalPrice / 100).toFixed(2)}</span>
-        </div>
-
-        <Button
-          type="submit"
-          form="checkout-form"
-          disabled={!isValid || loading}
-          className="h-12 w-full rounded-xl border border-white/20 !bg-white font-semibold !text-black shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
-        >
-          {loading ? t.checkout.processing : `${t.checkout.pay} €${(totalPrice / 100).toFixed(2)}`}
-        </Button>
-
-        {/* TRUST / UX BOOST */}
-        <div className="mt-20 space-y-1 text-xs text-neutral-500">
-          <p>🔒 {t.checkout.securePayment}</p>
-          <p>💳 {t.checkout.stripe}</p>
-          <p>🚚 {t.checkout.fastShipping}</p>
-        </div>
-      </div>
+      <CheckoutSummary
+        items={items}
+        totalPrice={totalPrice}
+        loading={loading}
+        isValid={!!isValid}
+        increaseQuantity={increaseQuantity}
+        decreaseQuantity={decreaseQuantity}
+        removeItem={removeItem}
+      />
     </div>
   );
 }
