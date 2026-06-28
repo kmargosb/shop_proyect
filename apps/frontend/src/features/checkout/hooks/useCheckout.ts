@@ -5,6 +5,7 @@ import { apiFetch } from '@/shared/lib/api';
 import { toast } from 'sonner';
 import type { ChangeEvent } from 'react';
 import type { CheckoutFormData, Address, AddressData, CheckoutResponse } from '../types';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 export function useCheckout() {
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,7 @@ export function useCheckout() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isLogged, setIsLogged] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const { user, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     firstName: '',
@@ -63,21 +65,11 @@ export function useCheckout() {
     console.time('loadAddresses');
 
     try {
-      const [meRes, res] = await Promise.all([
-        apiFetch('/auth/me'),
-        apiFetch('/customers/me/addresses'),
-      ]);
+      const res = await apiFetch('/customers/me/addresses');
 
-      if (!meRes || !meRes.ok) {
-        setIsLogged(false);
+      if (!res || !res.ok) {
         return;
       }
-
-      setIsLogged(true);
-
-      const meData = await meRes.json();
-
-      if (!res || !res.ok) return;
 
       const data: Address[] = await res.json();
       setAddresses(data);
@@ -91,7 +83,7 @@ export function useCheckout() {
 
         setForm((prev) => ({
           ...prev,
-          email: meData.user?.email || prev.email,
+          email: user?.email || prev.email,
 
           firstName,
           lastName: lastParts.join(' '),
@@ -106,7 +98,7 @@ export function useCheckout() {
       } else {
         setForm((prev) => ({
           ...prev,
-          email: meData.user?.email || prev.email,
+          email: user?.email || prev.email,
         }));
       }
 
@@ -117,8 +109,19 @@ export function useCheckout() {
   };
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      setIsLogged(false);
+      return;
+    }
+
+    setIsLogged(true);
+
     loadAddresses();
-  }, []);
+  }, [authLoading, user]);
 
   const setFavorite = async (id: string) => {
     await apiFetch(`/customers/me/addresses/${id}/favorite`, {
