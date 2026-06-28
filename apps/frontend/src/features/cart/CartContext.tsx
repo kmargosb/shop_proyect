@@ -3,7 +3,14 @@
 import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { mapItems, createCart, ensureCart, getActiveCartId, fetchCart } from './cart.service';
+import {
+  mapItems,
+  removeItemRequest,
+  createCart,
+  ensureCart,
+  getActiveCartId,
+  fetchCart,
+} from './cart.service';
 import { addItemRequest } from './cart.service';
 
 const CART_KEY = 'cartId';
@@ -253,9 +260,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const res = await apiFetch(`/cart/items/${itemId}`, {
-        method: 'DELETE',
-      });
+      const res = await removeItemRequest(itemId);
 
       if (!res || !res.ok) {
         itemsRef.current = previous;

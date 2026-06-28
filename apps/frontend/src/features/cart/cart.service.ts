@@ -120,3 +120,9 @@ export async function addItemRequest(
     }),
   });
 }
+
+export async function removeItemRequest(itemId: string) {
+  return apiFetch(`/cart/items/${itemId}`, {
+    method: 'DELETE',
+  });
+}
