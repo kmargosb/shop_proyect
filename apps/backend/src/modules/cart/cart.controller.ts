@@ -229,3 +229,30 @@ export const checkoutCartController = async (req: AuthRequest, res: Response) =>
     });
   }
 };
+
+/* =========================================================
+   CHECKOUT ACTIVE CART
+========================================================= */
+
+export const checkoutActiveCartController = async (req: AuthRequest, res: Response) => {
+  try {
+    const cartId = req.cookies?.cartId;
+
+    const cart = await CartService.getActiveCart(cartId, req.user?.id);
+
+    const result = await CheckoutService.checkout({
+      cartId: cart.id,
+      method: 'CARD',
+      ...req.body,
+      userId: req.user?.id,
+    });
+
+    return res.json(result);
+  } catch (error: any) {
+    console.error('Checkout error:', error);
+
+    return res.status(500).json({
+      error: error.message || 'Checkout failed',
+    });
+  }
+};

@@ -218,13 +218,9 @@ export default function CreateOrderForm() {
     setLoading(true);
 
     try {
-      const cartId = localStorage.getItem('cartId');
-      if (!cartId) throw new Error();
-
-      const res = await apiFetch(`/cart/${cartId}/checkout`, {
+      const res = await apiFetch('/cart/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          cartId,
           method: 'CARD',
 
           fullName: `${form.firstName} ${form.lastName}`.trim(),

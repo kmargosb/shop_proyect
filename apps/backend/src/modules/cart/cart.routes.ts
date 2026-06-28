@@ -9,6 +9,7 @@ import {
   checkoutCartController,
   getCartTotalsController,
   getActiveCartController,
+  checkoutActiveCartController,
   addItemToActiveCartController,
 } from './cart.controller';
 
@@ -31,6 +32,8 @@ router.delete('/items/:itemId', removeItemController);
 router.get('/:cartId/totals', getCartTotalsController);
 
 router.post('/merge', mergeCartController);
+
+router.post('/checkout', attachUserIfExists, checkoutActiveCartController);
 
 router.post('/:cartId/checkout', attachUserIfExists, checkoutCartController);
 
