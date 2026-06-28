@@ -160,6 +160,34 @@ export const addItemToActiveCartController = async (req: AuthRequest, res: Respo
 };
 
 /* =========================================================
+   UPDATE QUANTITY (ACTIVE CART)
+========================================================= */
+
+export const updateQuantityActiveCartController = async (req: AuthRequest, res: Response) => {
+  try {
+    const cartId = req.cookies?.cartId;
+
+    const activeCart = await CartService.getActiveCart(cartId, req.user?.id);
+
+    const { productId, variantId, quantity } = req.body;
+
+    const cart = await CartService.addItem(activeCart.id, productId, variantId, quantity);
+
+    if (!cart) {
+      return res.status(500).json({
+        error: 'Failed to update cart',
+      });
+    }
+
+    return res.json(cart);
+  } catch (error: any) {
+    return res.status(400).json({
+      error: error?.message || 'Failed to update quantity',
+    });
+  }
+};
+
+/* =========================================================
    REMOVE ITEM
 ========================================================= */
 

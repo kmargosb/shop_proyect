@@ -5,9 +5,7 @@ import { socket } from '@/shared/lib/socket';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import {
   mapItems,
-  createCart,
-  ensureCart,
-  getActiveCartId,
+  getCart,
   fetchCart,
   addItemRequest,
   removeItemRequest,
@@ -87,11 +85,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartBusy, setCartBusy] = useState(false);
 
   /**
-   * Cache en memoria del carrito activo.
-   * Evita consultar localStorage constantemente.
-   */
-  const cartIdRef = React.useRef<string | null>(null);
-  /**
    * Cola de sincronización del carrito.
    * Agrupa cambios rápidos para reducir peticiones.
    */
@@ -117,21 +110,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const cartId = await getActiveCartId(cartIdRef);
-
-    if (!cartId) {
-      return;
-    }
-
     const operations = Array.from(pendingSyncRef.current.values());
 
     pendingSyncRef.current.clear();
 
     try {
       await Promise.all(
-        operations.map((op) =>
-          updateQuantityRequest(cartId, op.productId, op.variantId, op.quantity),
-        ),
+        operations.map((op) => updateQuantityRequest('', op.productId, op.variantId, op.quantity)),
       );
 
       // NO sincronizamos el carrito aquí.
@@ -139,7 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error(err);
 
-      await fetchCart(cartId, setItems);
+      await fetchCart(setItems);
     }
   };
 
@@ -147,14 +132,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const cartId = await ensureCart(cartIdRef);
-
-      if (!cartId) {
-        setHydrated(true);
-        return;
-      }
-
-      await fetchCart(cartId, setItems);
+      await fetchCart(setItems);
 
       setHydrated(true);
     };
@@ -168,7 +146,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (!cartId) return;
 
-      await fetchCart(cartId, setItems);
+      await fetchCart(setItems);
     };
 
     socket.on('productUpdated', handleProductUpdated);
@@ -196,13 +174,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addLocalItem(productId, variantId, quantity, optimisticItem);
     }
 
-    const cartId = await getActiveCartId(cartIdRef);
-
-    if (!cartId) {
-      throw new Error('No active cart');
-    }
-
-    const res = await addItemRequest(cartId, productId, variantId, quantity);
+    const res = await addItemRequest('', productId, variantId, quantity);
 
     if (!res) {
       setLoading(false);
@@ -211,7 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setOpen(false);
       }
 
-      await fetchCart(cartId, setItems);
+      await fetchCart(setItems);
 
       throw new Error('Connection error');
     }
@@ -225,7 +197,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const data = await res.json().catch(() => null);
 
-      await fetchCart(cartId, setItems);
+      await fetchCart(setItems);
 
       throw new Error(data?.error || 'No se pudo añadir al carrito');
     }
@@ -392,8 +364,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
-    cartIdRef.current = null;
-    localStorage.removeItem(CART_KEY);
   };
 
   /* ================= TOTALS ================= */

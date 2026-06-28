@@ -10,6 +10,7 @@ import {
   getCartTotalsController,
   getActiveCartController,
   checkoutActiveCartController,
+  updateQuantityActiveCartController,
   addItemToActiveCartController,
 } from './cart.controller';
 
@@ -22,6 +23,8 @@ router.post('/', createCartController);
 router.get('/', attachUserIfExists, getActiveCartController);
 
 router.post('/items', attachUserIfExists, addItemToActiveCartController);
+
+router.post('/items/update', attachUserIfExists, updateQuantityActiveCartController);
 
 router.post('/:cartId/items', addItemController);
 
