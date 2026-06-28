@@ -126,3 +126,19 @@ export async function removeItemRequest(itemId: string) {
     method: 'DELETE',
   });
 }
+
+export async function updateQuantityRequest(
+  cartId: string,
+  productId: string,
+  variantId: string,
+  quantity: number,
+) {
+  return apiFetch(`/cart/${cartId}/items`, {
+    method: 'POST',
+    body: JSON.stringify({
+      productId,
+      variantId,
+      quantity,
+    }),
+  });
+}

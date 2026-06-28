@@ -5,13 +5,14 @@ import { socket } from '@/shared/lib/socket';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import {
   mapItems,
-  removeItemRequest,
   createCart,
   ensureCart,
   getActiveCartId,
   fetchCart,
+  addItemRequest,
+  removeItemRequest,
+  updateQuantityRequest,
 } from './cart.service';
-import { addItemRequest } from './cart.service';
 
 const CART_KEY = 'cartId';
 
@@ -129,14 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       await Promise.all(
         operations.map((op) =>
-          apiFetch(`/cart/${cartId}/items`, {
-            method: 'POST',
-            body: JSON.stringify({
-              productId: op.productId,
-              variantId: op.variantId,
-              quantity: op.quantity,
-            }),
-          }),
+          updateQuantityRequest(cartId, op.productId, op.variantId, op.quantity),
         ),
       );
 
