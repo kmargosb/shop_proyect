@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/features/cart/CartContext';
+import { useCartUI } from '@/features/cart/CartUIContext';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import MobileAccountSheet from './MobileAccountSheet';
@@ -10,7 +11,8 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 export default function MobileNavbar() {
-  const { items, setOpen } = useCart();
+  const { items } = useCart();
+  const { openCart } = useCartUI();
   const { locale, setLocale } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -142,7 +144,7 @@ export default function MobileNavbar() {
               </Link>
             )}
 
-            <button onClick={() => setOpen(true)} className="relative">
+            <button onClick={openCart} className="relative">
               <ShoppingCart size={22} />
 
               {totalItems > 0 && (

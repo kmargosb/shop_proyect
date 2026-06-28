@@ -3,6 +3,8 @@
 import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { mapItems, createCart, ensureCart, getActiveCartId, fetchCart } from './cart.service';
+import { addItemRequest } from './cart.service';
 
 const CART_KEY = 'cartId';
 
@@ -98,108 +100,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* ================= HELPERS ================= */
-
-  const mapItems = (cart: any): CartItem[] =>
-    (cart.items ?? [])
-      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-      .map((item: any) => ({
-        id: item.id,
-        productId: item.productId,
-        variantId: item.variantId,
-        name: item.product?.name ?? 'Producto',
-        price: item.price,
-        quantity: item.quantity,
-        stock: item.variant?.stock ?? 0,
-        image:
-          item.product?.images?.find((img: any) => img.isPrimary)?.url ??
-          item.product?.images?.[0]?.url ??
-          null,
-        size: item.variant?.size ?? null,
-        color: item.variant?.color ?? null,
-      }));
-
-  /* ================= CREATE CART ================= */
-
-  const createCart = async (): Promise<string | null> => {
-    const res = await apiFetch('/cart', { method: 'POST' });
-
-    if (!res || !res.ok) return null;
-
-    const cart = await res.json();
-
-    localStorage.setItem(CART_KEY, cart.id);
-    cartIdRef.current = cart.id;
-
-    return cart.id;
-  };
-
-  /* ================= ENSURE VALID CART ================= */
-
-  const ensureCart = async (): Promise<string | null> => {
-    let cartId = cartIdRef.current ?? localStorage.getItem(CART_KEY);
-
-    if (cartId && !cartIdRef.current) {
-      cartIdRef.current = cartId;
-    }
-
-    /* no cart */
-
-    if (!cartId) {
-      return await createCart();
-    }
-
-    /* validate current cart */
-
-    const res = await apiFetch(`/cart/${cartId}`);
-
-    /* invalid / expired / converted */
-
-    if (!res || !res.ok) {
-      localStorage.removeItem(CART_KEY);
-
-      return await createCart();
-    }
-
-    const cart = await res.json();
-
-    /* backend generated new cart */
-
-    if (cart.id !== cartId) {
-      localStorage.setItem(CART_KEY, cart.id);
-      cartIdRef.current = cart.id;
-    }
-
-    return cart.id;
-  };
-
-  /* ================= GET ACTIVE CART ID ================= */
-
-  const getActiveCartId = async (): Promise<string | null> => {
-    if (cartIdRef.current) {
-      return cartIdRef.current;
-    }
-
-    const storedCartId = localStorage.getItem(CART_KEY);
-
-    if (storedCartId) {
-      cartIdRef.current = storedCartId;
-      return storedCartId;
-    }
-
-    return await createCart();
-  };
-
-  /* ================= FETCH CART ================= */
-
-  const fetchCart = async (cartId: string) => {
-    const res = await apiFetch(`/cart/${cartId}`);
-    if (!res || !res.ok) return;
-
-    const cart = await res.json();
-    setItems(mapItems(cart));
-  };
-
   /* ================= SYNC QUEUE ================= */
 
   const flushCartQueue = async () => {
@@ -209,7 +109,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const cartId = await getActiveCartId();
+    const cartId = await getActiveCartId(cartIdRef);
 
     if (!cartId) {
       return;
@@ -238,7 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error(err);
 
-      await fetchCart(cartId);
+      await fetchCart(cartId, setItems);
     }
   };
 
@@ -246,14 +146,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const cartId = await ensureCart();
+      const cartId = await ensureCart(cartIdRef);
 
       if (!cartId) {
         setHydrated(true);
         return;
       }
 
-      await fetchCart(cartId);
+      await fetchCart(cartId, setItems);
 
       setHydrated(true);
     };
@@ -267,7 +167,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (!cartId) return;
 
-      await fetchCart(cartId);
+      await fetchCart(cartId, setItems);
     };
 
     socket.on('productUpdated', handleProductUpdated);
@@ -295,20 +195,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addLocalItem(productId, variantId, quantity, optimisticItem);
     }
 
-    const cartId = await getActiveCartId();
+    const cartId = await getActiveCartId(cartIdRef);
 
     if (!cartId) {
       throw new Error('No active cart');
     }
 
-    const res = await apiFetch(`/cart/${cartId}/items`, {
-      method: 'POST',
-      body: JSON.stringify({
-        productId,
-        variantId,
-        quantity,
-      }),
-    });
+    const res = await addItemRequest(cartId, productId, variantId, quantity);
 
     if (!res) {
       setLoading(false);
@@ -317,7 +210,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setOpen(false);
       }
 
-      await fetchCart(cartId);
+      await fetchCart(cartId, setItems);
 
       throw new Error('Connection error');
     }
@@ -331,7 +224,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const data = await res.json().catch(() => null);
 
-      await fetchCart(cartId);
+      await fetchCart(cartId, setItems);
 
       throw new Error(data?.error || 'No se pudo añadir al carrito');
     }

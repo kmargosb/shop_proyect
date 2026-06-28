@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/features/cart/CartContext';
+import { useCartUI } from '@/features/cart/CartUIContext';
 import { useEffect, useRef, useState } from 'react';
 import { useNavbar } from '@/hooks/useNavbar';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -11,7 +12,8 @@ import Image from 'next/image';
 import { apiFetch } from '@/shared/lib/api';
 
 export default function DesktopNavbar() {
-  const { items, setOpen } = useCart();
+  const { items } = useCart();
+  const { openCart } = useCartUI();
   const { user, isAuthenticated, loading } = useAuth();
   const { locale, setLocale, t } = useLanguage();
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
@@ -240,7 +242,7 @@ export default function DesktopNavbar() {
 
           {/* CART */}
 
-          <button onClick={() => setOpen(true)} className="relative">
+          <button onClick={openCart} className="relative">
             <ShoppingCart size={24} />
 
             {totalItems > 0 && (

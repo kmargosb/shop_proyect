@@ -3,13 +3,14 @@
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/shared/ui/sheet';
 import { Button } from '@/shared/ui/button';
 import { useCart, CartItem } from '@/features/cart/CartContext';
+import { useCartUI } from '@/features/cart/CartUIContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 export default function CartDrawer() {
-  const { items, open, setOpen, removeItem, increaseQuantity, decreaseQuantity, totalPrice } =
-    useCart();
+  const { items, removeItem, increaseQuantity, decreaseQuantity, totalPrice } = useCart();
+  const { isOpen, closeCart } = useCartUI();
   const router = useRouter();
   const { t } = useLanguage();
   const total = totalPrice / 100;
@@ -22,7 +23,14 @@ export default function CartDrawer() {
   const unlocked = remaining === 0;
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          closeCart();
+        }
+      }}
+    >
       <SheetContent
         side="right"
         className="flex h-[100dvh] w-full max-w-[440px] flex-col border-l border-white/10 bg-neutral-950 px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+20px)] text-white sm:px-6"
@@ -91,7 +99,7 @@ export default function CartDrawer() {
               <Button
                 className="mt-8 rounded-2xl bg-white px-8 text-black hover:bg-neutral-200"
                 onClick={() => {
-                  setOpen(false);
+                  closeCart();
                   router.push('/shop');
                 }}
               >
@@ -185,7 +193,7 @@ export default function CartDrawer() {
             <Button
               className="h-14 w-full rounded-2xl bg-white text-black transition-all hover:bg-neutral-200"
               onClick={() => {
-                setOpen(false);
+                closeCart();
                 router.push('/checkout');
               }}
             >
