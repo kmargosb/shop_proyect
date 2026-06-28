@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 duration: 3500,
               }}
             />
-            <StoreProviders>{children}</StoreProviders>
+            {children}
           </LanguageProvider>
         </AuthProvider>
       </body>
