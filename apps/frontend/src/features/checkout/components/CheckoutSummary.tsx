@@ -1,4 +1,4 @@
-import { CartItem } from '@/features/cart/CartContext';
+import type { CartItem } from '@/features/cart/types';
 import { Button } from '@/shared/ui/button';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 
