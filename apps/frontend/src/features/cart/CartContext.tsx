@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { applyLocalChange, addLocalItem } from './lib/cart.optimistic';
+import { addLocalItem } from './lib/cart.optimistic';
 import { useCartInit } from './hooks/useCartInit';
-import { useCartSync } from './hooks/useCartSync';
+
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import { getTotalItems, getTotalPrice } from './utils/cartTotals';
 import { mapItems, fetchCart, addItemRequest, removeItemRequest } from './cart.service';
@@ -29,11 +29,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setHydrated,
   });
 
-  const { queueUpdate } = useCartSync({
-    itemsRef,
-    setItems,
-  });
-
   /* ================= ADD ITEM ================= */
 
   const addItem = async (
@@ -43,65 +38,68 @@ export function CartProvider({ children }: { children: ReactNode }) {
     openDrawer = true,
     optimisticItem?: OptimisticCartItem,
   ) => {
-    if (openDrawer) {
-      setLoading(true);
-      setOpen(true);
-    }
+    if (cartBusy) return;
 
-    if (optimisticItem) {
-      const updated = addLocalItem(
-        itemsRef.current,
-        productId,
-        variantId,
-        quantity,
-        optimisticItem,
-      );
+    setCartBusy(true);
 
-      itemsRef.current = updated;
-      setItems(updated);
-    }
-
-    const res = await addItemRequest(productId, variantId, quantity);
-
-    if (!res) {
-      setLoading(false);
-
+    try {
       if (openDrawer) {
-        setOpen(false);
+        setLoading(true);
+        setOpen(true);
       }
 
-      const items = await fetchCart();
+      if (optimisticItem) {
+        const updated = addLocalItem(
+          itemsRef.current,
+          productId,
+          variantId,
+          quantity,
+          optimisticItem,
+        );
 
-      itemsRef.current = items;
-      setItems(items);
-
-      throw new Error('Connection error');
-    }
-
-    if (!res.ok) {
-      setLoading(false);
-
-      if (openDrawer) {
-        setOpen(false);
+        itemsRef.current = updated;
+        setItems(updated);
       }
 
-      const data = await res.json().catch(() => null);
+      const res = await addItemRequest(productId, variantId, quantity);
 
-      const items = await fetchCart();
+      if (!res) {
+        if (openDrawer) {
+          setOpen(false);
+        }
 
-      itemsRef.current = items;
-      setItems(items);
+        const items = await fetchCart();
 
-      throw new Error(data?.error || 'No se pudo añadir al carrito');
+        itemsRef.current = items;
+        setItems(items);
+
+        throw new Error('Connection error');
+      }
+
+      if (!res.ok) {
+        if (openDrawer) {
+          setOpen(false);
+        }
+
+        const data = await res.json().catch(() => null);
+
+        const items = await fetchCart();
+
+        itemsRef.current = items;
+        setItems(items);
+
+        throw new Error(data?.error || 'No se pudo añadir al carrito');
+      }
+      const cart = await res.json();
+
+      const synced = mapItems(cart);
+
+      itemsRef.current = synced;
+      setItems(synced);
+    } finally {
+      setLoading(false);
+      setCartBusy(false);
     }
-    const cart = await res.json();
-
-    const synced = mapItems(cart);
-
-    itemsRef.current = synced;
-    setItems(synced);
-
-    setLoading(false);
   };
 
   /* ================= REMOVE ITEM ================= */
@@ -150,13 +148,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (!item) return;
 
-    // UI inmediata
-    const updated = applyLocalChange(itemsRef.current, itemId, 1);
+    setCartBusy(true);
 
-    itemsRef.current = updated;
-    setItems(updated);
+    try {
+      const res = await addItemRequest(item.productId, item.variantId, 1);
 
-    queueUpdate(item.productId, item.variantId, 1);
+      if (!res || !res.ok) {
+        return;
+      }
+
+      const cart = await res.json();
+
+      const synced = mapItems(cart);
+
+      itemsRef.current = synced;
+      setItems(synced);
+    } finally {
+      setCartBusy(false);
+    }
   };
 
   /* ================= DECREASE ================= */
@@ -171,13 +180,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // UI inmediata
-    const updated = applyLocalChange(itemsRef.current, itemId, -1);
+    setCartBusy(true);
 
-    itemsRef.current = updated;
-    setItems(updated);
+    try {
+      const res = await addItemRequest(item.productId, item.variantId, -1);
 
-    queueUpdate(item.productId, item.variantId, -1);
+      if (!res || !res.ok) {
+        return;
+      }
+
+      const cart = await res.json();
+
+      const synced = mapItems(cart);
+
+      itemsRef.current = synced;
+      setItems(synced);
+    } finally {
+      setCartBusy(false);
+    }
   };
 
   /* ================= CLEAR ================= */
