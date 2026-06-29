@@ -1,11 +1,11 @@
 'use client';
 
 import type { Product } from '@/types/product';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { productsApi } from '@/features/products/api/products.api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 import { useProductsLive } from '../hooks/useProductsLive';
-import ProductsGrid from './ProductsGrid';
+import ProductCard from './ProductCard';
 import ProductsSkeleton from './ProductsSkeleton';
 
 interface Props {
@@ -16,7 +16,6 @@ interface Props {
 export default function ProductsView({ brand, initialProducts }: Props) {
   const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
   const [loading, setLoading] = useState(!initialProducts);
-  const carouselRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   const loadProducts = async () => {
@@ -43,23 +42,6 @@ export default function ProductsView({ brand, initialProducts }: Props) {
 
   useProductsLive(!(initialProducts && !brand), loadProducts);
 
-  useEffect(() => {
-    if (window.innerWidth >= 768) return;
-
-    const el = carouselRef.current;
-
-    if (!el) return;
-
-    const timer = setTimeout(() => {
-      el.scrollTo({
-        left: 50,
-        behavior: 'smooth',
-      });
-    }, 700);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <section className="w-full bg-white px-4 py-12 md:px-6 md:py-20">
       <div className="mb-12 flex items-end justify-between">
@@ -74,11 +56,16 @@ export default function ProductsView({ brand, initialProducts }: Props) {
         </div>
       </div>
 
-      <div
-        ref={carouselRef}
-        className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:gap-6"
-      >
-        {loading ? <ProductsSkeleton /> : <ProductsGrid products={products} />}
+      <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:gap-6">
+        {loading ? (
+          <ProductsSkeleton />
+        ) : (
+          products.map((product) => (
+            <div key={product.id} className="min-w-[48%] md:min-w-0">
+              <ProductCard product={product} />
+            </div>
+          ))
+        )}
       </div>
     </section>
   );

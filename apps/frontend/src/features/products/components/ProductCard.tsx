@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/features/wishlist/WishListContext';
 import type { Product } from '@/types/product';
@@ -31,9 +30,8 @@ export default function ProductCard({ product }: Props) {
   const hoverImage = product.images?.[1]?.url ?? primaryImage;
 
   return (
-    <motion.div
-      transition={{ duration: 0.2 }}
-      className={`group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 transition-all ${
+    <div
+      className={`group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 transition-all duration-200 ${
         outOfStock ? 'opacity-60' : 'hover:border-neutral-600'
       }`}
     >
@@ -54,11 +52,7 @@ export default function ProductCard({ product }: Props) {
               className={wishlisted ? 'fill-rose-500 text-rose-500' : 'text-white'}
             />
           </button>
-          <motion.div
-            className="absolute inset-0"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-          >
+          <div className="absolute inset-0 overflow-hidden">
             {outOfStock && (
               <span className="absolute top-3 left-3 z-10 rounded bg-black/80 px-2 py-1 text-xs font-semibold text-red-300">
                 {t.productCard.soldOut}
@@ -69,7 +63,7 @@ export default function ProductCard({ product }: Props) {
               src={primaryImage}
               alt={product.name}
               fill
-              className="object-cover transition-opacity duration-500 group-hover:opacity-0"
+              className="object-cover transition-all duration-500 group-hover:scale-105 group-hover:opacity-0"
             />
 
             {/* HOVER */}
@@ -77,9 +71,9 @@ export default function ProductCard({ product }: Props) {
               src={hoverImage}
               alt={product.name}
               fill
-              className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              className="object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
             />
-          </motion.div>
+          </div>
         </div>
       </Link>
 
@@ -111,16 +105,15 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         <Link href={`/product/${product.id}`} className="block">
-          <motion.div
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: outOfStock ? 1 : 1.02 }}
-            transition={{ duration: 0.15 }}
-            className="w-full rounded-md bg-white py-1.5 text-center text-xs font-medium text-black hover:bg-neutral-200"
+          <div
+            className={`w-full rounded-md bg-white py-1.5 text-center text-xs font-medium text-black transition-transform duration-150 hover:bg-neutral-200 ${
+              outOfStock ? '' : 'hover:scale-[1.02] active:scale-95'
+            }`}
           >
             {t.productCard.viewProduct}
-          </motion.div>
+          </div>
         </Link>
       </div>
-    </motion.div>
+    </div>
   );
 }
