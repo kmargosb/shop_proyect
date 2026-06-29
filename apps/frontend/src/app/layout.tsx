@@ -2,9 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 import StoreProviders from '@/components/providers/StoreProviders';
-import { AuthProvider } from '@/features/auth/context/AuthContext';
-import { LanguageProvider } from '@/shared/i18n/LanguageContext';
-
+import AppProviders from '@/components/providers/AppProviders';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
@@ -17,18 +15,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <LanguageProvider>
-            <Toaster
-              richColors
-              position="bottom-left"
-              toastOptions={{
-                duration: 3500,
-              }}
-            />
-            {children}
-          </LanguageProvider>
-        </AuthProvider>
+        <AppProviders>
+          <Toaster
+            richColors
+            position="bottom-left"
+            toastOptions={{
+              duration: 3500,
+            }}
+          />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

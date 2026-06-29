@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { apiFetch } from "@/shared/lib/api";
+import { createContext, useContext, useEffect, useState } from 'react';
+import { fetchCurrentUser } from '../auth.service';
 
 /* ================= TYPES ================= */
 
 type User = {
   id: string;
   email: string;
-  role: "ADMIN" | "CUSTOMER";
+  role: 'ADMIN' | 'CUSTOMER';
   name?: string | null;
   provider?: string | null;
   createdAt?: string;
@@ -29,52 +29,38 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 /* ================= PROVIDER ================= */
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+type Props = {
+  children: React.ReactNode;
+  initialUser?: User | null;
+};
 
-  /* ================= LOAD USER ================= */
+export function AuthProvider({ children, initialUser = null }: Props) {
+  const hasInitialUser = initialUser !== null;
+
+  const [user, setUser] = useState<User | null>(initialUser);
+
+  const [loading, setLoading] = useState(!hasInitialUser);
+
+  const fetchUser = async () => {
+    const user = await fetchCurrentUser();
+
+    setUser(user);
+  };
 
   const loadUser = async () => {
     try {
-      const res = await apiFetch("/auth/me");
-
-      if (!res || !res.ok) {
-        setUser(null);
-        return;
-      }
-
-      const data = await res.json();
-      setUser(data.user || null);
-    } catch {
-      setUser(null);
+      await fetchUser();
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= REFRESH USER (🔥 CLAVE) ================= */
-
-  const refreshUser = async () => {
-    try {
-      const res = await apiFetch("/auth/me");
-
-      if (!res || !res.ok) {
-        setUser(null);
-        return;
-      }
-
-      const data = await res.json();
-      setUser(data.user || null);
-    } catch {
-      setUser(null);
-    }
-  };
-
-  /* ================= INIT ================= */
+  const refreshUser = fetchUser;
 
   useEffect(() => {
-    loadUser();
+    if (!hasInitialUser) {
+      loadUser();
+    }
   }, []);
 
   return (
@@ -82,8 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
-        isAuthenticated: !!user,
-        isAdmin: user?.role === "ADMIN",
+        isAuthenticated: user !== null,
+        isAdmin: user?.role === 'ADMIN',
         setUser,
         refreshUser, // 🔥 EXPORTADO
       }}
@@ -99,7 +85,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
+    throw new Error('useAuth must be used inside AuthProvider');
   }
 
   return context;

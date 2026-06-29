@@ -1,5 +1,5 @@
 import Navbar from '@/components/navbar/Navbar';
-import StoreProviders from '@/components/providers/StoreProviders';
+import StoreProviders from '@/components/providers/StoreClientProviders';
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (

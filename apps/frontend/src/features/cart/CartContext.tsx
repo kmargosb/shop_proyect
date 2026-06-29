@@ -5,6 +5,8 @@ import { applyLocalChange, addLocalItem } from './lib/cart.optimistic';
 import { useCartInit } from './hooks/useCartInit';
 import { useCartSync } from './hooks/useCartSync';
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
+import { getTotalItems, getTotalPrice } from './utils/cartTotals';
+import { useCartActions } from './hooks/useCartActions';
 import {
   mapItems,
   fetchCart,
@@ -191,14 +193,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
-  /* ================= TOTALS ================= */
-
-  const totalItems = items.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
-
-  const totalPrice = items.reduce(
-    (acc: number, item: CartItem) => acc + item.price * item.quantity,
-    0,
-  );
+  const totalItems = getTotalItems(items);
+  const totalPrice = getTotalPrice(items);
 
   return (
     <CartContext.Provider
