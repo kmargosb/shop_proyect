@@ -1,193 +1,39 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
-
 import Autoplay from 'embla-carousel-autoplay';
-
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/shared/ui/carousel';
-
-type Slide = {
-  title: string;
-  subtitle: string;
-
-  imageDesktop: string;
-  imageMobile: string;
-
-  link: string;
-};
-
-const slides: Slide[] = [
-  {
-    title: 'Lust',
-    subtitle: 'Women From A Broken Future',
-
-    imageDesktop:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647059/refund-evidence/SarahConors_2_grbhik.png',
-
-    imageMobile:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647059/refund-evidence/SarahConors_1_m5boum.png',
-
-    link: '/shop',
-  },
-
-  {
-    title: 'Sunglasses',
-    subtitle: 'New technology UV400',
-
-    imageDesktop:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647540/refund-evidence/GafasCamarguette_fpuoxr.png',
-
-    imageMobile:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647591/refund-evidence/ChatGPT_Image_24_may_2026_08_32_42_p.m._1_gcfwio.png',
-
-    link: '/shop',
-  },
-
-  {
-    title: '1988',
-    subtitle: 'Skateboarding essentials',
-
-    imageDesktop:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779647999/refund-evidence/ChatGPT_Image_24_may_2026_08_38_33_p.m._1_caqfa6.png',
-
-    imageMobile:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779648057/refund-evidence/ChatGPT_Image_24_may_2026_08_40_36_p.m._1_lnmvxq.png',
-
-    link: '/shop',
-  },
-
-  {
-    title: 'Luxphere',
-    subtitle: 'Minimal design, maximum quality',
-
-    imageDesktop:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779648958/refund-evidence/ChatGPT_Image_24_may_2026_08_55_22_p.m._1_gsrxyk.png',
-
-    imageMobile:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779649030/refund-evidence/ChatGPT_Image_24_may_2026_08_56_35_p.m._2_qhz8a6.png',
-
-    link: '/shop',
-  },
-
-  {
-    title: 'Limited Drops',
-    subtitle: 'Exclusive products available now',
-
-    imageDesktop:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779649314/refund-evidence/ChatGPT_Image_24_may_2026_09_01_39_p.m._1_uleiro.png',
-
-    imageMobile:
-      'https://res.cloudinary.com/dhybf1y2t/image/upload/v1779649501/refund-evidence/ChatGPT_Image_24_may_2026_09_04_45_p.m._1_ygp9ev.png',
-
-    link: '/shop',
-  },
-];
+import HeroSlide from './HeroSlide';
+import { useRef } from 'react';
+import { heroSlides } from './data/heroSlides';
+import { Carousel, CarouselContent, CarouselNext, CarouselPrevious } from '@/shared/ui/carousel';
 
 export default function HeroCarousel() {
-  const autoplay = Autoplay({
-    delay: 5000,
-    stopOnInteraction: true,
-  });
+  const autoplay = useRef(
+    Autoplay({
+      delay: 5000,
+      stopOnInteraction: true,
+    }),
+  );
 
   return (
     <section className="relative w-full overflow-hidden bg-black">
       <Carousel
-        plugins={[autoplay]}
+        plugins={[autoplay.current]}
         opts={{
           loop: true,
         }}
         className="w-full"
-        onMouseEnter={autoplay.stop}
-        onMouseLeave={autoplay.reset}
-        onTouchStart={autoplay.stop}
+        onMouseEnter={autoplay.current.stop}
+        onMouseLeave={autoplay.current.reset}
+        onTouchStart={autoplay.current.stop}
         onTouchEnd={() => {
           setTimeout(() => {
-            autoplay.reset();
+            autoplay.current.reset();
           }, 5000);
         }}
       >
         <CarouselContent>
-          {slides.map((slide, index) => (
-            <CarouselItem key={index}>
-              <div className="relative h-[75svh] w-full md:h-[82vh]">
-                {/* DESKTOP IMAGE */}
-
-                <Image
-                  src={slide.imageDesktop}
-                  alt={slide.title}
-                  fill
-                  priority
-                  className="hidden object-cover object-center md:block"
-                />
-
-                {/* MOBILE IMAGE */}
-
-                <Image
-                  src={slide.imageMobile}
-                  alt={slide.title}
-                  fill
-                  priority
-                  className="object-cover object-center md:hidden"
-                />
-
-                {/* OVERLAYS */}
-
-                <div className="absolute inset-0 bg-black/45 md:bg-black/35" />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent md:hidden" />
-
-                <div className="absolute inset-0 hidden bg-gradient-to-r from-black/50 via-transparent to-black/10 md:block" />
-
-                {/* CONTENT */}
-
-                <div className="absolute inset-0 flex items-end justify-center px-6 pb-20 md:items-center md:justify-start md:px-20 md:pb-0">
-                  <div className="max-w-xl text-center text-white md:text-left">
-                    {/* LABEL */}
-
-                    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] tracking-[0.25em] text-neutral-300 uppercase backdrop-blur-sm">
-                      Camarguette Collective
-                    </div>
-
-                    {/* TITLE */}
-
-                    <h2 className="mt-6 text-5xl leading-[0.95] font-bold tracking-tight md:text-7xl">
-                      {slide.title}
-                    </h2>
-
-                    {/* SUBTITLE */}
-
-                    <p className="mt-5 text-base leading-relaxed text-neutral-300 md:max-w-lg md:text-lg">
-                      {slide.subtitle}
-                    </p>
-
-                    {/* ACTIONS */}
-
-                    <div className="mt-8 flex flex-col items-center gap-3 md:flex-row md:items-start">
-                      <Link
-                        href={slide.link}
-                        className="inline-flex h-14 w-[220px] items-center justify-center rounded-2xl bg-white px-7 text-sm font-semibold text-black transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200"
-                      >
-                        Shop now
-                      </Link>
-
-                      <Link
-                        href="/brands"
-                        className="inline-flex h-14 w-[220px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-7 text-sm font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.08]"
-                      >
-                        Explore brands
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CarouselItem>
+          {heroSlides.map((slide, index) => (
+            <HeroSlide key={slide.title} slide={slide} index={index} />
           ))}
         </CarouselContent>
 
