@@ -12,11 +12,10 @@ import Image from 'next/image';
 import { apiFetch } from '@/shared/lib/api';
 
 export default function DesktopNavbar() {
-  const { items } = useCart();
+  const { totalItems } = useCart();
   const { openCart } = useCartUI();
   const { user, isAuthenticated, loading } = useAuth();
   const { locale, setLocale, t } = useLanguage();
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
   const [visible, setVisible] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);

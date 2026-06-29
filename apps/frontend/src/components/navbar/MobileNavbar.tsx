@@ -11,19 +11,16 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 export default function MobileNavbar() {
-  const { items } = useCart();
+  const { totalItems } = useCart();
   const { openCart } = useCartUI();
   const { locale, setLocale } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [visible, setVisible] = useState(true);
-
   const lastScrollRef = useRef(0);
   const tickingRef = useRef(false);
   const visibleRef = useRef(true);
   const latestScrollRef = useRef(0);
-
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
     const handleScroll = () => {

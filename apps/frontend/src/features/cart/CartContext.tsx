@@ -1,8 +1,8 @@
 'use client';
 
-import { apiFetch } from '@/shared/lib/api';
-import { socket } from '@/shared/lib/socket';
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { useCartInit } from './hooks/useCartInit';
+import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import {
   mapItems,
   fetchCart,
@@ -11,62 +11,7 @@ import {
   updateQuantityRequest,
 } from './cart.service';
 
-/* ================= TYPES ================= */
-
-export type CartItem = {
-  id: string;
-  productId: string;
-  variantId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  stock: number;
-  image?: string | null;
-  size?: string | null;
-  color?: string | null;
-};
-
-export type OptimisticCartItem = {
-  productId: string;
-  variantId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  stock: number;
-  image?: string | null;
-  size?: string | null;
-  color?: string | null;
-};
-
-type CartContextType = {
-  items: CartItem[];
-  open: boolean;
-  loading: boolean;
-  hydrated: boolean;
-  cartBusy: boolean;
-  setOpen: (value: boolean) => void;
-
-  addItem: (
-    productId: string,
-    variantId: string,
-    quantity?: number,
-    openDrawer?: boolean,
-    optimisticItem?: OptimisticCartItem,
-  ) => Promise<void>;
-  removeItem: (itemId: string) => Promise<void>;
-
-  increaseQuantity: (itemId: string) => Promise<void>;
-  decreaseQuantity: (itemId: string) => Promise<void>;
-
-  clearCart: () => void;
-
-  totalItems: number;
-  totalPrice: number;
-};
-
 const CartContext = createContext<CartContextType | null>(null);
-
-/* ================= PROVIDER ================= */
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -81,10 +26,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [cartBusy, setCartBusy] = useState(false);
 
-  /**
-   * Cola de sincronización del carrito.
-   * Agrupa cambios rápidos para reducir peticiones.
-   */
+  useCartInit({
+    itemsRef,
+    setItems,
+    setHydrated,
+  });
+
   const pendingSyncRef = useRef<
     Map<
       string,
@@ -127,36 +74,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems(items);
     }
   };
-
-  /* ================= INIT ================= */
-
-  useEffect(() => {
-    const init = async () => {
-      const items = await fetchCart();
-
-      itemsRef.current = items;
-      setItems(items);
-
-      setHydrated(true);
-    };
-
-    init();
-  }, []);
-
-  useEffect(() => {
-    const handleProductUpdated = async () => {
-      const items = await fetchCart();
-
-      itemsRef.current = items;
-      setItems(items);
-    };
-
-    socket.on('productUpdated', handleProductUpdated);
-
-    return () => {
-      socket.off('productUpdated', handleProductUpdated);
-    };
-  }, []);
 
   /* ================= ADD ITEM ================= */
 
