@@ -217,9 +217,6 @@ export default function ProductPage() {
         toast.error(t.toast.selectVariant);
         return;
       }
-      toast.success(t.toast.addedToCart);
-
-      setAddedToCart(true);
 
       await addItem(product.id, selectedVariant.id, quantity, true, {
         productId: product.id,
@@ -235,6 +232,13 @@ export default function ProductPage() {
         size: selectedVariant.size,
         color: selectedVariant.color,
       });
+      toast.success(t.toast.addedToCart);
+
+      setAddedToCart(true);
+
+      setTimeout(() => {
+        setAddedToCart(false);
+      }, 900);
 
       void apiFetch('/analytics/track', {
         method: 'POST',
@@ -247,16 +251,12 @@ export default function ProductPage() {
           },
         }),
       });
-
-      setTimeout(() => {
-        setAddedToCart(false);
-        setAddingToCart(false);
-      }, 900);
     } catch (error: any) {
       setAddedToCart(false);
-      setAddingToCart(false);
       toast.dismiss();
       toast.error(error?.message || t.toast.stockError);
+    } finally {
+      setAddingToCart(false);
     }
   };
 
@@ -267,7 +267,6 @@ export default function ProductPage() {
         return;
       }
       setBuyingNow(true);
-      toast.success(t.toast.addedToCart);
 
       await addItem(product.id, selectedVariant.id, quantity, false, {
         productId: product.id,
@@ -283,6 +282,8 @@ export default function ProductPage() {
         size: selectedVariant.size,
         color: selectedVariant.color,
       });
+
+      toast.success(t.toast.addedToCart);
 
       await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -302,8 +303,9 @@ export default function ProductPage() {
       });
     } catch (error: any) {
       toast.dismiss();
-      setBuyingNow(false);
       toast.error(error?.message || t.toast.stockError);
+    } finally {
+      setBuyingNow(false);
     }
   };
 
