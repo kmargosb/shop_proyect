@@ -1,19 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart } from 'lucide-react';
-import { useCart } from '@/features/cart/CartContext';
-import { useCartUI } from '@/features/cart/CartUIContext';
-import { useLanguage } from '@/shared/i18n/LanguageContext';
+import CartButton from './components/CartButton';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import MobileAccountSheet from './MobileAccountSheet';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import LanguageSwitcher from './components/LanguageSwitcher';
 
 export default function MobileNavbar() {
-  const { totalItems } = useCart();
-  const { openCart } = useCartUI();
-  const { locale, setLocale } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -110,23 +105,7 @@ export default function MobileNavbar() {
 
           {/* LANG */}
 
-          <div className="flex items-center gap-2 text-sm">
-            <button
-              onClick={() => setLocale('en')}
-              className={locale === 'en' ? 'font-semibold' : 'text-neutral-400'}
-            >
-              EN
-            </button>
-
-            <span>|</span>
-
-            <button
-              onClick={() => setLocale('es')}
-              className={locale === 'es' ? 'font-semibold' : 'text-neutral-400'}
-            >
-              ES
-            </button>
-          </div>
+          <LanguageSwitcher />
 
           {/* USER + CART */}
 
@@ -140,16 +119,7 @@ export default function MobileNavbar() {
                 Login
               </Link>
             )}
-
-            <button onClick={openCart} className="relative">
-              <ShoppingCart size={22} />
-
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 rounded-full bg-black px-2 py-1 text-xs text-white">
-                  {totalItems}
-                </span>
-              )}
-            </button>
+            <CartButton />
           </div>
         </div>
       </header>

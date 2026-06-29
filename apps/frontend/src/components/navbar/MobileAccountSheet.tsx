@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { apiFetch } from '@/shared/lib/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useLogout } from './hooks/useLogout';
 
 type MobileAccountSheetProps = {
   open: boolean;
@@ -15,6 +14,7 @@ type MobileAccountSheetProps = {
 
 export default function MobileAccountSheet({ open, onClose }: MobileAccountSheetProps) {
   const { user } = useAuth();
+  const logout = useLogout();
   const { t } = useLanguage();
 
   useBodyScrollLock(open);
@@ -130,16 +130,7 @@ export default function MobileAccountSheet({ open, onClose }: MobileAccountSheet
             <button
               onClick={async () => {
                 onClose();
-
-                await apiFetch('/auth/logout', {
-                  method: 'POST',
-                });
-
-                localStorage.removeItem('orderEmail');
-                localStorage.removeItem('orderEmailOrderId');
-                localStorage.removeItem('checkoutData');
-
-                window.location.href = '/';
+                await logout();
               }}
               className="mt-6 w-full rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-left font-medium text-red-600 transition hover:bg-red-100"
             >

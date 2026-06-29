@@ -2,37 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { fetchCurrentUser } from '../auth.service';
-
-/* ================= TYPES ================= */
-
-type User = {
-  id: string;
-  email: string;
-  role: 'ADMIN' | 'CUSTOMER';
-  name?: string | null;
-  provider?: string | null;
-  createdAt?: string;
-};
-
-type AuthContextType = {
-  user: User | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  setUser: (user: User | null) => void;
-  refreshUser: () => Promise<void>; // 🔥 NUEVO
-};
-
-/* ================= CONTEXT ================= */
+import type { User, AuthContextType, Props } from '../types';
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-/* ================= PROVIDER ================= */
-
-type Props = {
-  children: React.ReactNode;
-  initialUser?: User | null;
-};
 
 export function AuthProvider({ children, initialUser = null }: Props) {
   const hasInitialUser = initialUser !== null;

@@ -6,14 +6,7 @@ import { useCartInit } from './hooks/useCartInit';
 import { useCartSync } from './hooks/useCartSync';
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import { getTotalItems, getTotalPrice } from './utils/cartTotals';
-import { useCartActions } from './hooks/useCartActions';
-import {
-  mapItems,
-  fetchCart,
-  addItemRequest,
-  removeItemRequest,
-  updateQuantityRequest,
-} from './cart.service';
+import { mapItems, fetchCart, addItemRequest, removeItemRequest } from './cart.service';
 
 const CartContext = createContext<CartContextType | null>(null);
 
