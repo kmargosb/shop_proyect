@@ -1,8 +1,9 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { applyLocalChange, addLocalItem } from './cart.optimistic';
+import { applyLocalChange, addLocalItem } from './lib/cart.optimistic';
 import { useCartInit } from './hooks/useCartInit';
+import { useCartSync } from './hooks/useCartSync';
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import {
   mapItems,
@@ -33,48 +34,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setHydrated,
   });
 
-  const pendingSyncRef = useRef<
-    Map<
-      string,
-      {
-        productId: string;
-        variantId: string;
-        quantity: number;
-      }
-    >
-  >(new Map());
-
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  /* ================= SYNC QUEUE ================= */
-
-  const flushCartQueue = async () => {
-    syncTimeoutRef.current = null;
-
-    if (pendingSyncRef.current.size === 0) {
-      return;
-    }
-
-    const operations = Array.from(pendingSyncRef.current.values());
-
-    pendingSyncRef.current.clear();
-
-    try {
-      await Promise.all(
-        operations.map((op) => updateQuantityRequest(op.productId, op.variantId, op.quantity)),
-      );
-
-      // NO sincronizamos el carrito aquí.
-      // La UI optimista ya es la fuente de verdad.
-    } catch (err) {
-      console.error(err);
-
-      const items = await fetchCart();
-
-      itemsRef.current = items;
-      setItems(items);
-    }
-  };
+  const { queueUpdate } = useCartSync({
+    itemsRef,
+    setItems,
+  });
 
   /* ================= ADD ITEM ================= */
 
@@ -198,19 +161,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     itemsRef.current = updated;
     setItems(updated);
 
-    const key = `${item.productId}:${item.variantId}`;
-
-    const existing = pendingSyncRef.current.get(key);
-
-    pendingSyncRef.current.set(key, {
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: (existing?.quantity ?? 0) + 1,
-    });
-
-    if (!syncTimeoutRef.current) {
-      syncTimeoutRef.current = setTimeout(flushCartQueue, 250);
-    }
+    queueUpdate(item.productId, item.variantId, 1);
   };
 
   /* ================= DECREASE ================= */
@@ -231,19 +182,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     itemsRef.current = updated;
     setItems(updated);
 
-    const key = `${item.productId}:${item.variantId}`;
-
-    const existing = pendingSyncRef.current.get(key);
-
-    pendingSyncRef.current.set(key, {
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: (existing?.quantity ?? 0) - 1,
-    });
-
-    if (!syncTimeoutRef.current) {
-      syncTimeoutRef.current = setTimeout(flushCartQueue, 250);
-    }
+    queueUpdate(item.productId, item.variantId, -1);
   };
 
   /* ================= CLEAR ================= */

@@ -1,4 +1,4 @@
-import type { CartItem, OptimisticCartItem } from './types';
+import type { CartItem, OptimisticCartItem } from '../types';
 
 export function applyLocalChange(items: CartItem[], itemId: string, delta: number): CartItem[] {
   return items.map((item) => {

@@ -1,5 +1,5 @@
 import { apiFetch } from '@/shared/lib/api';
-import { CartItem } from './CartContext';
+import { CartItem } from './types';
 
 export const mapItems = (cart: any): CartItem[] =>
   (cart.items ?? [])
