@@ -49,10 +49,11 @@ const Carousel = React.forwardRef<
       ...opts,
       axis: orientation === 'horizontal' ? 'x' : 'y',
 
-      // Mejor convivencia con el scroll vertical en iOS
       dragFree: false,
+      containScroll: 'keepSnaps',
+      skipSnaps: false,
       watchDrag: true,
-      containScroll: 'trimSnaps',
+      duration: 32,
     },
     plugins,
   );
