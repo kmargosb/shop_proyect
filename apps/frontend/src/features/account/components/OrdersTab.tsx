@@ -34,15 +34,15 @@ export default function OrdersTab({ orders }: Props) {
   }, [orders, page]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold">{t.orders.title}</h2>
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 p-3 md:rounded-3xl md:p-6">
+      <div className="mb-3 md:mb-6">
+        <h2 className="text-xl font-bold md:text-2xl">{t.orders.title}</h2>
 
-        <p className="mt-2 text-sm text-neutral-500">{t.orders.description}</p>
+        <p className="mt-1 text-xs md:mt-2 md:text-sm text-neutral-500">{t.orders.description}</p>
       </div>
 
       {orders.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 p-10 text-center">
+        <div className="rounded-2xl border border-white/10 p-6 text-center md:p-10">
           <p className="text-neutral-400">{t.orders.empty}</p>
 
           <Link
@@ -54,7 +54,7 @@ export default function OrdersTab({ orders }: Props) {
         </div>
       ) : (
         <div className="premium-scrollbar flex-1 overflow-y-auto pr-1">
-          <div className="grid gap-4">
+          <div className="grid gap-2 md:gap-4">
             {paginatedOrders.map((order) => {
               const totalProducts = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -72,20 +72,20 @@ export default function OrdersTab({ orders }: Props) {
               return (
                 <div
                   key={order.id}
-                  className="group rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent p-4 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.04]"
+                  className="group rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent p-3 md:rounded-3xl md:p-4 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.04]"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-2 md:gap-4 sm:flex-row sm:items-start sm:justify-between">
                     {/* LEFT */}
 
                     <div className="min-w-0 flex-1">
                       {/* IMAGES */}
 
                       {previewImages.length > 0 && (
-                        <div className="mb-3 flex items-center">
+                        <div className="mb-2 flex items-center md:mb-3">
                           {previewImages.map((image, index) => (
                             <div
                               key={image + index}
-                              className="relative -ml-2 h-16 w-16 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 first:ml-0"
+                              className="relative -ml-2 h-12 w-12 md:h-16 md:w-16 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 first:ml-0"
                             >
                               <img
                                 src={image}
@@ -101,12 +101,12 @@ export default function OrdersTab({ orders }: Props) {
                         {t.orders.order}
                       </p>
 
-                      <h3 className="mt-1 text-xl font-semibold text-white">
+                      <h3 className="mt-0.5 text-lg md:mt-1 md:text-xl font-semibold text-white">
                         #{order.id.slice(0, 6)}
                       </h3>
-                      <div className="mt-3 space-y-1">
+                      <div className="mt-2 space-y-0.5 md:mt-3 md:space-y-1">
                         {order.items.slice(0, 2).map((item) => (
-                          <p key={item.id} className="truncate text-sm text-neutral-400">
+                          <p key={item.id} className="truncate text-xs md:text-sm text-neutral-400">
                             {item.product?.name}
 
                             {(item.color || item.size) && (
@@ -127,7 +127,7 @@ export default function OrdersTab({ orders }: Props) {
                         )}
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+                      <div className="mt-2 flex flex-wrap md:mt-3 items-center gap-2 text-sm text-neutral-500">
                         <span>{new Date(order.createdAt).toLocaleDateString()}</span>
 
                         <span className="text-neutral-700">•</span>
@@ -160,7 +160,7 @@ export default function OrdersTab({ orders }: Props) {
                       <div className="text-right">
                         <p className="text-xs text-neutral-500">{t.orders.total}</p>
 
-                        <p className="text-2xl font-bold text-white">
+                        <p className="text-xl font-bold md:text-2xl text-white">
                           €{(order.totalAmount / 100).toFixed(2)}
                         </p>
                       </div>
@@ -169,7 +169,7 @@ export default function OrdersTab({ orders }: Props) {
 
                   {/* CTA */}
 
-                  <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="mt-3 flex items-center justify-between md:mt-6 border-t border-white/5 pt-3 md:pt-4">
                     <p className="text-xs text-neutral-600">{t.orders.thanks}</p>
 
                     <Link
@@ -186,7 +186,7 @@ export default function OrdersTab({ orders }: Props) {
         </div>
       )}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2 border-t border-white/10 pt-6">
+        <div className="mt-3 flex items-center justify-center gap-2 border-t border-white/10 pt-3 md:mt-6 md:pt-6">
           <button
             onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             disabled={page === 1}

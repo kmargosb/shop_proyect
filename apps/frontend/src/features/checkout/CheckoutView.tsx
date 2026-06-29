@@ -20,9 +20,9 @@ export default function CheckoutView() {
   }, [hydrated, cartBusy, items, router]);
 
   return (
-    <main className="min-h-screen bg-black px-4 py-10 text-white md:px-10">
+    <main className="min-h-screen bg-black px-4 py-5 md:py-10 text-white md:px-10">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-8 text-2xl font-bold md:text-3xl">{t.checkout.title}</h1>
+        <h1 className="mb-4 text-xl md:mb-8 md:text-2xl font-bold md:text-3xl">{t.checkout.title}</h1>
         <CreateOrderForm />
       </div>
     </main>

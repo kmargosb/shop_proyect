@@ -310,13 +310,13 @@ export default function ProductPage() {
   =============================== */
 
   return (
-    <div className="mx-auto max-w-7xl space-y-24 px-6 py-16">
-      <main className="grid gap-14 md:grid-cols-2">
+    <div className="mx-auto max-w-7xl space-y-10 px-4 py-6 md:space-y-24 md:px-6 md:py-16">
+      <main className="grid gap-6 md:grid-cols-2 md:gap-14">
         {/* ===============================
          IMAGE GALLERY
       =============================== */}
 
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-900">
             <Image src={mainImage} alt={product.name} fill className="object-cover" />
           </div>
@@ -327,7 +327,7 @@ export default function ProductPage() {
                 <button
                   key={img.id}
                   onClick={() => setSelectedImage(index)}
-                  className={`relative h-20 w-20 overflow-hidden rounded-md border ${
+                  className={`relative h-14 w-14 md:h-20 md:w-20 overflow-hidden rounded-md border ${
                     selectedImage === index ? 'border-white' : 'border-neutral-700'
                   } cursor-pointer`}
                 >
@@ -342,15 +342,15 @@ export default function ProductPage() {
          PRODUCT INFO
       =============================== */}
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {product.brand?.name && (
-            <p className="text-m tracking-[0.3em] text-neutral-500 uppercase">
+            <p className="text-xs tracking-[0.22em] md:text-sm md:tracking-[0.3em] text-neutral-500 uppercase">
               {product.brand.name}
             </p>
           )}
 
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
+            <h1 className="text-2xl font-bold md:text-3xl">{product.name}</h1>
 
             <button
               disabled={buyingNow}
@@ -367,11 +367,11 @@ export default function ProductPage() {
             </button>
           </div>
 
-          <p className="text-2xl font-semibold">€{(product.price / 100).toFixed(2)}</p>
+          <p className="text-xl font-semibold md:text-2xl">€{(product.price / 100).toFixed(2)}</p>
 
           {stockBadge}
 
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <div>
               <p className="mb-3 text-xs tracking-[0.25em] text-neutral-500 uppercase">
                 {t.product.size}
@@ -386,7 +386,7 @@ export default function ProductPage() {
                       setSelectedSize(size);
                       setQuantity(1);
                     }}
-                    className={`h-11 min-w-[52px] cursor-pointer rounded-xl border px-4 transition-all duration-200 ${
+                    className={`h-10 min-w-[46px] cursor-pointer rounded-lg border px-3 md:h-11 md:min-w-[52px] md:rounded-xl md:px-4 transition-all duration-200 ${
                       selectedSize === size
                         ? 'border-white bg-neutral-900 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.25)]'
                         : 'border-neutral-700 text-neutral-700 hover:border-neutral-500'
@@ -403,7 +403,7 @@ export default function ProductPage() {
                 {t.product.color}
               </p>
 
-              <div className="flex flex-wrap gap-5">
+              <div className="flex flex-wrap gap-3 md:gap-5">
                 {colors.map((color) => {
                   const colorMap: Record<string, string> = {
                     WHITE: 'bg-white border border-neutral-500',
@@ -470,7 +470,7 @@ export default function ProductPage() {
           </div>
 
           {product.description && (
-            <p className="leading-relaxed text-neutral-400">{product.description}</p>
+            <p className="text-sm leading-relaxed text-neutral-400 md:text-base">{product.description}</p>
           )}
 
           {/* ===============================
@@ -505,11 +505,11 @@ export default function ProductPage() {
            ACTION BUTTONS
         =============================== */}
 
-          <div className="flex gap-4">
+          <div className="flex gap-2 md:gap-4">
             <Button
               onClick={handleAddToCart}
               disabled={outOfStock || addingToCart || buyingNow}
-              className="min-w-[170px] cursor-pointer bg-white text-black shadow-sm transition-all duration-300 hover:bg-neutral-200 hover:shadow-md disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
+              className="min-w-[140px] md:min-w-[170px] cursor-pointer bg-white text-black shadow-sm transition-all duration-300 hover:bg-neutral-200 hover:shadow-md disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400"
             >
               <span className="flex items-center gap-2">
                 {addedToCart ? (

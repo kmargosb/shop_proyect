@@ -34,14 +34,14 @@ export default function CartDrawer() {
     >
       <SheetContent
         side="right"
-        className="flex h-[100dvh] w-full max-w-[440px] flex-col border-l border-white/10 bg-neutral-950 px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+20px)] text-white sm:px-6"
+        className="flex h-[100dvh] w-full max-w-[440px] flex-col border-l border-white/10 bg-neutral-950 px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+14px)] md:px-5 md:pt-6 md:pb-[calc(env(safe-area-inset-bottom)+20px)] text-white sm:px-6"
       >
         {/* ACCESSIBILITY */}
         <SheetTitle className="sr-only">{t.cart.title}</SheetTitle>
         <SheetDescription className="sr-only">{t.cart.productsInCart}</SheetDescription>
 
         {/* HEADER */}
-        <div className="border-b border-white/10 pb-5">
+        <div className="border-b border-white/10 pb-3 md:pb-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] tracking-[0.25em] text-neutral-500 uppercase">
@@ -58,7 +58,7 @@ export default function CartDrawer() {
         </div>
 
         {/* SHIPPING BAR */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="mt-4 rounded-xl md:mt-6 md:rounded-2xl border border-white/10 bg-white/[0.03] p-3 md:p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-base">{unlocked ? '🎉' : '🚚'}</span>
@@ -86,19 +86,19 @@ export default function CartDrawer() {
         </div>
 
         {/* ITEMS */}
-        <div className="mt-6 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
+        <div className="mt-4 flex-1 md:mt-6 space-y-2 overflow-y-auto overscroll-contain pr-1 [-webkit-overflow-scrolling:touch]">
           {items.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="mb-5 text-5xl">🛍️</div>
+              <div className="mb-3 text-4xl md:mb-5 md:text-5xl">🛍️</div>
 
-              <h3 className="text-xl font-semibold text-white">{t.cart.empty}</h3>
+              <h3 className="text-lg font-semibold md:text-xl text-white">{t.cart.empty}</h3>
 
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-400">
+              <p className="mt-2 max-w-xs text-sm leading-relaxed text-neutral-400">
                 Discover our latest collection.
               </p>
 
               <Button
-                className="mt-8 rounded-2xl bg-white px-8 text-black hover:bg-neutral-200"
+                className="mt-5 rounded-xl bg-white px-5 md:mt-8 md:rounded-2xl md:px-8 text-black hover:bg-neutral-200"
                 onClick={() => {
                   closeCart();
                   router.push('/shop');
@@ -113,7 +113,7 @@ export default function CartDrawer() {
             items.map((item: CartItem) => (
               <div
                 key={item.id}
-                className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.05]"
+                className="flex gap-2 rounded-xl md:gap-3 border border-white/10 bg-white/[0.03] p-2.5 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.05]"
               >
                 {/* IMAGE */}
                 <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
@@ -177,14 +177,14 @@ export default function CartDrawer() {
         </div>
 
         {/* FOOTER */}
-        <div className="space-y-4 border-t border-white/10 pt-5">
+        <div className="space-y-3 border-t md:space-y-4 border-white/10 pt-3 md:pt-5">
           <div className="flex items-center justify-between text-sm text-neutral-400">
             <span>{t.cart.subtotal}</span>
 
             <span>€{total.toFixed(2)}</span>
           </div>
 
-          <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xl font-semibold">
+          <div className="flex items-center justify-between border-t border-white/10 pt-4 text-lg font-semibold md:text-xl">
             <span>{t.cart.total}</span>
 
             <span>€{total.toFixed(2)}</span>
@@ -192,7 +192,7 @@ export default function CartDrawer() {
 
           <motion.div whileTap={{ scale: 0.97 }}>
             <Button
-              className="h-14 w-full rounded-2xl bg-white text-black transition-all hover:bg-neutral-200"
+              className="h-11 w-full rounded-xl md:h-14 md:rounded-2xl bg-white text-black transition-all hover:bg-neutral-200"
               onClick={() => {
                 closeCart();
                 router.push('/checkout');

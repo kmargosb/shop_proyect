@@ -73,13 +73,13 @@ export default function CreateOrderForm() {
   }, [form]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
+    <div className="grid gap-4 lg:grid-cols-2 lg:gap-10">
       {/* LEFT */}
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* LOGIN APPLE STYLE */}
         {!isLogged && (
           <div className="overflow-hidden rounded-xl bg-neutral-900">
-            <motion.div layout className="p-4">
+            <motion.div layout className="p-3 md:p-4">
               <AnimatePresence mode="wait">
                 {!showLogin ? (
                   <motion.div
@@ -137,7 +137,7 @@ export default function CreateOrderForm() {
 
         {/* ADDRESSES */}
         {addresses.length > 0 && (
-          <div className="space-y-3 rounded-xl bg-neutral-900 p-4">
+          <div className="space-y-2 rounded-xl bg-neutral-900 p-3 md:space-y-3 md:p-4">
             <h3 className="text-sm text-neutral-400">{t.checkout.savedAddresses}</h3>
 
             {addresses.map((addr) => {
@@ -172,7 +172,7 @@ export default function CreateOrderForm() {
                       country: addr.country ?? 'ES',
                     }));
                   }}
-                  className={`relative cursor-pointer rounded-xl border p-4 pr-4 pl-10 ${
+                  className={`relative cursor-pointer rounded-xl border p-3 pr-3 pl-9 md:p-4 md:pr-4 md:pl-10 ${
                     selected
                       ? 'border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]'
                       : 'border-white/10 hover:border-white/30'

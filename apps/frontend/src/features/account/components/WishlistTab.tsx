@@ -57,12 +57,12 @@ export default function WishlistTab() {
   }, []);
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-neutral-950 p-4 md:p-6">
+    <div className="rounded-2xl border md:rounded-3xl border-white/10 bg-neutral-950 p-4 md:p-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">{t.wishlist.title}</h2>
+          <h2 className="text-xl font-bold md:text-2xl text-white">{t.wishlist.title}</h2>
 
-          <p className="mt-2 text-sm text-neutral-500">{t.wishlist.description}</p>
+          <p className="mt-1 text-xs md:mt-2 md:text-sm text-neutral-500">{t.wishlist.description}</p>
         </div>
 
         <div className="text-right">
@@ -73,24 +73,24 @@ export default function WishlistTab() {
       </div>
 
       {loading ? (
-        <div className="mt-8 text-center text-neutral-500">{t.wishlist.loading}</div>
+        <div className="mt-4 text-center md:mt-8 text-neutral-500">{t.wishlist.loading}</div>
       ) : items.length === 0 ? (
-        <div className="mt-8 rounded-3xl border border-dashed border-white/10 p-10 text-center">
+        <div className="mt-4 rounded-2xl md:mt-8 md:rounded-3xl border border-dashed border-white/10 p-6 text-center md:p-10">
           <Heart size={40} className="mx-auto text-neutral-700" />
 
           <h3 className="mt-4 text-lg font-medium text-white">{t.wishlist.emptyTitle}</h3>
 
-          <p className="mt-2 text-sm text-neutral-500">{t.wishlist.emptyDescription}</p>
+          <p className="mt-1 text-xs md:mt-2 md:text-sm text-neutral-500">{t.wishlist.emptyDescription}</p>
 
           <Link
             href="/shop"
-            className="mt-6 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
+            className="mt-4 inline-flex rounded-xl bg-white px-4 py-2.5 md:mt-6 md:rounded-2xl md:px-5 md:py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
             {t.wishlist.exploreProducts}
           </Link>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-2 md:mt-8 md:gap-3 md:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
             const image =
               item.product.images?.find((img) => img.isPrimary)?.url ??
@@ -100,7 +100,7 @@ export default function WishlistTab() {
             return (
               <div
                 key={item.id}
-                className="group overflow-hidden rounded-3xl border border-white/10 bg-black"
+                className="group overflow-hidden rounded-2xl border md:rounded-3xl border-white/10 bg-black"
               >
                 <Link href={`/product/${item.product.id}`}>
                   <div className="relative aspect-[4/5] overflow-hidden">
@@ -113,7 +113,7 @@ export default function WishlistTab() {
                   </div>
                 </Link>
 
-                <div className="space-y-3 p-3 md:p-4">
+                <div className="space-y-2 p-2.5 md:space-y-3 md:p-4">
                   {item.product.brand?.name && (
                     <p className="text-[10px] tracking-[0.15em] text-neutral-500 uppercase">
                       {item.product.brand.name}
@@ -121,7 +121,7 @@ export default function WishlistTab() {
                   )}
 
                   <Link href={`/product/${item.product.id}`} className="block">
-                    <h3 className="line-clamp-2 min-h-[40px] text-sm font-medium text-white">
+                    <h3 className="line-clamp-2 min-h-[34px] text-xs md:min-h-[40px] md:text-sm font-medium text-white">
                       {item.product.name}
                     </h3>
                   </Link>

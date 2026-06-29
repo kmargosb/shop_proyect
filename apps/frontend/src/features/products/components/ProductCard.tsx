@@ -27,7 +27,7 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <div
-      className={`group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 transition-all duration-200 ${
+      className={`group overflow-hidden rounded-lg border md:rounded-xl border-neutral-800 bg-neutral-900 transition-all duration-200 ${
         outOfStock ? 'opacity-60' : 'hover:border-neutral-600'
       }`}
     >
@@ -61,7 +61,7 @@ export default function ProductCard({ product }: Props) {
       </Link>
 
       {/* INFO */}
-      <div className="space-y-2 p-3 md:space-y-3 md:p-4">
+      <div className="space-y-1.5 p-2.5 md:space-y-3 md:p-4">
         <div className="space-y-1">
           {product.brand?.name && (
             <p className="text-[10px] tracking-[0.15em] text-neutral-500 uppercase md:text-[11px]">
@@ -89,7 +89,7 @@ export default function ProductCard({ product }: Props) {
 
         <Link href={`/product/${product.id}`} className="block">
           <div
-            className={`w-full rounded-md bg-white py-1.5 text-center text-xs font-medium text-black transition-transform duration-150 hover:bg-neutral-200 ${
+            className={`w-full rounded-md bg-white py-1.5 text-center text-[11px] md:text-xs font-medium text-black transition-transform duration-150 hover:bg-neutral-200 ${
               outOfStock ? '' : 'hover:scale-[1.02] active:scale-95'
             }`}
           >

@@ -111,8 +111,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-72px)] overflow-hidden bg-black px-4 py-4 text-white md:px-6">
-      <div className="mx-auto grid h-full max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="h-[calc(100vh-72px)] overflow-hidden bg-black px-3 py-3 md:px-6 md:py-4 text-white">
+      <div className="mx-auto grid h-full max-w-7xl gap-3 md:gap-6 lg:grid-cols-[280px_1fr]">
         {/* MOBILE OVERLAY */}
 
         {sidebarOpen && (
@@ -137,13 +137,13 @@ export default function AccountPage() {
         <div className="lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-neutral-950/90 px-4 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-neutral-950/90 px-3 py-2 text-sm md:px-4 md:py-3 font-medium text-white shadow-lg backdrop-blur-xl transition hover:bg-white/10"
           >
             <Menu size={18} />
             {t.account.menu}
           </button>
         </div>
-        <section className="h-full overflow-y-auto pr-1 pb-10">
+        <section className="h-full overflow-y-auto pr-1 pb-6 md:pb-10">
           {activeTab === 'orders' && <OrdersTab orders={orders} />}
 
           {activeTab === 'profile' && <ProfileTab user={user} orders={orders} />}

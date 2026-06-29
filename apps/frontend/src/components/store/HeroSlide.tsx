@@ -11,7 +11,7 @@ type Props = {
 export default function HeroSlide({ slide, index }: Props) {
   return (
     <CarouselItem>
-      <div className="relative h-[75svh] w-full md:h-[82vh]">
+      <div className="relative h-[68svh] min-h-[460px] w-full md:h-[82vh]">
         {/* DESKTOP */}
 
         <Image
@@ -44,31 +44,31 @@ export default function HeroSlide({ slide, index }: Props) {
 
         {/* CONTENT */}
 
-        <div className="absolute inset-0 flex items-end justify-center px-6 pb-20 md:items-center md:justify-start md:px-20 md:pb-0">
+        <div className="absolute inset-0 flex items-end justify-center px-4 pb-10 md:items-center md:justify-start md:px-20 md:pb-0">
           <div className="max-w-xl text-center text-white md:text-left">
-            <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] tracking-[0.25em] text-neutral-300 uppercase backdrop-blur-sm">
+            <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] md:px-4 md:py-2 md:text-[11px] tracking-[0.25em] text-neutral-300 uppercase backdrop-blur-sm">
               Camarguette Collective
             </div>
 
-            <h2 className="mt-6 text-5xl leading-[0.95] font-bold tracking-tight md:text-7xl">
+            <h2 className="mt-4 text-3xl md:mt-6 md:text-5xl leading-[0.95] font-bold tracking-tight md:text-7xl">
               {slide.title}
             </h2>
 
-            <p className="mt-5 text-base leading-relaxed text-neutral-300 md:max-w-lg md:text-lg">
+            <p className="mt-3 text-sm leading-relaxed text-neutral-300 md:mt-5 md:max-w-lg md:text-lg">
               {slide.subtitle}
             </p>
 
-            <div className="mt-8 flex flex-col items-center gap-3 md:flex-row md:items-start">
+            <div className="mt-5 flex flex-col items-center gap-2 md:mt-8 md:flex-row md:items-start md:gap-3">
               <Link
                 href={slide.link}
-                className="inline-flex h-14 w-[220px] items-center justify-center rounded-2xl bg-white px-7 text-sm font-semibold text-black transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200"
+                className="inline-flex h-11 w-[180px] items-center justify-center rounded-xl bg-white px-5 text-xs md:h-14 md:w-[220px] md:rounded-2xl md:px-7 md:text-sm font-semibold text-black transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200"
               >
                 Shop now
               </Link>
 
               <Link
                 href="/brands"
-                className="inline-flex h-14 w-[220px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-7 text-sm font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.08]"
+                className="inline-flex h-11 w-[180px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-5 text-xs md:h-14 md:w-[220px] md:rounded-2xl md:px-7 md:text-sm font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.08]"
               >
                 Explore brands
               </Link>

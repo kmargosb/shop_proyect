@@ -149,7 +149,7 @@ export default function AddressesTab() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
+      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-3 md:p-6">
         <p className="text-neutral-400">{t.addresses.loading}</p>
       </div>
     );
@@ -157,19 +157,19 @@ export default function AddressesTab() {
 
   return (
     <>
-      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
+      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-3 md:p-6">
         {/* HEADER */}
 
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">{t.addresses.title}</h2>
+            <h2 className="text-xl font-bold md:text-2xl text-white">{t.addresses.title}</h2>
 
-            <p className="mt-2 text-sm text-neutral-500">{t.addresses.description}</p>
+            <p className="mt-1 text-xs md:mt-2 md:text-sm text-neutral-500">{t.addresses.description}</p>
           </div>
 
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 md:rounded-2xl md:px-4 md:py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
           >
             <Plus size={16} />
             {t.addresses.add}
@@ -179,17 +179,17 @@ export default function AddressesTab() {
         {/* EMPTY */}
 
         {addresses.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-white/10 p-10 text-center">
+          <div className="mt-4 rounded-2xl md:mt-8 border border-dashed border-white/10 p-6 text-center md:p-10">
             <MapPin size={40} className="mx-auto text-neutral-600" />
 
             <p className="mt-4 text-neutral-400">{t.addresses.empty}</p>
           </div>
         ) : (
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid gap-2 md:mt-8 md:gap-4 md:grid-cols-2">
             {addresses.map((address) => (
               <div
                 key={address.id}
-                className="rounded-3xl border border-white/10 bg-black/30 p-5 transition hover:border-white/20"
+                className="rounded-2xl border border-white/10 bg-black/30 p-3 md:rounded-3xl md:p-5 transition hover:border-white/20"
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -205,7 +205,7 @@ export default function AddressesTab() {
                   )}
                 </div>
 
-                <div className="mt-5 space-y-1 text-sm text-neutral-300">
+                <div className="mt-3 space-y-1 md:mt-5 text-sm text-neutral-300">
                   <p>{address.addressLine1}</p>
 
                   {address.addressLine2 && <p>{address.addressLine2}</p>}
@@ -219,10 +219,10 @@ export default function AddressesTab() {
 
                 {/* ACTIONS */}
 
-                <div className="mt-6 flex flex-wrap items-center gap-2">
+                <div className="mt-4 flex flex-wrap md:mt-6 items-center gap-2">
                   <button
                     onClick={() => setFavorite(address.id)}
-                    className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
+                    className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs md:text-sm transition ${
                       address.isDefault
                         ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300'
                         : 'border-white/10 text-neutral-300 hover:bg-white/10'
@@ -235,7 +235,7 @@ export default function AddressesTab() {
 
                   <button
                     onClick={() => openEdit(address)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:bg-white/10"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 text-xs md:text-sm text-neutral-300 transition hover:bg-white/10"
                   >
                     <Pencil size={15} />
                     {t.addresses.edit}
@@ -243,7 +243,7 @@ export default function AddressesTab() {
 
                   <button
                     onClick={() => deleteAddress(address.id)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 px-3 py-2 text-xs md:text-sm text-red-400 transition hover:bg-red-500/10"
                   >
                     <Trash2 size={15} />
                     {t.addresses.delete}
@@ -259,7 +259,7 @@ export default function AddressesTab() {
 
       {openModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-6 shadow-2xl">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-neutral-950 p-3 shadow-2xl md:p-6">
             {/* HEADER */}
 
             <div className="flex items-center justify-between">
@@ -281,7 +281,7 @@ export default function AddressesTab() {
 
             {/* FORM */}
 
-            <div className="mt-6 grid gap-4">
+            <div className="mt-4 grid gap-2 md:mt-6 md:gap-4">
               {/* FULL NAME */}
 
               <input
@@ -289,7 +289,7 @@ export default function AddressesTab() {
                 value={form.fullName}
                 onChange={handleChange}
                 placeholder={t.addresses.fullName}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm md:px-4 md:py-3 text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
               {/* PHONE */}
@@ -299,7 +299,7 @@ export default function AddressesTab() {
                 value={form.phone}
                 onChange={handleChange}
                 placeholder={t.addresses.phone}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm md:px-4 md:py-3 text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
               {/* ADDRESS AUTOCOMPLETE */}
@@ -329,7 +329,7 @@ export default function AddressesTab() {
                 value={form.addressLine2}
                 onChange={handleChange}
                 placeholder={t.addresses.apartment}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm md:px-4 md:py-3 text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
               {/* CITY + ZIP */}
@@ -340,7 +340,7 @@ export default function AddressesTab() {
                   value={form.city || ''}
                   onChange={handleChange}
                   placeholder={t.addresses.city}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm md:px-4 md:py-3 text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
                 />
 
                 <input
@@ -348,7 +348,7 @@ export default function AddressesTab() {
                   value={form.postalCode || ''}
                   onChange={handleChange}
                   placeholder={t.addresses.zipCode}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm md:px-4 md:py-3 text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
                 />
               </div>
 
@@ -358,7 +358,7 @@ export default function AddressesTab() {
                 name="country"
                 value={form.country}
                 onChange={handleChange}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none focus:border-white/30"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm md:px-4 md:py-3 text-white transition outline-none focus:border-white/30"
               >
                 {COUNTRIES.map((country) => (
                   <option key={country.code} value={country.code} className="bg-white text-black">
@@ -370,10 +370,10 @@ export default function AddressesTab() {
 
             {/* FOOTER */}
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-4 flex justify-end gap-2 md:mt-6 md:gap-3">
               <button
                 onClick={() => setOpenModal(false)}
-                className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-neutral-300 transition hover:bg-white/10"
+                className="rounded-2xl border border-white/10 px-3 py-2.5 text-sm md:px-4 md:py-3 text-neutral-300 transition hover:bg-white/10"
               >
                 {t.addresses.cancel}
               </button>

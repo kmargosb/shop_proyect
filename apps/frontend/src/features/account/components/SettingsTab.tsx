@@ -61,20 +61,20 @@ export default function SettingsTab() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
+      <div className="rounded-3xl border border-white/10 bg-neutral-950 p-3 md:p-6">
         <p className="text-neutral-500">{t.settings.loading}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
-      <h2 className="text-2xl font-bold">{t.settings.title}</h2>
+    <div className="rounded-3xl border border-white/10 bg-neutral-950 p-3 md:p-6">
+      <h2 className="text-xl font-bold md:text-2xl">{t.settings.title}</h2>
 
-      <p className="mt-2 text-sm text-neutral-500">{t.settings.description}</p>
+      <p className="mt-1 text-xs md:mt-2 md:text-sm text-neutral-500">{t.settings.description}</p>
 
-      <div className="mt-8 space-y-4">
-        <div className="flex items-center justify-between rounded-2xl border border-white/10 p-5">
+      <div className="mt-4 space-y-2 md:mt-8 md:space-y-4">
+        <div className="flex items-center justify-between rounded-xl border border-white/10 p-3 md:rounded-2xl md:p-5">
           <div>
             <p className="font-medium">{t.settings.marketingEmails}</p>
 
@@ -90,14 +90,14 @@ export default function SettingsTab() {
             {marketingEmails ? t.settings.enabled : t.settings.disabled}
           </button>
         </div>
-        <div className="rounded-2xl border border-red-500/20 p-5">
+        <div className="rounded-xl border border-red-500/20 p-3 md:rounded-2xl md:p-5">
           <p className="font-medium text-white">{t.settings.deactivateAccount}</p>
 
           <p className="mt-1 text-sm text-neutral-500">{t.settings.deactivateDescription}</p>
 
           <button
             onClick={() => setShowDeactivateModal(true)}
-            className="mt-5 cursor-pointer rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white"
+            className="mt-3 cursor-pointer rounded-xl bg-red-500 px-3 py-2.5 md:mt-5 md:px-4 md:py-3 text-sm font-medium text-white"
           >
             {t.settings.deactivateAccount}
           </button>
@@ -105,12 +105,12 @@ export default function SettingsTab() {
       </div>
       {showDeactivateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-3 md:p-6">
             <h3 className="text-xl font-semibold text-white">{t.settings.deactivateAccount}</h3>
 
             <p className="mt-3 text-sm text-neutral-400">{t.settings.modalDescription}</p>
 
-            <p className="mt-2 text-sm text-neutral-400">{t.settings.modalDescription2}</p>
+            <p className="mt-1 text-xs md:mt-2 md:text-sm text-neutral-400">{t.settings.modalDescription2}</p>
 
             <div className="mt-6 flex gap-3">
               <button

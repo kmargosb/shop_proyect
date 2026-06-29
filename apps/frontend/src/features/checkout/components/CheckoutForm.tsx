@@ -29,8 +29,8 @@ export default function CheckoutForm({
   const { t } = useLanguage();
 
   return (
-    <form id="checkout-form" onSubmit={(e) => handleSubmit(e, clearCart)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <form id="checkout-form" onSubmit={(e) => handleSubmit(e, clearCart)} className="space-y-3 md:space-y-4">
+      <div className="grid grid-cols-2 gap-2 md:gap-4">
         <Input
           name="firstName"
           value={form.firstName}
@@ -80,7 +80,7 @@ export default function CheckoutForm({
         name="country"
         value={form.country}
         onChange={handleChange}
-        className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3"
+        className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-2.5 text-sm md:p-3"
       >
         {COUNTRIES.map((c) => (
           <option key={c.code} value={c.code}>

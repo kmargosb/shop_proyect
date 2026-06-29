@@ -260,18 +260,18 @@ export default function AdminDashboard() {
   if (!metrics) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-8">
       {/* ================= HERO ================= */}
-      <section className="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.28),transparent_34%),linear-gradient(135deg,#111111,#080808)] p-5 shadow-2xl shadow-black/30 sm:p-7">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-4">
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.28),transparent_34%),linear-gradient(135deg,#111111,#080808)] p-4 shadow-2xl shadow-black/30 sm:p-7">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2 sm:space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-medium text-neutral-300">
               <Sparkles size={14} className="text-indigo-300" />
               Panel en tiempo real para decisiones de tienda
             </div>
 
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+              <h1 className="text-xl font-semibold tracking-tight text-white sm:text-4xl">
                 Resumen comercial
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base">
@@ -311,7 +311,7 @@ export default function AdminDashboard() {
       )}
 
       {/* ================= KPIs ================= */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <KpiCard
           title="Ingresos netos hoy"
           value={format(metrics.todayNetRevenue)}
@@ -343,8 +343,8 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-6">
-        <div className="mb-6 flex gap-2">
+      <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 sm:p-6">
+        <div className="mb-4 flex sm:mb-6 gap-2">
           {[
             ['total', 'Total'],
             ['year', 'Año'],
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
         </div>
         <h2 className="mb-2 text-lg font-semibold text-white">Rendimiento financiero</h2>
 
-        <p className="mb-6 text-sm text-neutral-500">
+        <p className="mb-4 text-sm sm:mb-6 text-neutral-500">
           Resumen de ingresos, reembolsos y rentabilidad.
         </p>
         {/* ================= Resumen Financiero ================= */}
@@ -406,33 +406,33 @@ export default function AdminDashboard() {
           <table className="w-full text-sm">
             <tbody>
               <tr className="border-b border-white/10">
-                <td className="px-5 py-4 text-neutral-400">Ventas brutas</td>
+                <td className="px-3 py-2.5 text-neutral-400">Ventas brutas</td>
 
-                <td className="px-5 py-4 text-right font-medium text-white">
+                <td className="px-3 py-2.5 text-right font-medium text-white">
                   {format(financialData.grossRevenue)}
                 </td>
               </tr>
 
               <tr className="border-b border-white/10">
-                <td className="px-5 py-4 text-neutral-400">Reembolsos</td>
+                <td className="px-3 py-2.5 text-neutral-400">Reembolsos</td>
 
-                <td className="px-5 py-4 text-right font-medium text-red-300">
+                <td className="px-3 py-2.5 text-right font-medium text-red-300">
                   -{format(financialData.refundedAmount)}
                 </td>
               </tr>
 
               <tr className="border-b border-white/10">
-                <td className="px-5 py-4 text-neutral-400">Ingresos netos</td>
+                <td className="px-3 py-2.5 text-neutral-400">Ingresos netos</td>
 
-                <td className="px-5 py-4 text-right font-medium text-emerald-300">
+                <td className="px-3 py-2.5 text-right font-medium text-emerald-300">
                   {format(financialData.netRevenue)}
                 </td>
               </tr>
 
               <tr>
-                <td className="px-5 py-4 text-neutral-400">Ticket medio</td>
+                <td className="px-3 py-2.5 text-neutral-400">Ticket medio</td>
 
-                <td className="px-5 py-4 text-right font-medium text-indigo-300">
+                <td className="px-3 py-2.5 text-right font-medium text-indigo-300">
                   {format(averageTicketSelected)}
                 </td>
               </tr>
@@ -451,7 +451,7 @@ export default function AdminDashboard() {
 
       {/* ================= CHART ================= */}
       <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mb-4 flex sm:mb-6 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
               Revenue
@@ -485,7 +485,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="h-72 sm:h-80">
+        <div className="h-60 sm:h-80">
           {revenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData} margin={{ left: 0, right: 8, top: 8 }}>
@@ -561,7 +561,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
         {/* SALES BY COUNTRY */}
         <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
-          <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="mb-4 flex sm:mb-6 items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
                 Mercados
@@ -571,7 +571,7 @@ export default function AdminDashboard() {
             <Globe2 className="text-neutral-500" size={22} />
           </div>
 
-          <div className="h-72">
+          <div className="h-60 sm:h-72">
             {countriesFormatted.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={countriesFormatted} margin={{ left: 0, right: 8 }}>
@@ -615,7 +615,7 @@ export default function AdminDashboard() {
 
         {/* ACTIVITY */}
         <section className="rounded-3xl border border-white/10 bg-neutral-950/80 p-4 shadow-xl shadow-black/20 sm:p-6">
-          <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="mb-4 flex sm:mb-6 items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.24em] text-neutral-500 uppercase">
                 Timeline
@@ -625,7 +625,7 @@ export default function AdminDashboard() {
             <ReceiptText className="text-neutral-500" size={22} />
           </div>
 
-          <div className="premium-scrollbar max-h-96 space-y-3 overflow-y-auto pr-1">
+          <div className="premium-scrollbar max-h-80 space-y-2 sm:max-h-96 sm:space-y-3 overflow-y-auto pr-1">
             {activity.length > 0 ? (
               activity.map((item, index) => <ActivityItem key={item.id ?? index} item={item} />)
             ) : (

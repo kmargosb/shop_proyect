@@ -24,7 +24,7 @@ export default function CheckoutSummary({
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6 rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6">
+    <div className="space-y-4 rounded-2xl md:space-y-6 border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6">
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">{t.checkout.orderSummary}</h2>
@@ -34,12 +34,12 @@ export default function CheckoutSummary({
       </div>
 
       {/* ITEMS */}
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         {items.map((item) => (
           <div key={item.id} className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               {/* IMAGE  */}
-              <div className="h-16 w-16 overflow-hidden rounded-lg bg-neutral-800">
+              <div className="h-14 w-14 md:h-16 md:w-16 overflow-hidden rounded-lg bg-neutral-800">
                 {item.image ? (
                   <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                 ) : (
@@ -132,13 +132,13 @@ export default function CheckoutSummary({
         type="submit"
         form="checkout-form"
         disabled={!isValid || loading}
-        className="h-12 w-full rounded-xl border border-white/20 !bg-white font-semibold !text-black shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
+        className="h-11 w-full md:h-12 rounded-xl border border-white/20 !bg-white font-semibold !text-black shadow-md transition-all duration-200 hover:!bg-neutral-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.99]"
       >
         {loading ? t.checkout.processing : `${t.checkout.pay} €${(totalPrice / 100).toFixed(2)}`}
       </Button>
 
       {/* TRUST / UX BOOST */}
-      <div className="mt-20 space-y-1 text-xs text-neutral-500">
+      <div className="mt-6 space-y-1 md:mt-20 text-xs text-neutral-500">
         <p>🔒 {t.checkout.securePayment}</p>
         <p>💳 {t.checkout.stripe}</p>
         <p>🚚 {t.checkout.fastShipping}</p>
