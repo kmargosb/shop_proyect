@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { applyLocalChange, addLocalItem } from './cart.optimistic';
 import { useCartInit } from './hooks/useCartInit';
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import {
@@ -90,7 +91,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     if (optimisticItem) {
-      addLocalItem(productId, variantId, quantity, optimisticItem);
+      const updated = addLocalItem(
+        itemsRef.current,
+        productId,
+        variantId,
+        quantity,
+        optimisticItem,
+      );
+
+      itemsRef.current = updated;
+      setItems(updated);
     }
 
     const res = await addItemRequest(productId, variantId, quantity);
@@ -175,61 +185,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const applyLocalChange = (itemId: string, delta: number) => {
-    let updated: CartItem[] = [];
-
-    updated = itemsRef.current.map((item) => {
-      if (item.id !== itemId) {
-        return item;
-      }
-
-      const nextQuantity = Math.max(1, Math.min(item.stock, item.quantity + delta));
-
-      return {
-        ...item,
-        quantity: nextQuantity,
-      };
-    });
-
-    itemsRef.current = updated;
-    setItems(updated);
-  };
-
-  const addLocalItem = (
-    productId: string,
-    variantId: string,
-    quantity: number,
-    optimisticItem: OptimisticCartItem,
-  ) => {
-    const existing = itemsRef.current.find(
-      (i) => i.productId === productId && i.variantId === variantId,
-    );
-
-    let updated: CartItem[];
-
-    if (existing) {
-      updated = itemsRef.current.map((i) =>
-        i.id === existing.id
-          ? {
-              ...i,
-              quantity: Math.min(i.stock, i.quantity + quantity),
-            }
-          : i,
-      );
-    } else {
-      updated = [
-        ...itemsRef.current,
-        {
-          id: `optimistic-${Date.now()}`,
-          ...optimisticItem,
-        },
-      ];
-    }
-
-    itemsRef.current = updated;
-    setItems(updated);
-  };
-
   /* ================= INCREASE ================= */
 
   const increaseQuantity = async (itemId: string) => {
@@ -238,7 +193,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!item) return;
 
     // UI inmediata
-    applyLocalChange(itemId, 1);
+    const updated = applyLocalChange(itemsRef.current, itemId, 1);
+
+    itemsRef.current = updated;
+    setItems(updated);
 
     const key = `${item.productId}:${item.variantId}`;
 
@@ -268,7 +226,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     // UI inmediata
-    applyLocalChange(itemId, -1);
+    const updated = applyLocalChange(itemsRef.current, itemId, -1);
+
+    itemsRef.current = updated;
+    setItems(updated);
 
     const key = `${item.productId}:${item.variantId}`;
 

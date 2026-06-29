@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { socket } from '@/shared/lib/socket';
 import { fetchCart } from '../cart.service';
-import type { CartItem } from '../CartContext';
+import type { CartItem } from '../types';
 
 type Props = {
   itemsRef: React.MutableRefObject<CartItem[]>;
