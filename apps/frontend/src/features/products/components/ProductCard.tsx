@@ -2,20 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
-import { useWishlist } from '@/features/wishlist/WishListContext';
 import type { Product } from '@/types/product';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import WishlistButton from './WishlistButton';
 
 type Props = {
   product: Product;
 };
 
 export default function ProductCard({ product }: Props) {
-  const { isWishlisted, toggleWishlist } = useWishlist();
   const { t } = useLanguage();
-
-  const wishlisted = isWishlisted(product.id);
 
   const availableStock =
     product.variants?.reduce((total, variant) => total + (variant.stock ?? 0), 0) ?? 0;
@@ -38,20 +34,7 @@ export default function ProductCard({ product }: Props) {
       {/* IMAGE */}
       <Link href={`/product/${product.id}`} className="block">
         <div className="relative aspect-[4/5] overflow-hidden">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-
-              toggleWishlist(product.id);
-            }}
-            className="absolute top-3 right-3 z-20 rounded-full bg-black/60 p-2 backdrop-blur"
-          >
-            <Heart
-              size={18}
-              className={wishlisted ? 'fill-rose-500 text-rose-500' : 'text-white'}
-            />
-          </button>
+          <WishlistButton productId={product.id} />
           <div className="absolute inset-0 overflow-hidden">
             {outOfStock && (
               <span className="absolute top-3 left-3 z-10 rounded bg-black/80 px-2 py-1 text-xs font-semibold text-red-300">
