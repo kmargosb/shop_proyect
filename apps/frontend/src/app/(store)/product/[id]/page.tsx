@@ -210,14 +210,14 @@ export default function ProductPage() {
   =============================== */
 
   const handleAddToCart = async () => {
+    if (addingToCart) return;
+    setAddingToCart(true);
     try {
       if (!selectedVariant) {
         toast.error(t.toast.selectVariant);
         return;
       }
       toast.success(t.toast.addedToCart);
-
-      setAddingToCart(true);
 
       setAddedToCart(true);
 
@@ -283,6 +283,8 @@ export default function ProductPage() {
         size: selectedVariant.size,
         color: selectedVariant.color,
       });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       router.push('/checkout');
 
@@ -524,7 +526,7 @@ export default function ProductPage() {
 
             <Button
               onClick={handleBuyNow}
-              disabled={outOfStock || buyingNow}
+              disabled={outOfStock || buyingNow || addingToCart}
               variant="outline"
               className="cursor-pointer shadow-sm transition-all hover:shadow-md"
             >

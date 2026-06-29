@@ -1,6 +1,8 @@
 import type { CartItem } from '@/features/cart/types';
 import { Button } from '@/shared/ui/button';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import { useCart } from '@/features/cart/CartContext';
+import { memo } from 'react';
 
 type Props = {
   items: CartItem[];
@@ -12,7 +14,7 @@ type Props = {
   removeItem: (id: string) => Promise<void>;
 };
 
-export default function CheckoutSummary({
+const CheckoutSummary = memo(function CheckoutSummary({
   items,
   totalPrice,
   loading,
@@ -22,6 +24,7 @@ export default function CheckoutSummary({
   removeItem,
 }: Props) {
   const { t } = useLanguage();
+  const { cartBusy } = useCart();
 
   return (
     <div className="space-y-6 rounded-2xl border border-white/10 bg-neutral-900 p-4 md:p-6 lg:sticky lg:top-6">
@@ -64,6 +67,7 @@ export default function CheckoutSummary({
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
+                    disabled={cartBusy}
                     onClick={() => decreaseQuantity(item.id)}
                     className="h-6 w-6 rounded border border-neutral-700 transition hover:border-white"
                   >
@@ -76,6 +80,7 @@ export default function CheckoutSummary({
 
                   <button
                     type="button"
+                    disabled={cartBusy}
                     onClick={() => increaseQuantity(item.id)}
                     className="h-6 w-6 rounded border border-neutral-700 transition hover:border-white"
                   >
@@ -84,6 +89,7 @@ export default function CheckoutSummary({
 
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={() => removeItem(item.id)}
                     className="ml-2 text-xs text-neutral-500 transition hover:text-red-400"
                   >
@@ -145,4 +151,6 @@ export default function CheckoutSummary({
       </div>
     </div>
   );
-}
+});
+
+export default CheckoutSummary;

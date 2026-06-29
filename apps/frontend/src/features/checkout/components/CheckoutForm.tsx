@@ -10,6 +10,7 @@ import type {
   CheckoutSubmitHandler,
   AddressData,
 } from '../types';
+import { memo } from 'react';
 
 type Props = {
   form: CheckoutFormData;
@@ -19,7 +20,7 @@ type Props = {
   clearCart: () => void;
 };
 
-export default function CheckoutForm({
+const CheckoutForm = memo(function CheckoutForm({
   form,
   handleChange,
   handleAddressChange,
@@ -90,4 +91,6 @@ export default function CheckoutForm({
       </select>
     </form>
   );
-}
+});
+
+export default CheckoutForm;
