@@ -2,7 +2,8 @@
 
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/shared/ui/sheet';
 import { Button } from '@/shared/ui/button';
-import { useCart, CartItem } from '@/features/cart/CartContext';
+import { useCart } from '@/features/cart/CartContext';
+import type { CartItem } from '@/features/cart/types';
 import { useCartUI } from '@/features/cart/CartUIContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
