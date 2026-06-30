@@ -114,10 +114,12 @@ export default function Page() {
 
     // socket.on("dashboard:update", refreshOrder);
     socket.on('orderUpdated', refreshOrder);
+    socket.on('orderPaid', refreshOrder);
 
     return () => {
       // socket.off("dashboard:update", refreshOrder);
       socket.off('orderUpdated', refreshOrder);
+      socket.off('orderPaid', refreshOrder);
     };
   }, [id, searchParams]);
 
