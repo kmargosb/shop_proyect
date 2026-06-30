@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { socket } from '@/shared/lib/socket';
 import { addLocalItem } from './lib/cart.optimistic';
 import { useCartInit } from './hooks/useCartInit';
-
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import { getTotalItems, getTotalPrice } from './utils/cartTotals';
 import { mapItems, fetchCart, addItemRequest, removeItemRequest } from './cart.service';
@@ -17,6 +17,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+
+  useEffect(() => {
+    const handleCartUpdated = async () => {
+      try {
+        const synced = await fetchCart();
+
+        itemsRef.current = synced;
+        setItems(synced);
+      } catch (error) {
+        console.error('Cart sync failed:', error);
+      }
+    };
+
+    socket.on('cartUpdated', handleCartUpdated);
+
+    return () => {
+      socket.off('cartUpdated', handleCartUpdated);
+    };
+  }, []);
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);

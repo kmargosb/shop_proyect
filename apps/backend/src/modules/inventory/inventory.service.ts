@@ -26,15 +26,6 @@ export const InventoryService = {
       throw new Error('Not enough stock available');
     }
 
-    await tx.inventoryReservation.create({
-      data: {
-        variantId,
-        orderId,
-        quantity,
-        expiresAt: new Date(Date.now() + RESERVATION_TIME_MINUTES * 60 * 1000),
-      },
-    });
-
     await tx.productVariant.update({
       where: {
         id: variantId,
@@ -43,6 +34,15 @@ export const InventoryService = {
         reservedStock: {
           increment: quantity,
         },
+      },
+    });
+
+    await tx.inventoryReservation.create({
+      data: {
+        variantId,
+        orderId,
+        quantity,
+        expiresAt: new Date(Date.now() + RESERVATION_TIME_MINUTES * 60 * 1000),
       },
     });
   },
