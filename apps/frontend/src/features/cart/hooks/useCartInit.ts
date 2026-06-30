@@ -37,4 +37,19 @@ export function useCartInit({ itemsRef, setItems, setHydrated }: Props) {
       socket.off('productUpdated', handleProductUpdated);
     };
   }, [itemsRef, setItems]);
+
+  useEffect(() => {
+    const handleCartUpdated = async () => {
+      const items = await fetchCart();
+
+      itemsRef.current = items;
+      setItems(items);
+    };
+
+    socket.on('cartUpdated', handleCartUpdated);
+
+    return () => {
+      socket.off('cartUpdated', handleCartUpdated);
+    };
+  }, [itemsRef, setItems]);
 }

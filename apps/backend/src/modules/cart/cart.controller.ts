@@ -67,7 +67,8 @@ export const getCartController = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const cart = await CartService.getCart(cartId);
+    const cart =
+      (await CartService.getCart(cartId)) ?? (await CartService.getOrCreateCart(req.user?.id));
 
     res.json(cart);
   } catch (error) {
@@ -267,6 +268,14 @@ export const checkoutActiveCartController = async (req: AuthRequest, res: Respon
     const cartId = req.cookies?.cartId;
 
     const cart = await CartService.getActiveCart(cartId, req.user?.id);
+
+    console.log('========== CHECKOUT ==========');
+    console.log('Cookie cartId:', cartId);
+    console.log('Resolved cartId:', cart.id);
+    console.log('Items:', cart.items.length);
+    console.log('Status:', cart.status);
+    console.log('Expires:', cart.expiresAt.toISOString());
+    console.log('==============================');
 
     const result = await CheckoutService.checkout({
       cartId: cart.id,

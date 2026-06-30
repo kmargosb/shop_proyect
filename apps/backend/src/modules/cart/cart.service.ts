@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getIO } from '@/lib/socket';
 
 const CART_EXPIRATION_HOURS = 24;
 
@@ -47,18 +48,24 @@ export const CartService = {
   async getOrCreateCart(userId?: string) {
     const expiresAt = new Date(Date.now() + CART_EXPIRATION_HOURS * 60 * 60 * 1000);
 
-    /* guest cart */
+    /* =========================
+     GUEST CART
+  ========================= */
 
     if (!userId) {
       return prisma.cart.create({
-        data: { expiresAt },
+        data: {
+          expiresAt,
+        },
         include: CART_INCLUDE,
       });
     }
 
-    /* existing active cart */
+    /* =========================
+     EXISTING ACTIVE CART
+  ========================= */
 
-    let cart = await prisma.cart.findFirst({
+    const activeCarts = await prisma.cart.findMany({
       where: {
         userId,
         status: 'ACTIVE',
@@ -66,22 +73,37 @@ export const CartService = {
           gt: new Date(),
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: CART_INCLUDE,
     });
 
-    /* create new cart */
-
-    if (!cart) {
-      cart = await prisma.cart.create({
-        data: {
-          userId,
-          expiresAt,
-        },
-        include: CART_INCLUDE,
-      });
+    if (activeCarts.length > 1) {
+      console.warn(`[Cart] User ${userId} has ${activeCarts.length} ACTIVE carts.`);
     }
 
-    return cart;
+    const existingCart = activeCarts[0];
+
+    if (existingCart) {
+      return existingCart;
+    }
+
+    /* =========================
+     CREATE NEW CART
+  ========================= */
+
+    const newCart = await prisma.cart.create({
+      data: {
+        userId,
+        expiresAt,
+      },
+      include: CART_INCLUDE,
+    });
+
+    console.log(`[Cart] New cart created: ${newCart.id}`);
+
+    return newCart;
   },
 
   /* =========================================================
@@ -93,27 +115,16 @@ export const CartService = {
       gt: new Date(),
     };
 
-    // Usuario autenticado
-    if (userId) {
-      const cart = await prisma.cart.findFirst({
-        where: {
-          userId,
-          status: 'ACTIVE',
-          expiresAt,
-        },
-        include: CART_INCLUDE,
-      });
+    console.log('========== GET ACTIVE CART ==========');
+    console.log('Input cartId:', cartId);
+    console.log('Input userId:', userId);
 
-      if (cart) {
-        return cart;
-      }
+    /* =========================================================
+     1. TRY COOKIE CART FIRST
+  ========================================================= */
 
-      return this.getOrCreateCart(userId);
-    }
-
-    // Invitado
     if (cartId) {
-      const cart = await prisma.cart.findFirst({
+      const cookieCart = await prisma.cart.findFirst({
         where: {
           id: cartId,
           status: 'ACTIVE',
@@ -122,10 +133,74 @@ export const CartService = {
         include: CART_INCLUDE,
       });
 
-      if (cart) {
-        return cart;
+      console.log(
+        '[COOKIE SEARCH]',
+        cookieCart
+          ? {
+              id: cookieCart.id,
+              status: cookieCart.status,
+              items: cookieCart.items.length,
+              expiresAt: cookieCart.expiresAt,
+              userId: cookieCart.userId,
+            }
+          : 'NOT FOUND',
+      );
+
+      if (cookieCart) {
+        // Si el usuario está autenticado, el carrito debe pertenecerle
+        // o ser un carrito de invitado todavía.
+        if (!userId || cookieCart.userId === userId || cookieCart.userId === null) {
+          console.log('[RETURN] Cookie cart:', cookieCart.id);
+          return cookieCart;
+        }
       }
     }
+
+    /* =========================================================
+     2. USER ACTIVE CART
+  ========================================================= */
+
+    if (userId) {
+      const userCart = await prisma.cart.findFirst({
+        where: {
+          userId,
+          status: 'ACTIVE',
+          expiresAt,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: CART_INCLUDE,
+      });
+
+      console.log(
+        '[USER SEARCH]',
+        userCart
+          ? {
+              id: userCart.id,
+              status: userCart.status,
+              items: userCart.items.length,
+              expiresAt: userCart.expiresAt,
+            }
+          : 'NOT FOUND',
+      );
+
+      if (userCart) {
+        console.log('[RETURN] User cart:', userCart.id);
+        return userCart;
+      }
+
+      console.log('[CREATE] No active user cart found.');
+
+      return this.getOrCreateCart(userId);
+    }
+
+    /* =========================================================
+     3. CREATE GUEST CART
+  ========================================================= */
+
+    console.log('[CREATE] Guest cart not found.');
+    console.log('=====================================');
 
     return this.getOrCreateCart();
   },
@@ -234,10 +309,16 @@ export const CartService = {
         },
       });
 
-      return tx.cart.findUnique({
+      const updatedCart = await tx.cart.findUnique({
         where: { id: cartId },
         include: CART_INCLUDE,
       });
+
+      getIO().emit('cartUpdated', {
+        cartId,
+      });
+
+      return updatedCart;
     });
   },
 
@@ -289,10 +370,18 @@ export const CartService = {
       });
     }
 
-    /* invalid cart → regenerate */
+    /* invalid cart */
 
-    if (!cart || cart.status !== 'ACTIVE' || cart.expiresAt < new Date()) {
-      cart = await this.getOrCreateCart(userId);
+    if (!cart) {
+      return null;
+    }
+
+    if (cart.status !== 'ACTIVE') {
+      return null;
+    }
+
+    if (cart.expiresAt < new Date()) {
+      return null;
     }
 
     /* sync inventory */
@@ -318,10 +407,15 @@ export const CartService = {
       },
     });
 
+    console.log('===== SYNC CART INVENTORY =====');
+    console.log('Cart:', cartId);
+    console.log('Items before sync:', items.length);
+
     for (const item of items) {
       /* deleted / inactive */
 
       if (!item.product || !item.product.isActive || !item.variant) {
+        console.log('[DELETE]', item.id, 'Reason: product deleted or inactive');
         await prisma.cartItem.delete({
           where: { id: item.id },
         });
@@ -334,6 +428,16 @@ export const CartService = {
       /* out of stock */
 
       if (availableStock <= 0) {
+        console.log(
+          '[DELETE]',
+          item.id,
+          'Reason: availableStock =',
+          availableStock,
+          'stock =',
+          item.variant.stock,
+          'reserved =',
+          item.variant.reservedStock,
+        );
         await prisma.cartItem.delete({
           where: { id: item.id },
         });
@@ -344,6 +448,7 @@ export const CartService = {
       /* adjust quantity */
 
       if (item.quantity > availableStock) {
+        console.log('[UPDATE]', item.id, 'Quantity:', item.quantity, '->', availableStock);
         await prisma.cartItem.update({
           where: { id: item.id },
           data: {
@@ -352,6 +457,7 @@ export const CartService = {
         });
       }
     }
+    console.log('===== END SYNC =====');
   },
 
   /* =========================================================
@@ -442,6 +548,10 @@ export const CartService = {
       data: {
         status: 'CONVERTED',
       },
+    });
+
+    getIO().emit('cartUpdated', {
+      cartId,
     });
 
     /* =========================
