@@ -1,6 +1,7 @@
-import { CartService } from "@/modules/cart/cart.service";
-import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
-import { prisma } from "@/lib/prisma"
+import { CartService } from '@/modules/cart/cart.service';
+import { PaymentSessionService } from '@/modules/payment-sessions/payment-session.service';
+import { prisma } from '@/lib/prisma';
+import { createOrderWithTx } from '@/modules/orders/order.service';
 
 type CheckoutInput = {
   cartId: string;
@@ -21,54 +22,57 @@ export const CheckoutService = {
   async checkout(data: CheckoutInput) {
     const { cartId, method, userId, ...checkoutData } = data;
 
-   /* =========================
-      SYNC INVENTORY
-   ========================= */
-
     await CartService.syncCartInventory(cartId);
 
-   /* =========================
-      VALIDATE CART
-   ========================= */
+    const { order, totals } = await prisma.$transaction(async (tx) => {
+      await CartService.lockCartTx(tx, cartId);
 
-    await CartService.validateCart(cartId);
+      const cart = await CartService.validateCartTx(tx, cartId);
 
-   /* =========================
-      CALCULATE TOTALS
-   ========================= */
+      const totals = CartService.calculateTotalsFromCart(cart);
 
-    const totals = await CartService.calculateTotals(cartId);
+      const order = await createOrderWithTx(tx, {
+        ...checkoutData,
+        userId,
+        items: cart.items.map((item: (typeof cart.items)[number]) => ({
+          productId: item.productId,
+          variantId: item.variantId ?? undefined,
+          quantity: item.quantity,
 
-    /* =========================
-       CREATE ORDER
-    ========================= */
+          productName: item.product.name,
+          productPrice: item.product.price,
 
-    const order = await CartService.convertCartToOrder(cartId, {
-      ...checkoutData,
-      userId,
+          sku: item.variant?.sku ?? null,
+
+          size: item.variant?.size,
+          color: item.variant?.color,
+        })),
+      });
+
+      await CartService.finishCartTx(tx, cartId);
+
+      return {
+        order,
+        totals,
+      };
     });
 
     await prisma.analyticsEvent.create({
-  data: {
-    userId,
-    productId: null,
-    orderId: order.id,
-    event: "CHECKOUT_STARTED",
-  },
-});
+      data: {
+        userId,
+        productId: null,
+        orderId: order.id,
+        event: 'CHECKOUT_STARTED',
+      },
+    });
 
     /* =========================
        CREATE PAYMENT SESSION
     ========================= */
 
-    const session = await PaymentSessionService.createSession(
-      order.id,
-      method as any,
-    );
+    const session = await PaymentSessionService.createSession(order.id, method as any);
 
-    const paymentIntent = await PaymentSessionService.createPaymentIntent(
-      session.id,
-    );
+    const paymentIntent = await PaymentSessionService.createPaymentIntent(session.id);
 
     return {
       orderId: order.id,

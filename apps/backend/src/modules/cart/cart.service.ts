@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getIO } from '@/lib/socket';
 import { createOrderWithTx } from '@/modules/orders/order.service';
 
@@ -496,66 +497,65 @@ export const CartService = {
     };
   },
 
-  /* =========================================================
-     CONVERT CART TO ORDER
-  ========================================================= */
+  calculateTotalsFromCart(cart: {
+    items: {
+      price: number;
+      quantity: number;
+    }[];
+  }) {
+    const subtotal = cart.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
-    return prisma
-      .$transaction(async (tx) => {
-        const locked = await tx.cart.updateMany({
-          where: {
-            id: cartId,
-            status: 'ACTIVE',
-          },
-          data: {
-            status: 'CONVERTING',
-          },
-        });
+    const discount = 0;
 
-        if (locked.count !== 1) {
-          throw new Error('Cart already being processed');
-        }
+    const tax = Math.floor(subtotal * 0.21);
 
-        const cart = await this.validateCartTx(tx, cartId);
+    const shipping = subtotal > 5000 ? 0 : 500;
 
-        const order = await createOrderWithTx(tx, {
-          userId: checkoutData.userId ?? undefined,
-          ...checkoutData,
-          items: cart.items.map((item: (typeof cart.items)[number]) => ({
-            productId: item.productId,
-            variantId: item.variantId ?? undefined,
-            quantity: item.quantity,
-          })),
-        });
+    const total = subtotal - discount + tax + shipping;
 
-        await tx.cart.update({
-          where: { id: cartId },
-          data: {
-            status: 'CONVERTED',
-          },
-        });
+    return {
+      subtotal,
+      discount,
+      tax,
+      shipping,
+      total,
+    };
+  },
 
-        await tx.cartItem.deleteMany({
-          where: { cartId },
-        });
+  async lockCartTx(tx: Prisma.TransactionClient, cartId: string) {
+    const locked = await tx.cart.updateMany({
+      where: {
+        id: cartId,
+        status: 'ACTIVE',
+      },
+      data: {
+        status: 'CONVERTING',
+      },
+    });
 
-        return order;
-      })
-      .then((order) => {
-        getIO().emit('cartUpdated', {
-          cartId,
-        });
+    if (locked.count !== 1) {
+      throw new Error('Cart already being processed');
+    }
+  },
 
-        return order;
-      });
+  async finishCartTx(tx: Prisma.TransactionClient, cartId: string) {
+    await tx.cart.update({
+      where: { id: cartId },
+      data: {
+        status: 'CONVERTED',
+      },
+    });
+
+    await tx.cartItem.deleteMany({
+      where: { cartId },
+    });
   },
 
   /* =========================================================
      VALIDATE CART
   ========================================================= */
 
-  async validateCartTx(tx: any, cartId: string) {
+  async validateCartTx(tx: Prisma.TransactionClient, cartId: string) {
     const cart = await tx.cart.findUnique({
       where: { id: cartId },
       include: {
@@ -601,55 +601,6 @@ export const CartService = {
     }
 
     return cart;
-  },
-
-  async validateCart(cartId: string) {
-    const cart = await prisma.cart.findUnique({
-      where: { id: cartId },
-
-      include: {
-        items: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-      },
-    });
-
-    if (!cart) {
-      throw new Error('Cart not found');
-    }
-
-    if (cart.status !== 'ACTIVE') {
-      throw new Error('Cart already converted');
-    }
-
-    if (cart.expiresAt < new Date()) {
-      throw new Error('Cart expired');
-    }
-
-    if (cart.items.length === 0) {
-      throw new Error('Cart empty');
-    }
-
-    for (const item of cart.items) {
-      if (!item.product || !item.variant) {
-        throw new Error(`Product ${item.productId} not found`);
-      }
-
-      if (!item.product.isActive) {
-        throw new Error(`Product ${item.product.name} not available`);
-      }
-
-      const availableStock = item.variant.stock - item.variant.reservedStock;
-
-      if (availableStock < item.quantity) {
-        throw new Error(`Not enough stock for ${item.product.name}`);
-      }
-    }
-
-    return true;
   },
 
   /* =========================================================

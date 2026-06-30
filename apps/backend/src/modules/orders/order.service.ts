@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getIO } from '@/lib/socket';
 import { Prisma, OrderStatus } from '@prisma/client';
 import { RefundService } from '@/modules/refunds/refund.service';
+import { InventoryService } from '@/modules/inventory/inventory.service';
 import Stripe from 'stripe';
 
 type CreateOrderInput = {
@@ -11,6 +12,14 @@ type CreateOrderInput = {
     productId: string;
     variantId?: string;
     quantity: number;
+
+    productName: string;
+    productPrice: number;
+
+    sku?: string | null;
+
+    size?: any;
+    color?: any;
   }[];
 
   fullName: string;
@@ -71,39 +80,20 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     ========================= */
 
   for (const item of items) {
-    const variant = await tx.productVariant.findUnique({
-      where: {
-        id: item.variantId,
-      },
-      include: {
-        product: true,
-      },
-    });
-
-    if (!variant) {
-      throw new Error('Variante no encontrada');
-    }
-
-    const availableStock = variant.stock - variant.reservedStock;
-
-    if (item.quantity > availableStock) {
-      throw new Error(`Stock insuficiente para ${variant.product.name}`);
-    }
-
-    totalAmount += variant.product.price * item.quantity;
+    totalAmount += item.productPrice * item.quantity;
 
     orderItemsData.push({
-      productId: variant.product.id,
-      variantId: variant.id,
+      productId: item.productId,
+      variantId: item.variantId,
 
-      productName: variant.product.name,
-      productSku: variant.sku ?? null,
+      productName: item.productName,
+      productSku: item.sku ?? null,
 
-      size: variant.size,
-      color: variant.color,
+      size: item.size,
+      color: item.color,
 
       quantity: item.quantity,
-      price: variant.product.price,
+      price: item.productPrice,
     });
   }
 
@@ -170,8 +160,6 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
   /* =========================
        RESERVE INVENTORY
     ========================= */
-
-  const { InventoryService } = await import('@/modules/inventory/inventory.service');
 
   for (const item of order.items) {
     if (!item.variantId) {
