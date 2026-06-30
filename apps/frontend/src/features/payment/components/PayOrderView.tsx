@@ -1,18 +1,42 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import PaymentWrapper from "./PaymentWrapper";
-import StripePaymentForm from "./StripePaymentForm";
-import { useEffect } from "react";
-import { socket } from "@/shared/lib/socket";
+import { motion } from 'framer-motion';
+import PaymentWrapper from './PaymentWrapper';
+import StripePaymentForm from './StripePaymentForm';
+import { useEffect, useState } from 'react';
+import { apiFetch } from '@/shared/lib/api';
+import { socket } from '@/shared/lib/socket';
 
 type Props = {
   orderId: string;
-  clientSecret: string;
+  clientSecret: string | null;
 };
 
 export default function PayOrderView({ orderId, clientSecret }: Props) {
-  
+  const [secret, setSecret] = useState(clientSecret);
+
+  useEffect(() => {
+    if (secret) return;
+
+    const recover = async () => {
+      try {
+        const res = await apiFetch(`/payment/retry/${orderId}`, {
+          method: 'POST',
+        });
+
+        if (!res?.ok) return;
+
+        const data = await res.json();
+
+        setSecret(data.clientSecret);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    recover();
+  }, [orderId, secret]);
+
   useEffect(() => {
     const handler = ({ orderId: updatedOrderId }: { orderId: string }) => {
       if (updatedOrderId !== orderId) return;
@@ -20,23 +44,20 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
       window.location.reload();
     };
 
-    socket.on("orderCancelled", handler);
+    socket.on('orderCancelled', handler);
 
     return () => {
-      socket.off("orderCancelled", handler);
+      socket.off('orderCancelled', handler);
     };
   }, [orderId]);
 
-  if (!clientSecret) {
+  if (!secret) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="text-center space-y-4">
-          <p className="text-lg">Payment session expired</p>
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        <div className="space-y-4 text-center">
+          <p className="text-lg">Recovering your payment...</p>
 
-          <a
-            href="/shop"
-            className="underline text-neutral-400 hover:text-white"
-          >
+          <a href="/shop" className="text-neutral-400 underline hover:text-white">
             Volver a la tienda
           </a>
         </div>
@@ -45,38 +66,32 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
   }
 
   return (
-    <main className="relative overflow-x-hidden bg-[#0A0A0A] text-white px-4 py-6 min-h-[calc(100vh-64px)] flex items-center">
+    <main className="relative flex min-h-[calc(100vh-64px)] items-center overflow-x-hidden bg-[#0A0A0A] px-4 py-6 text-white">
       {/* BACKGROUND LIGHT */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-white/5 blur-[160px] rounded-full" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-[-200px] left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-white/5 blur-[160px]" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+      <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12">
         {/* LEFT */}
         <motion.div
-          initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.6 }}
           className="space-y-8"
         >
           <div className="space-y-4">
-            <h1 className="text-3xl md:text-5xl font-semibold tracking-tight">
-              Checkout
-            </h1>
+            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Checkout</h1>
 
-            <p className="text-neutral-400 text-base md:text-lg">
-              Complete your payment securely
-            </p>
+            <p className="text-base text-neutral-400 md:text-lg">Complete your payment securely</p>
           </div>
 
-          <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-6 rounded-2xl">
-            <p className="text-sm text-neutral-500 mb-2">Order ID</p>
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 backdrop-blur-xl">
+            <p className="mb-2 text-sm text-neutral-500">Order ID</p>
 
-            <p className="text-sm font-mono text-neutral-300 break-all">
-              {orderId}
-            </p>
+            <p className="font-mono text-sm break-all text-neutral-300">{orderId}</p>
 
-            <div className="mt-4 pt-4 border-t border-white/[0.08] text-xs text-neutral-500">
+            <div className="mt-4 border-t border-white/[0.08] pt-4 text-xs text-neutral-500">
               Powered by Stripe
             </div>
           </div>
@@ -90,15 +105,15 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
 
         {/* RIGHT */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          initial={{ opacity: 0, scale: 0.96, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="relative"
         >
-          <div className="absolute inset-0 pointer-events-none bg-white/[0.06] blur-3xl rounded-3xl" />
+          <div className="pointer-events-none absolute inset-0 rounded-3xl bg-white/[0.06] blur-3xl" />
 
-          <div className="relative z-10 bg-white/[0.04] border border-white/[0.08] backdrop-blur-2xl p-4 md:p-8 rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
-            <PaymentWrapper clientSecret={clientSecret}>
+          <div className="relative z-10 rounded-3xl border border-white/[0.08] bg-white/[0.04] p-4 shadow-[0_20px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl md:p-8">
+            <PaymentWrapper clientSecret={secret}>
               <StripePaymentForm orderId={orderId} />
             </PaymentWrapper>
           </div>

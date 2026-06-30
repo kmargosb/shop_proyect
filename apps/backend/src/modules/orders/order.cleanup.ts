@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
-import { OrderStatus } from "@prisma/client";
-import { InventoryService } from "@/modules/inventory/inventory.service";
-import { stripe } from "@/lib/stripe";
-import { getIO } from "@/lib/socket";
+import { prisma } from '@/lib/prisma';
+import { OrderStatus } from '@prisma/client';
+import { InventoryService } from '@/modules/inventory/inventory.service';
+import { stripe } from '@/lib/stripe';
+import { getIO } from '@/lib/socket';
 
 export async function cleanupExpiredOrders() {
   /* ===============================
@@ -36,12 +36,16 @@ export async function cleanupExpiredOrders() {
       ],
     },
     include: {
-      items: true,
+      items: {
+        include: {
+          product: true,
+        },
+      },
     },
   });
 
   if (expiredOrders.length > 0) {
-    console.log("🧾 Orders found:", expiredOrders.length);
+    console.log('🧾 Orders found:', expiredOrders.length);
   }
 
   /* ===============================
@@ -49,7 +53,7 @@ export async function cleanupExpiredOrders() {
   =============================== */
 
   for (const order of expiredOrders) {
-    console.log("⏳ Expired order:", order.id, order.status);
+    console.log('⏳ Expired order:', order.id, order.status);
 
     /* =========================
        CANCEL STRIPE INTENT
@@ -59,9 +63,9 @@ export async function cleanupExpiredOrders() {
       try {
         await stripe.paymentIntents.cancel(order.stripePaymentIntentId);
 
-        console.log("🚫 PaymentIntent cancelled:", order.stripePaymentIntentId);
+        console.log('🚫 PaymentIntent cancelled:', order.stripePaymentIntentId);
       } catch (error) {
-        console.error("❌ Failed to cancel PaymentIntent:", error);
+        console.error('❌ Failed to cancel PaymentIntent:', error);
       }
     }
 
@@ -78,14 +82,15 @@ export async function cleanupExpiredOrders() {
         },
         data: {
           status: OrderStatus.CANCELLED,
+          stripePaymentIntentId: null,
         },
       });
 
       await tx.orderEvent.create({
         data: {
           orderId: order.id,
-          type: "ORDER_CANCELLED",
-          message: "Order expired (auto cleanup)",
+          type: 'ORDER_CANCELLED',
+          message: 'Order expired (auto cleanup)',
         },
       });
     });
@@ -94,7 +99,7 @@ export async function cleanupExpiredOrders() {
        REALTIME EVENT
     ========================= */
 
-    getIO().emit("orderCancelled", {
+    getIO().emit('orderCancelled', {
       orderId: order.id,
     });
   }

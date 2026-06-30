@@ -196,6 +196,10 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
   return order;
 }
 
+export async function createOrderWithTx(tx: Prisma.TransactionClient, data: CreateOrderInput) {
+  return createOrderTx(tx, data);
+}
+
 export async function createOrder(data: CreateOrderInput) {
   return prisma.$transaction(async (tx) => {
     return createOrderTx(tx, data);

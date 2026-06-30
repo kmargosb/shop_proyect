@@ -67,43 +67,57 @@ export const PaymentSessionService = {
       throw new Error('Payment session already completed');
     }
     if (session.paymentIntentId) {
-      const existingIntent = await stripe.paymentIntents.retrieve(session.paymentIntentId);
+      try {
+        const existingIntent = await stripe.paymentIntents.retrieve(session.paymentIntentId);
 
-      if (existingIntent.status !== 'canceled' && existingIntent.status !== 'succeeded') {
-        console.log('♻️ Reusing session PaymentIntent:', existingIntent.id);
+        if (
+          existingIntent.status !== 'canceled' &&
+          existingIntent.status !== 'succeeded' &&
+          existingIntent.status !== 'processing'
+        ) {
+          console.log('♻️ Reusing session PaymentIntent:', existingIntent.id);
 
-        return existingIntent;
+          return existingIntent;
+        }
+      } catch {
+        console.warn('⚠️ Existing PaymentIntent could not be recovered, creating a new one.');
       }
     }
     const provider = getPaymentProvider(session.provider);
 
-    const paymentIntent = await provider.createPaymentIntent(
-      session.order.totalAmount,
-      session.order.currency,
-      session.order.id,
-    );
+    try {
+      const paymentIntent = await provider.createPaymentIntent(
+        session.order.totalAmount,
+        session.order.currency,
+        session.order.id,
+      );
 
-    await prisma.$transaction([
-      prisma.paymentSession.update({
-        where: { id: session.id },
-        data: {
-          paymentIntentId: paymentIntent.id,
-          status: 'ACTIVE',
-        },
-      }),
+      await prisma.$transaction([
+        prisma.paymentSession.update({
+          where: { id: session.id },
+          data: {
+            paymentIntentId: paymentIntent.id,
+            status: 'ACTIVE',
+          },
+        }),
 
-      prisma.order.update({
-        where: { id: session.order.id },
-        data: {
-          stripePaymentIntentId: paymentIntent.id,
-          paymentProvider: session.provider,
-          paymentMethod: session.method,
-          status: 'PAYMENT_PROCESSING',
-        },
-      }),
-    ]);
+        prisma.order.update({
+          where: { id: session.order.id },
+          data: {
+            stripePaymentIntentId: paymentIntent.id,
+            paymentProvider: session.provider,
+            paymentMethod: session.method,
+            status: 'PAYMENT_PROCESSING',
+          },
+        }),
+      ]);
 
-    return paymentIntent;
+      return paymentIntent;
+    } catch (error) {
+      console.error('❌ Failed to create PaymentIntent:', error);
+
+      throw new Error('Unable to initialize payment');
+    }
   },
 
   async markSessionCompleted(paymentIntentId: string) {
