@@ -8,31 +8,26 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  phone         String?
-  password      String?
-  name          String?
-  role          Role           @default(USER)
-
-  isActive      Boolean        @default(true)
-
-  lockUntil     DateTime?
-  loginAttempts Int            @default(0)
-  tokenVersion  Int            @default(0)
-
-  createdAt     DateTime       @default(now())
-  provider      String?
-
-  marketingEmails Boolean      @default(true)
-
-  addresses     Address[]
-  carts         Cart[]
-  orders        Order[]
-  refreshTokens RefreshToken[]
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  password            String?
+  name                String?
+  role                Role                 @default(USER)
+  lockUntil           DateTime?
+  loginAttempts       Int                  @default(0)
+  tokenVersion        Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  provider            String?
+  marketingEmails     Boolean              @default(true)
+  isActive            Boolean              @default(true)
+  phone               String?
+  addresses           Address[]
+  analyticsEvents     AnalyticsEvent[]
+  carts               Cart[]
+  orders              Order[]
   passwordResetTokens PasswordResetToken[]
-  wishlistItems WishlistItem[]
-  analyticsEvents AnalyticsEvent[]
+  refreshTokens       RefreshToken[]
+  wishlistItems       WishlistItem[]
 }
 
 model Brand {
@@ -44,22 +39,22 @@ model Brand {
 }
 
 model Product {
-  id          String           @id @default(uuid())
-  name        String
-  price       Int
-  createdAt   DateTime         @default(now())
-  description String?
-  isActive    Boolean          @default(true)
-  brandId     String?
-  category    ProductCategory  @default(OTHER)
-  gender      ProductGender    @default(UNISEX)
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-  brand       Brand?           @relation(fields: [brandId], references: [id])
-  images      ProductImage[]
-  variants    ProductVariant[]
-  wishlistItems WishlistItem[]
+  id              String           @id @default(uuid())
+  name            String
+  price           Int
+  createdAt       DateTime         @default(now())
+  description     String?
+  isActive        Boolean          @default(true)
+  brandId         String?
+  category        ProductCategory  @default(OTHER)
+  gender          ProductGender    @default(UNISEX)
   analyticsEvents AnalyticsEvent[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  brand           Brand?           @relation(fields: [brandId], references: [id])
+  images          ProductImage[]
+  variants        ProductVariant[]
+  wishlistItems   WishlistItem[]
 
   @@index([brandId])
 }
@@ -96,9 +91,8 @@ model WishlistItem {
   userId    String
   productId String
   createdAt DateTime @default(now())
-
-  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId])
@@ -148,6 +142,7 @@ model InventoryReservation {
 model Order {
   id                    String                 @id @default(uuid())
   userId                String?                 
+  userId                String?
   status                OrderStatus            @default(PENDING)
   createdAt             DateTime               @default(now())
   addressLine1          String
@@ -166,12 +161,12 @@ model Order {
   paymentProvider       PaymentProvider        @default(STRIPE)
   paymentMethod         PaymentMethod?
   abandonedEmailStage   Int                    @default(0)
+  analyticsEvents       AnalyticsEvent[]
   reservations          InventoryReservation[]
   invoice               Invoice?
   user                  User?                  @relation(fields: [userId], references: [id])
   OrderChangeRequest    OrderChangeRequest[]
   events                OrderEvent[]
-  analyticsEvents       AnalyticsEvent[]
   items                 OrderItem[]
   transactions          OrderTransaction[]
   paymentSessions       PaymentSession[]
@@ -246,24 +241,24 @@ model OrderEvent {
 model Refund {
   id              String           @id @default(uuid())
   orderId         String
-  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   stripeRefundId  String?          @unique
   amount          Int
   currency        String
-  type            RefundType       @default(CUSTOMER_RETURN)
-  reason          RefundReason?
-  note            String?
-  reviewedAt      DateTime?
-  reviewedBy      String?
-  rejectionReason String?
-  carrier         String?
-  trackingNumber  String?
-  customerSentAt  DateTime?
   status          RefundStatus     @default(PENDING_REVIEW)
-  items           RefundItem[]
-  evidence        RefundEvidence[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  note            String?
+  reason          RefundReason?
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  carrier         String?
+  customerSentAt  DateTime?
+  trackingNumber  String?
+  type            RefundType       @default(CUSTOMER_RETURN)
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  evidence        RefundEvidence[]
+  items           RefundItem[]
 }
 
 model RefundEvidence {
@@ -301,8 +296,7 @@ model PasswordResetToken {
   userId    String
   createdAt DateTime @default(now())
   expiresAt DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {
@@ -410,23 +404,16 @@ model OrderChangeRequest {
 
 model AnalyticsEvent {
   id        String   @id @default(uuid())
-
   userId    String?
   productId String?
-  orderId   String?
-
   event     String
-
   metadata  Json?
-
   createdAt DateTime @default(now())
-
-  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
 }
-
-
 
 enum ProductCategory {
   T_SHIRTS
@@ -525,12 +512,12 @@ enum OrderEventType {
   ORDER_SHIPPED
   PAYMENT_FAILED
   ORDER_UPDATED
-  ORDER_ADJUSTED
   ORDER_DELIVERED
   CUSTOMER_REQUESTED_SIZE_CHANGE
   CUSTOMER_REQUESTED_COLOR_CHANGE
   CUSTOMER_REQUESTED_PRODUCT_CHANGE
   CUSTOMER_REQUESTED_ADDRESS_CHANGE
+  ORDER_ADJUSTED
 }
 
 enum PaymentSessionStatus {
@@ -570,6 +557,7 @@ enum CouponType {
 
 enum CartStatus {
   ACTIVE
+  CONVERTING
   CONVERTED
   EXPIRED
   MERGED
