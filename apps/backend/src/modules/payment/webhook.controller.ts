@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
-import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
-import { sendOrderConfirmationEmail } from "@/modules/email/sendOrderEmail";
-import { PaymentSessionService } from "@/modules/payment-sessions/payment-session.service";
-import { InventoryService } from "@/modules/inventory/inventory.service";
-import { getIO } from "@/lib/socket";
+import { Request, Response } from 'express';
+import { prisma } from '@/lib/prisma';
+import { stripe } from '@/lib/stripe';
+import { sendOrderConfirmationEmail } from '@/modules/email/sendOrderEmail';
+import { PaymentSessionService } from '@/modules/payment-sessions/payment-session.service';
+import { InventoryService } from '@/modules/inventory/inventory.service';
+import { getIO } from '@/lib/socket';
 
 /* =========================================================
    UTIL
@@ -31,26 +31,26 @@ async function findOrderFromPaymentIntent(paymentIntent: any) {
 ========================================================= */
 
 async function handlePaymentSucceeded(paymentIntent: any) {
+  console.log('✅ handlePaymentSucceeded()');
+  console.log('PaymentIntent:', paymentIntent.id);
+
   const order = await findOrderFromPaymentIntent(paymentIntent);
 
+  console.log('Order found:', order?.id);
+  console.log('Current status:', order?.status);
+
   if (!order) {
-    console.error("⚠ Order not linked to PaymentIntent:", paymentIntent.id);
+    console.error('⚠ Order not linked to PaymentIntent:', paymentIntent.id);
     return;
   }
-  if (!["PENDING", "PAYMENT_PROCESSING"].includes(order.status)) {
-    console.error(
-      `❌ Payment received for invalid order status: ${order.status}`,
-      order.id,
-    );
+  if (!['PENDING', 'PAYMENT_PROCESSING'].includes(order.status)) {
+    console.error(`❌ Payment received for invalid order status: ${order.status}`, order.id);
 
     return;
   }
 
-  if (
-    order.totalAmount !== paymentIntent.amount ||
-    order.currency !== paymentIntent.currency
-  ) {
-    console.error("❌ Amount mismatch detected.");
+  if (order.totalAmount !== paymentIntent.amount || order.currency !== paymentIntent.currency) {
+    console.error('❌ Amount mismatch detected.');
     return;
   }
 
@@ -58,22 +58,24 @@ async function handlePaymentSucceeded(paymentIntent: any) {
      PROCESS PAYMENT (ONCE)
   ========================= */
 
-  if (order.status !== "PAID") {
+  if (order.status !== 'PAID') {
     await InventoryService.validateReservation(order.id);
     await prisma.order.update({
       where: { id: order.id },
       data: {
-        status: "PAID",
+        status: 'PAID',
         paidAt: new Date(),
         stripePaymentIntentId: paymentIntent.id,
       },
     });
 
+    console.log('✅ ORDER UPDATED TO PAID');
+
     await prisma.analyticsEvent.create({
       data: {
         userId: order.userId,
         orderId: order.id,
-        event: "PURCHASE_COMPLETED",
+        event: 'PURCHASE_COMPLETED',
       },
     });
 
@@ -89,25 +91,29 @@ async function handlePaymentSucceeded(paymentIntent: any) {
           userId: order.userId,
           orderId: order.id,
           productId: item.productId,
-          event: "PRODUCT_PURCHASED",
+          event: 'PRODUCT_PURCHASED',
         },
       });
     }
 
     await InventoryService.confirmReservation(order.id);
 
-    getIO().emit("orderUpdated", {
+    console.log('✅ INVENTORY CONFIRMED');
+
+    console.log('📡 EMITTING SOCKETS');
+
+    getIO().emit('orderUpdated', {
       orderId: order.id,
     });
 
-    getIO().emit("orderPaid", {
+    getIO().emit('orderPaid', {
       orderId: order.id,
     });
 
     await prisma.orderTransaction.create({
       data: {
         orderId: order.id,
-        type: "PAYMENT",
+        type: 'PAYMENT',
         amount: paymentIntent.amount,
         currency: paymentIntent.currency,
         stripePaymentIntentId: paymentIntent.id,
@@ -117,21 +123,23 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     await prisma.orderEvent.create({
       data: {
         orderId: order.id,
-        type: "PAYMENT_SUCCEEDED",
-        message: "Payment confirmed",
+        type: 'PAYMENT_SUCCEEDED',
+        message: 'Payment confirmed',
       },
     });
 
+    console.log('✅ PAYMENT EVENT CREATED');
+
     await PaymentSessionService.markSessionCompleted(paymentIntent.id);
 
-    console.log("✅ Order marked as PAID:", order.id);
+    console.log('✅ Order marked as PAID:', order.id);
 
-    getIO().emit("dashboard:update", {
-      type: "PAYMENT_SUCCEEDED",
+    getIO().emit('dashboard:update', {
+      type: 'PAYMENT_SUCCEEDED',
       orderId: order.id,
     });
   } else {
-    console.log("⚠ Duplicate payment webhook:", paymentIntent.id);
+    console.log('⚠ Duplicate payment webhook:', paymentIntent.id);
   }
 
   /* =========================
@@ -152,7 +160,7 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       },
     });
 
-    console.log("🧾 Invoice created.");
+    console.log('🧾 Invoice created.');
   }
 
   /* =========================
@@ -162,8 +170,8 @@ async function handlePaymentSucceeded(paymentIntent: any) {
   const emailEvent = await prisma.orderEvent.findFirst({
     where: {
       orderId: order.id,
-      type: "ORDER_UPDATED",
-      message: "Confirmation email sent",
+      type: 'ORDER_UPDATED',
+      message: 'Confirmation email sent',
     },
   });
 
@@ -173,12 +181,12 @@ async function handlePaymentSucceeded(paymentIntent: any) {
     await prisma.orderEvent.create({
       data: {
         orderId: order.id,
-        type: "ORDER_UPDATED",
-        message: "Confirmation email sent",
+        type: 'ORDER_UPDATED',
+        message: 'Confirmation email sent',
       },
     });
 
-    console.log("📧 Confirmation email sent.");
+    console.log('📧 Confirmation email sent.');
   }
 }
 
@@ -195,18 +203,18 @@ async function handlePaymentFailed(paymentIntent: any) {
 
   if (!order) return;
 
-  if (order.status === "PAID") return;
+  if (order.status === 'PAID') return;
 
   await prisma.order.update({
     where: { id: order.id },
-    data: { status: "FAILED" },
+    data: { status: 'FAILED' },
   });
 
   await prisma.orderEvent.create({
     data: {
       orderId: order.id,
-      type: "PAYMENT_FAILED",
-      message: "Payment failed",
+      type: 'PAYMENT_FAILED',
+      message: 'Payment failed',
     },
   });
 
@@ -214,10 +222,10 @@ async function handlePaymentFailed(paymentIntent: any) {
 
   await PaymentSessionService.markSessionFailed(paymentIntent.id);
 
-  console.log("❌ Order marked as FAILED:", order.id);
+  console.log('❌ Order marked as FAILED:', order.id);
 
-  getIO().emit("dashboard:update", {
-    type: "PAYMENT_FAILED",
+  getIO().emit('dashboard:update', {
+    type: 'PAYMENT_FAILED',
     orderId: order.id,
   });
 }
@@ -232,7 +240,7 @@ async function handleRefundCreated(refund: any) {
   });
 
   if (existingRefund) {
-    console.log("⚠ Refund already exists:", refund.id);
+    console.log('⚠ Refund already exists:', refund.id);
     return;
   }
 
@@ -250,14 +258,14 @@ async function handleRefundCreated(refund: any) {
       stripeRefundId: refund.id,
       amount: refund.amount,
       currency: refund.currency,
-      status: "PENDING_REVIEW",
+      status: 'PENDING_REVIEW',
     },
   });
 
   await prisma.orderTransaction.create({
     data: {
       orderId: order.id,
-      type: "REFUND",
+      type: 'REFUND',
       amount: refund.amount,
       currency: refund.currency,
       stripeRefundId: refund.id,
@@ -267,15 +275,15 @@ async function handleRefundCreated(refund: any) {
   await prisma.orderEvent.create({
     data: {
       orderId: order.id,
-      type: "REFUND_CREATED",
-      message: "Refund created",
+      type: 'REFUND_CREATED',
+      message: 'Refund created',
     },
   });
 
-  console.log("💸 Refund created:", refund.id);
+  console.log('💸 Refund created:', refund.id);
 
-  getIO().emit("dashboard:update", {
-    type: "REFUND_CREATED",
+  getIO().emit('dashboard:update', {
+    type: 'REFUND_CREATED',
   });
 }
 
@@ -291,24 +299,24 @@ async function handleRefundUpdated(refund: any) {
 
   if (!dbRefund) return;
 
-  if (dbRefund.status === "SUCCEEDED") {
-    console.log("⚠ Refund already processed:", refund.id);
+  if (dbRefund.status === 'SUCCEEDED') {
+    console.log('⚠ Refund already processed:', refund.id);
     return;
   }
 
   const status =
-    refund.status === "succeeded"
-      ? "SUCCEEDED"
-      : refund.status === "failed"
-        ? "FAILED"
-        : "PENDING_REVIEW";
+    refund.status === 'succeeded'
+      ? 'SUCCEEDED'
+      : refund.status === 'failed'
+        ? 'FAILED'
+        : 'PENDING_REVIEW';
 
   await prisma.refund.update({
     where: { stripeRefundId: refund.id },
     data: { status },
   });
 
-  if (status !== "SUCCEEDED") return;
+  if (status !== 'SUCCEEDED') return;
 
   const order = await prisma.order.findUnique({
     where: { id: dbRefund.orderId },
@@ -320,8 +328,7 @@ async function handleRefundUpdated(refund: any) {
    RESTORE STOCK
 ========================= */
 
-  const { InventoryCache } =
-    await import("@/modules/inventory/inventory.cache");
+  const { InventoryCache } = await import('@/modules/inventory/inventory.cache');
 
   const refundItems = await prisma.refundItem.findMany({
     where: { refundId: dbRefund.id },
@@ -347,13 +354,10 @@ async function handleRefundUpdated(refund: any) {
 
       try {
         if (item.orderItem.variantId) {
-          await InventoryCache.incrementStock(
-            item.orderItem.variantId,
-            item.quantity,
-          );
+          await InventoryCache.incrementStock(item.orderItem.variantId, item.quantity);
         }
       } catch (error) {
-        console.error("Redis stock restore error:", error);
+        console.error('Redis stock restore error:', error);
       }
     }
   } else {
@@ -384,7 +388,7 @@ async function handleRefundUpdated(refund: any) {
           await InventoryCache.incrementStock(item.variantId, item.quantity);
         }
       } catch (error) {
-        console.error("Redis stock restore error:", error);
+        console.error('Redis stock restore error:', error);
       }
     }
   }
@@ -396,7 +400,7 @@ async function handleRefundUpdated(refund: any) {
   const refundAggregate = await prisma.refund.aggregate({
     where: {
       orderId: dbRefund.orderId,
-      status: "SUCCEEDED",
+      status: 'SUCCEEDED',
     },
     _sum: {
       amount: true,
@@ -412,15 +416,15 @@ async function handleRefundUpdated(refund: any) {
   const orderAdjustedEvent = await prisma.orderEvent.findFirst({
     where: {
       orderId: order.id,
-      type: "ORDER_ADJUSTED",
+      type: 'ORDER_ADJUSTED',
     },
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
   if (orderAdjustedEvent) {
-    console.log("⚠️ Order adjustment refund detected");
+    console.log('⚠️ Order adjustment refund detected');
 
     return;
   }
@@ -429,8 +433,7 @@ async function handleRefundUpdated(refund: any) {
    NORMAL CUSTOMER REFUND
 ========================= */
 
-  const newStatus =
-    totalRefunded >= order.totalAmount ? "REFUNDED" : "PARTIALLY_REFUNDED";
+  const newStatus = totalRefunded >= order.totalAmount ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
 
   await prisma.order.update({
     where: { id: order.id },
@@ -442,15 +445,15 @@ async function handleRefundUpdated(refund: any) {
   await prisma.orderEvent.create({
     data: {
       orderId: order.id,
-      type: "REFUND_COMPLETED",
-      message: "Refund completed",
+      type: 'REFUND_COMPLETED',
+      message: 'Refund completed',
     },
   });
 
   console.log(`💰 Refund processed: ${order.id} → ${newStatus}`);
 
-  getIO().emit("dashboard:update", {
-    type: "REFUND_COMPLETED",
+  getIO().emit('dashboard:update', {
+    type: 'REFUND_COMPLETED',
     orderId: order.id,
   });
 }
@@ -460,7 +463,7 @@ async function handleRefundUpdated(refund: any) {
 ========================================================= */
 
 export const stripeWebhook = async (req: Request, res: Response) => {
-  const sig = req.headers["stripe-signature"] as string;
+  const sig = req.headers['stripe-signature'] as string;
 
   let event;
 
@@ -470,9 +473,12 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET as string,
     );
+
+    console.log('========== STRIPE WEBHOOK ==========');
+    console.log('Event:', event.type);
   } catch (err) {
-    console.error("❌ Webhook signature verification failed.");
-    return res.status(400).send("Webhook Error");
+    console.error('❌ Webhook signature verification failed.');
+    return res.status(400).send('Webhook Error');
   }
 
   try {
@@ -485,7 +491,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     });
 
     if (existingEvent) {
-      console.log("⚠ Duplicate webhook ignored:", event.id);
+      console.log('⚠ Duplicate webhook ignored:', event.id);
       return res.json({ received: true });
     }
 
@@ -498,33 +504,35 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     ========================= */
 
     switch (event.type) {
-      case "payment_intent.succeeded":
+      case 'payment_intent.succeeded':
         await handlePaymentSucceeded(event.data.object);
         break;
 
-      case "payment_intent.payment_failed":
+      case 'payment_intent.payment_failed':
         await handlePaymentFailed(event.data.object);
         break;
 
-      case "refund.created":
+      case 'refund.created':
         await handleRefundCreated(event.data.object);
         break;
 
-      case "refund.updated":
+      case 'refund.updated':
         await handleRefundUpdated(event.data.object);
         break;
 
-      case "payment_intent.canceled":
-        console.log("🚫 PaymentIntent cancelled:", event.data.object.id);
+      case 'payment_intent.canceled':
+        console.log('🚫 PaymentIntent cancelled:', event.data.object.id);
         break;
 
       default:
-        console.log("Unhandled webhook event:", event.type);
+        console.log('Unhandled webhook event:', event.type);
     }
 
     return res.json({ received: true });
+
+    console.log('========== WEBHOOK END ==========');
   } catch (err) {
-    console.error("🔥 Stripe webhook error:", err);
+    console.error('🔥 Stripe webhook error:', err);
     return res.json({ received: true });
   }
 };
