@@ -147,8 +147,7 @@ model InventoryReservation {
 
 model Order {
   id                    String                 @id @default(uuid())
-  userId                String?
-  cartId                String?                 
+  userId                String?                 
   status                OrderStatus            @default(PENDING)
   createdAt             DateTime               @default(now())
   addressLine1          String
