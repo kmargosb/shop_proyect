@@ -24,46 +24,43 @@ export const CheckoutService = {
 
     await CartService.syncCartInventory(cartId);
 
-    const { order, totals } = await prisma.$transaction(async (tx) => {
-      console.time('checkout_tx');
+    const { order, totals } = await prisma.$transaction(
+      async (tx) => {
+        await CartService.lockCartTx(tx, cartId);
 
-      await CartService.lockCartTx(tx, cartId);
+        const cart = await CartService.validateCartTx(tx, cartId);
 
-      const cart = await CartService.validateCartTx(tx, cartId);
+        const totals = CartService.calculateTotalsFromCart(cart);
 
-      const totals = CartService.calculateTotalsFromCart(cart);
+        const order = await createOrderWithTx(tx, {
+          ...checkoutData,
+          userId,
+          items: cart.items.map((item: (typeof cart.items)[number]) => ({
+            productId: item.productId,
+            variantId: item.variantId ?? undefined,
+            quantity: item.quantity,
 
-      const order = await createOrderWithTx(tx, {
-        ...checkoutData,
-        userId,
-        items: cart.items.map((item: (typeof cart.items)[number]) => ({
-          productId: item.productId,
-          variantId: item.variantId ?? undefined,
-          quantity: item.quantity,
+            productName: item.product.name,
+            productPrice: item.product.price,
 
-          productName: item.product.name,
-          productPrice: item.product.price,
+            sku: item.variant?.sku ?? null,
+            size: item.variant?.size,
+            color: item.variant?.color,
+          })),
+        });
 
-          sku: item.variant?.sku ?? null,
+        await CartService.finishCartTx(tx, cartId);
 
-          size: item.variant?.size,
-          color: item.variant?.color,
-        })),
-      });
-
-      console.time('finishCart');
-
-      await CartService.finishCartTx(tx, cartId);
-
-      console.timeEnd('finishCart');
-
-      console.timeEnd('checkout_tx');
-
-      return {
-        order,
-        totals,
-      };
-    });
+        return {
+          order,
+          totals,
+        };
+      },
+      {
+        maxWait: 10000,
+        timeout: 15000,
+      },
+    );
 
     await prisma.analyticsEvent.create({
       data: {
