@@ -104,6 +104,8 @@ async function handlePaymentSucceeded(paymentIntent: any) {
 
     console.log('4');
 
+    console.log('5');
+
     try {
       console.log('➡️ Confirming reservation...');
 
@@ -114,6 +116,8 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       console.error('❌ confirmReservation failed:', error);
       throw error;
     }
+
+    console.log('6');
 
     console.log('📡 EMITTING SOCKETS');
 
