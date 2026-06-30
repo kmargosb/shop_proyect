@@ -26,8 +26,8 @@ export const CheckoutService = {
 
     const { order, totals } = await prisma.$transaction(async (tx) => {
       console.time('checkout_tx');
+
       await CartService.lockCartTx(tx, cartId);
-      console.timeEnd('checkout_tx');
 
       const cart = await CartService.validateCartTx(tx, cartId);
 
@@ -56,6 +56,8 @@ export const CheckoutService = {
       await CartService.finishCartTx(tx, cartId);
 
       console.timeEnd('finishCart');
+
+      console.timeEnd('checkout_tx');
 
       return {
         order,
