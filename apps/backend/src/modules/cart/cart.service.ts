@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getIO } from '@/lib/socket';
+import { createOrderWithTx } from '@/modules/orders/order.service';
 
 const CART_EXPIRATION_HOURS = 24;
 
@@ -500,18 +501,78 @@ export const CartService = {
   ========================================================= */
 
   async convertCartToOrder(cartId: string, checkoutData: CheckoutData) {
-    await this.validateCart(cartId);
+    return prisma
+      .$transaction(async (tx) => {
+        const locked = await tx.cart.updateMany({
+          where: {
+            id: cartId,
+            status: 'ACTIVE',
+          },
+          data: {
+            status: 'CONVERTING',
+          },
+        });
 
-    const cart = await prisma.cart.findUnique({
+        if (locked.count !== 1) {
+          throw new Error('Cart already being processed');
+        }
+
+        const cart = await this.validateCartTx(tx, cartId);
+
+        const order = await createOrderWithTx(tx, {
+          userId: checkoutData.userId ?? undefined,
+          ...checkoutData,
+          items: cart.items.map((item: (typeof cart.items)[number]) => ({
+            productId: item.productId,
+            variantId: item.variantId ?? undefined,
+            quantity: item.quantity,
+          })),
+        });
+
+        await tx.cart.update({
+          where: { id: cartId },
+          data: {
+            status: 'CONVERTED',
+          },
+        });
+
+        await tx.cartItem.deleteMany({
+          where: { cartId },
+        });
+
+        return order;
+      })
+      .then((order) => {
+        getIO().emit('cartUpdated', {
+          cartId,
+        });
+
+        return order;
+      });
+  },
+
+  /* =========================================================
+     VALIDATE CART
+  ========================================================= */
+
+  async validateCartTx(tx: any, cartId: string) {
+    const cart = await tx.cart.findUnique({
       where: { id: cartId },
-      include: CART_INCLUDE,
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+      },
     });
 
     if (!cart) {
       throw new Error('Cart not found');
     }
 
-    if (cart.status !== 'ACTIVE') {
+    if (cart.status !== 'ACTIVE' && cart.status !== 'CONVERTING') {
       throw new Error('Cart already converted');
     }
 
@@ -523,51 +584,24 @@ export const CartService = {
       throw new Error('Cart empty');
     }
 
-    const { createOrder } = await import('@/modules/orders/order.service');
+    for (const item of cart.items) {
+      if (!item.product || !item.variant) {
+        throw new Error(`Product ${item.productId} not found`);
+      }
 
-    /* =========================
-     CREATE ORDER
-  ========================= */
+      if (!item.product.isActive) {
+        throw new Error(`Product ${item.product.name} not available`);
+      }
 
-    const order = await createOrder({
-      userId: checkoutData.userId ?? undefined,
-      ...checkoutData,
-      items: cart.items.map((item) => ({
-        productId: item.productId,
-        variantId: item.variantId ?? undefined,
-        quantity: item.quantity,
-      })),
-    });
+      const availableStock = item.variant.stock - item.variant.reservedStock;
 
-    /* =========================
-     MARK CART CONVERTED
-  ========================= */
+      if (availableStock < item.quantity) {
+        throw new Error(`Not enough stock for ${item.product.name}`);
+      }
+    }
 
-    await prisma.cart.update({
-      where: { id: cartId },
-      data: {
-        status: 'CONVERTED',
-      },
-    });
-
-    getIO().emit('cartUpdated', {
-      cartId,
-    });
-
-    /* =========================
-     CLEANUP CART
-  ========================= */
-
-    await prisma.cartItem.deleteMany({
-      where: { cartId },
-    });
-
-    return order;
+    return cart;
   },
-
-  /* =========================================================
-     VALIDATE CART
-  ========================================================= */
 
   async validateCart(cartId: string) {
     const cart = await prisma.cart.findUnique({
