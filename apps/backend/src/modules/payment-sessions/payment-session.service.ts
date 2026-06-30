@@ -1,12 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { PaymentMethod } from '@prisma/client';
+import { Prisma, PaymentMethod } from '@prisma/client';
 import { getProviderFromMethod } from '@/modules/payment/payment-method.mapper';
 import { getPaymentProvider } from '@/modules/payment/payment.factory';
 import { stripe } from '@/lib/stripe';
 
 export const PaymentSessionService = {
-  async createSession(orderId: string, method: PaymentMethod) {
-    const order = await prisma.order.findUnique({
+  async createSession(orderId: string, method: PaymentMethod, tx?: Prisma.TransactionClient) {
+    const db = tx ?? prisma;
+    const order = await db.order.findUnique({
       where: { id: orderId },
     });
 
@@ -18,7 +19,7 @@ export const PaymentSessionService = {
       throw new Error(`Order cannot be paid in status ${order.status}`);
     }
 
-    const existingSession = await prisma.paymentSession.findFirst({
+    const existingSession = await db.paymentSession.findFirst({
       where: {
         orderId,
         status: {
@@ -35,7 +36,7 @@ export const PaymentSessionService = {
 
     const provider = getProviderFromMethod(method);
 
-    const session = await prisma.paymentSession.create({
+    const session = await db.paymentSession.create({
       data: {
         orderId: order.id,
         provider,
