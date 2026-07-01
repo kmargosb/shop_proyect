@@ -12,6 +12,7 @@ type Props = {
 export function useCartInit({ itemsRef, setItems, setHydrated }: Props) {
   useEffect(() => {
     const init = async () => {
+      console.log('🚀 useCartInit init');
       const items = await fetchCart();
 
       itemsRef.current = items;

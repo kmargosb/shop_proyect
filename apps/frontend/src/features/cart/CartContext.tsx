@@ -21,6 +21,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleCartUpdated = async () => {
       try {
+        console.log('📡 cartUpdated socket');
         const synced = await fetchCart();
 
         itemsRef.current = synced;

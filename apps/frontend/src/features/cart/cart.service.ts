@@ -21,6 +21,8 @@ export const mapItems = (cart: any): CartItem[] =>
     }));
 
 export async function getCart() {
+  console.count('🌐 GET /cart');
+
   const res = await apiFetch('/cart');
 
   if (!res || !res.ok) {
@@ -39,6 +41,10 @@ export async function getActiveCartId(
 }
 
 export async function fetchCart() {
+  console.count('🛒 fetchCart()');
+
+  console.trace('🛒 fetchCart called from');
+
   const cart = await getCart();
 
   if (!cart) {
