@@ -46,33 +46,29 @@ const footerLinks = {
 export default function Footer() {
   return (
     <footer className="border-t border-white/5 bg-black pb-[env(safe-area-inset-bottom)] text-neutral-400">
-      <div className="mx-auto max-w-7xl px-5 py-14 md:px-6 md:py-10">
+      <div className="mx-auto max-w-7xl px-5 py-6 md:px-6 md:py-6">
         {/* TOP */}
 
-        <div className="grid gap-12 md:grid-cols-[1.4fr_auto_1fr_1fr_1fr]">
+        <div className="grid gap-12 py-8 md:grid-cols-[1.4fr_auto_1fr_1fr_1fr]">
           {/* BRAND */}
 
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">Camarguette</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white">Camarguette</h2>
 
             <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-neutral-400">
               Minimal products, premium experience and digital craftsmanship.
             </p>
 
-            {/* FOUNDER */}
-
-            <div className="mt-8 border-t border-white/10 pt-6">
-              <p className="text-sm tracking-[0.3em] text-neutral-400 uppercase">Founder</p>
-
-              <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-neutral-300">
-                Designed & developed by Nelson Camargo — Building premium digital experiences.
+            <div className="mt-6">
+              <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-neutral-300">
+                Designed & developed by Nelson Camargo. Building premium digital experiences.
               </p>
 
               <Link
                 href="/founder"
                 className="mt-4 inline-flex text-[15px] text-white transition hover:text-neutral-300"
               >
-                About the founder →
+                Our story →
               </Link>
             </div>
           </div>
@@ -95,7 +91,7 @@ export default function Footer() {
             {/* SHOP */}
 
             <div>
-              <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">Shop</h3>
+              <h3 className="text-s font-bold tracking-[0.25em] text-white uppercase">Shop</h3>
 
               <ul className="mt-5 space-y-3 text-sm md:text-[15px]">
                 {footerLinks.shop.map((link) => (
@@ -111,9 +107,7 @@ export default function Footer() {
             {/* SUPPORT */}
 
             <div>
-              <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">
-                Support
-              </h3>
+              <h3 className="text-s font-bold tracking-[0.25em] text-white uppercase">Support</h3>
 
               <ul className="mt-5 space-y-3 text-sm md:text-[15px]">
                 {footerLinks.support.map((link) => (
@@ -129,9 +123,7 @@ export default function Footer() {
             {/* LEGAL */}
 
             <div>
-              <h3 className="text-xs font-semibold tracking-[0.25em] text-white uppercase">
-                Legal
-              </h3>
+              <h3 className="text-s font-bold tracking-[0.25em] text-white uppercase">Legal</h3>
 
               <ul className="mt-5 space-y-3 text-sm md:text-[15px]">
                 {footerLinks.legal.map((link) => (
@@ -148,7 +140,7 @@ export default function Footer() {
 
         {/* BOTTOM */}
 
-        <div className="mt-14 border-t border-white/10 pt-6 pb-12 md:pb-8">
+        <div className="border-t border-white/10 py-6 md:pb-6">
           <div className="flex flex-col gap-3 text-sm text-neutral-500 md:flex-row md:items-center md:justify-between">
             <p>© {new Date().getFullYear()} Camarguette. All rights reserved.</p>
 
