@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Product } from '@/types/product';
@@ -10,7 +11,7 @@ type Props = {
   product: Product;
 };
 
-export default function ProductCard({ product }: Props) {
+function ProductCard({ product }: Props) {
   const { t } = useLanguage();
 
   const availableStock =
@@ -46,6 +47,7 @@ export default function ProductCard({ product }: Props) {
               src={primaryImage}
               alt={product.name}
               fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               className="object-cover transition-all duration-500 group-hover:scale-105 group-hover:opacity-0"
             />
 
@@ -54,6 +56,7 @@ export default function ProductCard({ product }: Props) {
               src={hoverImage}
               alt={product.name}
               fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               className="object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
             />
           </div>
@@ -100,3 +103,4 @@ export default function ProductCard({ product }: Props) {
     </div>
   );
 }
+export default memo(ProductCard);
