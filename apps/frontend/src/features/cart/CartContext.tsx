@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { socket } from '@/shared/lib/socket';
-import { addLocalItem } from './lib/cart.optimistic';
+import { addLocalItem, applyLocalChange } from './lib/cart.optimistic';
 import { useCartInit } from './hooks/useCartInit';
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import { getTotalItems, getTotalPrice } from './utils/cartTotals';
@@ -162,17 +162,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (!item) return;
 
+    const previous = itemsRef.current;
+
+    const updated = applyLocalChange(previous, itemId, 1);
+
+    itemsRef.current = updated;
+    setItems(updated);
+
     setCartBusy(true);
 
     try {
       const res = await addItemRequest(item.productId, item.variantId, 1);
 
       if (!res || !res.ok) {
+        itemsRef.current = previous;
+        setItems(previous);
         return;
       }
 
       const cart = await res.json();
+
       syncCart(cart);
+    } catch {
+      itemsRef.current = previous;
+      setItems(previous);
     } finally {
       setCartBusy(false);
     }
