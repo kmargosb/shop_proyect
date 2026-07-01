@@ -53,58 +53,54 @@ export default function Page() {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [sendingRefund, setSendingRefund] = useState(false);
 
+  const loadOrder = async () => {
+    try {
+      const queryEmail = searchParams.get('email');
+
+      const storedOrderId = localStorage.getItem('orderEmailOrderId');
+      const storedEmail = localStorage.getItem('orderEmail');
+
+      const email = queryEmail || (storedOrderId === id ? storedEmail : null);
+
+      /* GUEST */
+
+      if (email) {
+        const publicRes = await publicFetch(
+          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
+        );
+
+        const data = await publicRes.json();
+
+        setOrder(data);
+
+        return data;
+      }
+
+      /* AUTH USER */
+
+      const res = await apiFetch(`/orders/${id}`);
+
+      if (res?.ok) {
+        const data = await res.json();
+
+        setOrder(data);
+
+        return data;
+      }
+
+      return null;
+    } catch (err) {
+      console.error(err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
 
-    const loadOrder = async () => {
-      try {
-        const queryEmail = searchParams.get('email');
-
-        const storedOrderId = localStorage.getItem('orderEmailOrderId');
-
-        const storedEmail = localStorage.getItem('orderEmail');
-
-        const email = queryEmail || (storedOrderId === id ? storedEmail : null);
-
-        /* GUEST */
-
-        if (email) {
-          const publicRes = await publicFetch(
-            `/orders/public/${id}?email=${encodeURIComponent(email)}`,
-          );
-
-          const data = await publicRes.json();
-
-          setOrder(data);
-
-          return;
-        }
-
-        /* AUTH USER */
-
-        const res = await apiFetch(`/orders/${id}`);
-
-        if (res?.ok) {
-          const data = await res.json();
-
-          setOrder(data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    /* =========================
-     INITIAL LOAD
-  ========================= */
-
     void loadOrder();
-
-    /* =========================
-     REALTIME UPDATES
-  ========================= */
 
     const refreshOrder = (payload?: DashboardUpdatePayload | OrderUpdatedPayload) => {
       if (!payload?.orderId || payload.orderId === id) {
@@ -122,6 +118,26 @@ export default function Page() {
       socket.off('orderPaid', refreshOrder);
     };
   }, [id, searchParams]);
+
+  useEffect(() => {
+    if (!order) return;
+
+    if (order.status !== 'PAYMENT_PROCESSING') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const updated = await loadOrder();
+
+        if (updated && updated.status !== 'PAYMENT_PROCESSING') {
+          clearInterval(interval);
+        }
+      } catch (error) {
+        console.error('Order polling failed:', error);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [order]);
 
   useEffect(() => {
     timelineBottomRef.current?.scrollIntoView({
