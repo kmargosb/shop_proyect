@@ -205,6 +205,10 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       },
     });
 
+    getIO().emit('orderUpdated', {
+      orderId: order.id,
+    });
+
     console.log('📧 Confirmation email sent.');
   }
 }
