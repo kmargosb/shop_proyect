@@ -103,8 +103,6 @@ export const CartService = {
       include: CART_INCLUDE,
     });
 
-    console.log(`[Cart] New cart created: ${newCart.id}`);
-
     return newCart;
   },
 
@@ -116,10 +114,6 @@ export const CartService = {
     const expiresAt = {
       gt: new Date(),
     };
-
-    console.log('========== GET ACTIVE CART ==========');
-    console.log('Input cartId:', cartId);
-    console.log('Input userId:', userId);
 
     /* =========================================================
      1. TRY COOKIE CART FIRST
@@ -135,24 +129,10 @@ export const CartService = {
         include: CART_INCLUDE,
       });
 
-      console.log(
-        '[COOKIE SEARCH]',
-        cookieCart
-          ? {
-              id: cookieCart.id,
-              status: cookieCart.status,
-              items: cookieCart.items.length,
-              expiresAt: cookieCart.expiresAt,
-              userId: cookieCart.userId,
-            }
-          : 'NOT FOUND',
-      );
-
       if (cookieCart) {
         // Si el usuario está autenticado, el carrito debe pertenecerle
         // o ser un carrito de invitado todavía.
         if (!userId || cookieCart.userId === userId || cookieCart.userId === null) {
-          console.log('[RETURN] Cookie cart:', cookieCart.id);
           return cookieCart;
         }
       }
@@ -175,24 +155,10 @@ export const CartService = {
         include: CART_INCLUDE,
       });
 
-      console.log(
-        '[USER SEARCH]',
-        userCart
-          ? {
-              id: userCart.id,
-              status: userCart.status,
-              items: userCart.items.length,
-              expiresAt: userCart.expiresAt,
-            }
-          : 'NOT FOUND',
-      );
-
       if (userCart) {
         console.log('[RETURN] User cart:', userCart.id);
         return userCart;
       }
-
-      console.log('[CREATE] No active user cart found.');
 
       return this.getOrCreateCart(userId);
     }
@@ -200,9 +166,6 @@ export const CartService = {
     /* =========================================================
      3. CREATE GUEST CART
   ========================================================= */
-
-    console.log('[CREATE] Guest cart not found.');
-    console.log('=====================================');
 
     return this.getOrCreateCart();
   },
@@ -253,6 +216,7 @@ export const CartService = {
         throw new Error('Product not available');
       }
 
+      console.time('findExistingItem');
       const existingItem = await tx.cartItem.findFirst({
         where: {
           cartId,
@@ -260,6 +224,7 @@ export const CartService = {
           variantId,
         },
       });
+      console.timeEnd('findExistingItem');
 
       const currentQty = existingItem?.quantity ?? 0;
       const nextQty = currentQty + quantity;
@@ -280,6 +245,7 @@ export const CartService = {
 
       /* remove item */
 
+      console.time('updateItem');
       if (nextQty <= 0) {
         if (existingItem) {
           await tx.cartItem.delete({
@@ -307,14 +273,17 @@ export const CartService = {
         });
       }
 
+      console.timeEnd('updateItem');
       /* extend cart expiration */
 
+      console.time('updateCartExpiration');
       await tx.cart.update({
         where: { id: cartId },
         data: {
           expiresAt: new Date(Date.now() + CART_EXPIRATION_HOURS * 3600000),
         },
       });
+      console.timeEnd('updateCartExpiration');
 
       console.time('reloadCart');
       const updatedCart = await tx.cart.findUnique({
@@ -323,9 +292,11 @@ export const CartService = {
       });
       console.timeEnd('reloadCart');
 
+      console.time('socketEmit');
       getIO().emit('cartUpdated', {
         cartId,
       });
+      console.timeEnd('socketEmit');
 
       console.timeEnd('cart:addItem');
       return updatedCart;
@@ -417,10 +388,6 @@ export const CartService = {
       },
     });
 
-    console.log('===== SYNC CART INVENTORY =====');
-    console.log('Cart:', cartId);
-    console.log('Items before sync:', items.length);
-
     for (const item of items) {
       /* deleted / inactive */
 
@@ -438,16 +405,6 @@ export const CartService = {
       /* out of stock */
 
       if (availableStock <= 0) {
-        console.log(
-          '[DELETE]',
-          item.id,
-          'Reason: availableStock =',
-          availableStock,
-          'stock =',
-          item.variant.stock,
-          'reserved =',
-          item.variant.reservedStock,
-        );
         await prisma.cartItem.delete({
           where: { id: item.id },
         });
@@ -458,7 +415,6 @@ export const CartService = {
       /* adjust quantity */
 
       if (item.quantity > availableStock) {
-        console.log('[UPDATE]', item.id, 'Quantity:', item.quantity, '->', availableStock);
         await prisma.cartItem.update({
           where: { id: item.id },
           data: {
@@ -467,7 +423,6 @@ export const CartService = {
         });
       }
     }
-    console.log('===== END SYNC =====');
   },
 
   /* =========================================================
