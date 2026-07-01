@@ -7,7 +7,7 @@ export default function BrandsShowcase() {
   const { t } = useLanguage();
 
   return (
-    <section className="relative min-h-[650px] overflow-hidden bg-black text-white">
+    <section className="relative h-[80svh] min-h-[650px] overflow-hidden bg-black text-white md:min-h-[720px] 2xl:min-h-[900px]">
       {/* VIDEO */}
 
       <video
@@ -27,23 +27,23 @@ export default function BrandsShowcase() {
 
       {/* CONTENT */}
 
-      <div className="absolute bottom-0 left-0 z-10 w-full p-6 md:p-14">
+      <div className="absolute bottom-0 left-0 z-10 w-full p-5 md:p-14">
         <div className="max-w-xl">
-          <div className="inline-flex items-center rounded-full border border-white/10 bg-black/20 px-4 py-2 text-[10px] tracking-[0.25em] text-white/70 uppercase backdrop-blur-sm">
+          <div className="inline-flex items-center rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[9px] tracking-[0.25em] text-white/70 uppercase backdrop-blur-sm md:px-4 md:py-2 md:text-[10px]">
             {t.brandsShowcase.label}
           </div>
 
-          <h2 className="mt-4 text-2xl leading-tight font-bold md:mt-5 md:text-5xl">
+          <h2 className="mt-3 text-2xl leading-tight font-bold md:mt-5 md:text-5xl">
             {t.brandsShowcase.title}
           </h2>
 
-          <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/80 md:mt-4 md:max-w-xl md:text-base">
+          <p className="mt-2 max-w-sm text-xs leading-relaxed text-white/80 md:mt-4 md:max-w-xl md:text-base">
             {t.brandsShowcase.description}
           </p>
 
           <Link
             href="/brands"
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-neutral-200 md:mt-6 md:gap-3 md:px-6 md:py-3 md:text-sm"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[11px] font-semibold text-black transition hover:bg-neutral-200 md:mt-6 md:gap-3 md:rounded-2xl md:px-6 md:py-3 md:text-sm"
           >
             {t.brandsShowcase.button} →
           </Link>
