@@ -42,6 +42,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [cartBusy, setCartBusy] = useState(false);
 
+  const syncCart = (cart: any) => {
+    const synced = mapItems(cart);
+
+    itemsRef.current = synced;
+    setItems(synced);
+  };
+
   useCartInit({
     itemsRef,
     setItems,
@@ -111,10 +118,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       const cart = await res.json();
 
-      const synced = mapItems(cart);
-
-      itemsRef.current = synced;
-      setItems(synced);
+      syncCart(cart);
     } finally {
       setLoading(false);
       setCartBusy(false);
@@ -147,10 +151,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (data?.cart) {
-        const synced = mapItems(data.cart);
-
-        itemsRef.current = synced;
-        setItems(synced);
+        syncCart(data.cart);
       }
     } catch {
       itemsRef.current = previous;
@@ -177,11 +178,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       const cart = await res.json();
-
-      const synced = mapItems(cart);
-
-      itemsRef.current = synced;
-      setItems(synced);
+      syncCart(cart);
     } finally {
       setCartBusy(false);
     }
@@ -209,11 +206,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       const cart = await res.json();
-
-      const synced = mapItems(cart);
-
-      itemsRef.current = synced;
-      setItems(synced);
+      syncCart(cart);
     } finally {
       setCartBusy(false);
     }
