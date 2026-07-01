@@ -212,14 +212,17 @@ export const CartService = {
   ========================================================= */
 
   async addItem(cartId: string, productId: string, variantId: string, quantity: number) {
+    console.time('cart:addItem');
     if (quantity === 0) {
       throw new Error('Invalid quantity');
     }
 
     return prisma.$transaction(async (tx) => {
+      console.time('findCart');
       const cart = await tx.cart.findUnique({
         where: { id: cartId },
       });
+      console.timeEnd('findCart');
 
       if (!cart) {
         throw new Error('Cart not found');
@@ -235,6 +238,7 @@ export const CartService = {
         throw new Error('Cart expired');
       }
 
+      console.time('findVariant');
       const variant = await tx.productVariant.findUnique({
         where: {
           id: variantId,
@@ -243,6 +247,7 @@ export const CartService = {
           product: true,
         },
       });
+      console.timeEnd('findVariant');
 
       if (!variant || !variant.product.isActive) {
         throw new Error('Product not available');
@@ -311,15 +316,18 @@ export const CartService = {
         },
       });
 
+      console.time('reloadCart');
       const updatedCart = await tx.cart.findUnique({
         where: { id: cartId },
         include: CART_INCLUDE,
       });
+      console.timeEnd('reloadCart');
 
       getIO().emit('cartUpdated', {
         cartId,
       });
 
+      console.timeEnd('cart:addItem');
       return updatedCart;
     });
   },

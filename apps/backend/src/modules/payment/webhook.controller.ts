@@ -71,8 +71,6 @@ async function handlePaymentSucceeded(paymentIntent: any) {
 
     console.log('✅ ORDER UPDATED TO PAID');
 
-    console.log('1');
-
     await prisma.analyticsEvent.create({
       data: {
         userId: order.userId,
@@ -81,15 +79,11 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       },
     });
 
-    console.log('2');
-
     const orderItems = await prisma.orderItem.findMany({
       where: {
         orderId: order.id,
       },
     });
-
-    console.log('3');
 
     for (const item of orderItems) {
       await prisma.analyticsEvent.create({
@@ -102,10 +96,6 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       });
     }
 
-    console.log('4');
-
-    console.log('5');
-
     try {
       console.log('➡️ Confirming reservation...');
 
@@ -116,8 +106,6 @@ async function handlePaymentSucceeded(paymentIntent: any) {
       console.error('❌ confirmReservation failed:', error);
       throw error;
     }
-
-    console.log('6');
 
     console.log('📡 EMITTING SOCKETS');
 
