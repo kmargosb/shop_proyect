@@ -991,3 +991,108 @@ export function passwordResetTemplate(customerName: string, resetUrl: string) {
     </div>
   `;
 }
+
+export function contactMessageTemplate(
+  name: string,
+  email: string,
+  subject: string,
+  message: string,
+) {
+  return `
+    <div style="max-width:640px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#111;padding:32px;">
+
+      <div
+        style="
+          background:#111;
+          padding:28px;
+          border-radius:16px;
+          text-align:center;
+        "
+      >
+        <h1
+          style="
+            margin:0;
+            color:#fff;
+            font-size:28px;
+          "
+        >
+          Camarguette Store
+        </h1>
+      </div>
+
+      <h2
+        style="
+          margin-top:32px;
+          font-size:28px;
+        "
+      >
+        New Contact Message
+      </h2>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+          background:#fafafa;
+        "
+      >
+        <p>
+          <strong>Name</strong><br/>
+          ${name}
+        </p>
+
+        <p>
+          <strong>Email</strong><br/>
+          ${email}
+        </p>
+
+        <p>
+          <strong>Subject</strong><br/>
+          ${subject}
+        </p>
+      </div>
+
+      <div
+        style="
+          margin-top:24px;
+          padding:20px;
+          border:1px solid #e5e5e5;
+          border-radius:16px;
+        "
+      >
+        <p>
+          <strong>Message</strong>
+        </p>
+
+        <p
+          style="
+            white-space:pre-wrap;
+            line-height:1.7;
+          "
+        >
+          ${message}
+        </p>
+      </div>
+
+      <hr
+        style="
+          margin:32px 0;
+          border:none;
+          border-top:1px solid #eee;
+        "
+      />
+
+      <p
+        style="
+          color:#666;
+          font-size:14px;
+        "
+      >
+        This message was sent from the Camarguette contact page.
+      </p>
+
+    </div>
+  `;
+}

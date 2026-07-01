@@ -18,6 +18,7 @@ import checkoutRoutes from '@/modules/checkout/checkout.routes';
 import brandRoutes from '@/modules/brands/brands.routes';
 import wishlistRoutes from '@/modules/wishlist/wishlist.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
+import contactRoutes from '@/modules/contact/contact.routes';
 import { stripeWebhook } from './modules/payment/webhook.controller';
 import { errorHandler } from './common/middleware/error.middleware';
 import { allowedOrigins } from '@/config/origins';
@@ -78,6 +79,7 @@ app.use('/cart', cartRoutes);
 app.use('/checkout', checkoutRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/analytics', analyticsRoutes);
+app.use('/contact', contactRoutes);
 app.use('/api/auth', authRoutes);
 
 /* ERROR HANDLER */
