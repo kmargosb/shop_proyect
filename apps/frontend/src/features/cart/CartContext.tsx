@@ -7,12 +7,14 @@ import { useCartInit } from './hooks/useCartInit';
 import type { CartItem, OptimisticCartItem, CartContextType } from './types';
 import { getTotalItems, getTotalPrice } from './utils/cartTotals';
 import { mapItems, fetchCart, addItemRequest, removeItemRequest } from './cart.service';
+import { useCartUI } from './CartUIContext';
 
 const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const itemsRef = useRef<CartItem[]>([]);
+  const { openCart, closeCart } = useCartUI();
 
   useEffect(() => {
     itemsRef.current = items;
@@ -38,7 +40,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [cartBusy, setCartBusy] = useState(false);
@@ -72,7 +73,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       if (openDrawer) {
         setLoading(true);
-        setOpen(true);
+        openCart();
       }
 
       if (optimisticItem) {
@@ -91,10 +92,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const res = await addItemRequest(productId, variantId, quantity);
 
       if (!res) {
-        if (openDrawer) {
-          setOpen(false);
-        }
-
         const items = await fetchCart();
 
         itemsRef.current = items;
@@ -104,10 +101,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       if (!res.ok) {
-        if (openDrawer) {
-          setOpen(false);
-        }
-
         const data = await res.json().catch(() => null);
 
         const items = await fetchCart();
@@ -137,7 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(updated);
 
     if (updated.length === 0) {
-      setTimeout(() => setOpen(false), 180);
+      setTimeout(() => closeCart(), 200);
     }
 
     try {
@@ -226,11 +219,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         items,
-        open,
         loading,
         hydrated,
         cartBusy,
-        setOpen,
         addItem,
         removeItem,
         increaseQuantity,

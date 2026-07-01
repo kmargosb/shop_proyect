@@ -25,11 +25,9 @@ export type OptimisticCartItem = {
 
 export type CartContextType = {
   items: CartItem[];
-  open: boolean;
   loading: boolean;
   hydrated: boolean;
   cartBusy: boolean;
-  setOpen: (value: boolean) => void;
 
   addItem: (
     productId: string,
