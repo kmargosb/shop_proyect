@@ -169,7 +169,9 @@ export default function Page() {
 
   const isPaid = order.status !== 'PENDING' && order.status !== 'PAYMENT_PROCESSING';
 
-  const canContinuePayment = order.status === 'PENDING' || order.status === 'PAYMENT_PROCESSING';
+  const canContinuePayment = order.status === 'PENDING';
+
+  const paymentProcessing = order.status === 'PAYMENT_PROCESSING';
 
   const markRefundSent = async () => {
     if (!selectedRefund) return;
@@ -307,10 +309,17 @@ export default function Page() {
               </div>
 
               <h1 className="text-4xl font-semibold tracking-tight">
-                {isPaid ? 'Payment completed' : 'Order created'}
+                {order.status === 'PAYMENT_PROCESSING'
+                  ? 'Confirming payment'
+                  : isPaid
+                    ? 'Payment completed'
+                    : 'Order created'}
               </h1>
-
-              <p className="mt-3 text-neutral-400">Order # {order.id.slice(0, 8)}</p>
+              <p className="mt-3 text-neutral-400">
+                {order.status === 'PAYMENT_PROCESSING'
+                  ? 'Your payment has been received and is being confirmed.'
+                  : `Order # ${order.id.slice(0, 8)}`}
+              </p>
             </div>
 
             <div>
@@ -794,6 +803,17 @@ export default function Page() {
             <Button className="h-12 w-full rounded-2xl" onClick={handleDownloadInvoice}>
               Download invoice
             </Button>
+          )}
+          {paymentProcessing && (
+            <div className="w-full rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-center">
+              <div className="mb-2 inline-block h-5 w-5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
+
+              <p className="font-medium text-yellow-300">Confirming your payment...</p>
+
+              <p className="mt-1 text-sm text-yellow-200/80">
+                This usually takes just a few seconds.
+              </p>
+            </div>
           )}
 
           {canContinuePayment && (
