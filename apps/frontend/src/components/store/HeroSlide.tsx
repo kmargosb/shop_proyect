@@ -36,7 +36,7 @@ export default function HeroSlide({ slide, index }: Props) {
 
         {/* OVERLAYS */}
 
-        <div className="absolute inset-0 bg-black/45 md:bg-black/35" />
+        <div className="absolute inset-0 bg-black/20 md:bg-black/25" />
 
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent md:hidden" />
 
@@ -61,14 +61,14 @@ export default function HeroSlide({ slide, index }: Props) {
             <div className="mt-6 flex flex-col items-center gap-2 md:mt-8 md:flex-row md:items-start md:gap-3">
               <Link
                 href={slide.link}
-                className="inline-flex h-10 w-[120px] items-center justify-center rounded-xl bg-white px-4 text-xs font-semibold text-black transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200 md:h-14 md:w-[220px] md:rounded-2xl md:px-7 md:text-sm"
+                className="inline-flex h-10 w-[130px] items-center justify-center rounded-xl bg-white px-4 text-xs font-semibold whitespace-nowrap text-black transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200 md:h-14 md:w-[220px] md:rounded-2xl md:px-7 md:text-sm"
               >
                 Shop now
               </Link>
 
               <Link
                 href="/brands"
-                className="inline-flex h-10 w-[120px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.08] md:h-14 md:w-[220px] md:rounded-2xl md:px-7 md:text-sm"
+                className="inline-flex h-10 w-[130px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 text-xs font-medium whitespace-nowrap text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.08] md:h-14 md:w-[220px] md:rounded-2xl md:px-7 md:text-sm"
               >
                 Explore brands
               </Link>
