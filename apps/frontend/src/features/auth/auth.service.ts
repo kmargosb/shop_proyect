@@ -1,13 +1,18 @@
-import { apiFetch } from '@/shared/lib/api';
+import { request } from '@/shared/lib/request';
+import { ApiError, ApiErrorCode } from '@/shared/api';
 
 export async function fetchCurrentUser() {
-  const res = await apiFetch('/auth/me');
+  try {
+    const response = await request('/auth/me');
 
-  if (!res || !res.ok) {
-    return null;
+    const data = await response.json();
+
+    return data.user ?? null;
+  } catch (error) {
+    if (error instanceof ApiError && error.code === ApiErrorCode.UNAUTHORIZED) {
+      return null;
+    }
+
+    throw error;
   }
-
-  const data = await res.json();
-
-  return data.user ?? null;
 }
