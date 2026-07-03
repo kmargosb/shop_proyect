@@ -1,0 +1,20 @@
+export enum ApiErrorCode {
+  // Network
+  NETWORK = 'NETWORK',
+  OFFLINE = 'OFFLINE',
+  TIMEOUT = 'TIMEOUT',
+
+  // Client
+  BAD_REQUEST = 'BAD_REQUEST',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  NOT_FOUND = 'NOT_FOUND',
+  CONFLICT = 'CONFLICT',
+  VALIDATION = 'VALIDATION',
+
+  // Server
+  SERVER = 'SERVER',
+
+  // Unknown
+  UNKNOWN = 'UNKNOWN',
+}
