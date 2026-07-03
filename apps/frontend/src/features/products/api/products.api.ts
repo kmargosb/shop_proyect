@@ -1,27 +1,27 @@
-import { apiFetch } from '@/shared/lib/api';
+import { request } from '@/shared/lib/request';
 
 export const productsApi = {
   async search(queryString: string) {
-    const res = await apiFetch(`/products/search?${queryString}`);
+    const response = await request(`/products/search?${queryString}`, {
+      auth: false,
+    });
 
-    if (!res || !res.ok) return [];
-
-    return res.json();
+    return response.json();
   },
 
   async getAll() {
-    const res = await apiFetch('/products');
+    const response = await request('/products', {
+      auth: false,
+    });
 
-    if (!res || !res.ok) return [];
-
-    return res.json();
+    return response.json();
   },
 
   async getByBrand(brand: string) {
-    const res = await apiFetch(`/products/brand/${brand}`);
+    const response = await request(`/products/brand/${brand}`, {
+      auth: false,
+    });
 
-    if (!res || !res.ok) return [];
-
-    return res.json();
+    return response.json();
   },
 };
