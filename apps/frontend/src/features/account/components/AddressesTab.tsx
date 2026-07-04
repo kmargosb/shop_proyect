@@ -1,10 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAddresses } from '../hooks/useAddresses';
 import AddressAutocomplete from '@/features/checkout/components/AddressAutocomplete';
 import { COUNTRIES } from '@/shared/constants/countries';
 import { MapPin, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
-import { apiFetch } from '@/shared/lib/api';
+import {
+  getAddresses,
+  createAddress,
+  updateAddress,
+  deleteAddressRequest,
+  setFavoriteAddress,
+} from '../addresses.service';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 
 type Address = {
@@ -30,34 +37,11 @@ const emptyForm = {
 };
 
 export default function AddressesTab() {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: addresses = [], isPending: loading, refetch } = useAddresses();
   const [openModal, setOpenModal] = useState(false);
   const [editing, setEditing] = useState<Address | null>(null);
   const [form, setForm] = useState(emptyForm);
   const { t } = useLanguage();
-
-  /* ================= LOAD ================= */
-
-  const loadAddresses = async () => {
-    try {
-      const res = await apiFetch('/customers/me/addresses');
-
-      if (!res) return;
-
-      const data = await res.json();
-
-      setAddresses(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAddresses();
-  }, []);
 
   /* ================= INPUT ================= */
 
@@ -96,55 +80,36 @@ export default function AddressesTab() {
     setOpenModal(true);
   };
 
-  /* ================= SAVE ================= */
-
   const saveAddress = async () => {
     try {
-      const method = editing ? 'PUT' : 'POST';
-
-      const endpoint = editing
-        ? `/customers/me/addresses/${editing.id}`
-        : '/customers/me/addresses';
-
-      const res = await apiFetch(endpoint, {
-        method,
-        body: JSON.stringify(form),
-      });
-
-      if (!res || !res.ok) {
-        throw new Error();
+      if (editing) {
+        await updateAddress(editing.id, form);
+      } else {
+        await createAddress(form);
       }
 
       setOpenModal(false);
 
-      await loadAddresses();
+      await refetch();
     } catch {
       alert(t.addresses.saveError);
     }
   };
-
-  /* ================= DELETE ================= */
 
   const deleteAddress = async (id: string) => {
     const confirmed = confirm(t.addresses.deleteConfirm);
 
     if (!confirmed) return;
 
-    await apiFetch(`/customers/me/addresses/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteAddressRequest(id);
 
-    loadAddresses();
+    await refetch();
   };
 
-  /* ================= FAVORITE ================= */
-
   const setFavorite = async (id: string) => {
-    await apiFetch(`/customers/me/addresses/${id}/favorite`, {
-      method: 'PATCH',
-    });
+    await setFavoriteAddress(id);
 
-    loadAddresses();
+    await refetch();
   };
 
   if (loading) {
