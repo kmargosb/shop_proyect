@@ -13,7 +13,6 @@ import ProfileTab from './components/ProfileTab';
 import WishlistTab from './components/WishlistTab';
 import SecurityTab from './components/SecurityTab';
 import SettingsTab from './components/SettingsTab';
-import type { Order } from './types';
 
 export default function AccountPage() {
   const { user } = useAuth();

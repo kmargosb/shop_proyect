@@ -107,6 +107,17 @@ export default function ProductPage() {
     return <div className="mx-auto max-w-7xl px-6 py-20 text-center">{t.product.loading}</div>;
   }
 
+  if (isError) {
+    return (
+      <QueryErrorState
+        error={error}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
+
   if (!product) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-6">
