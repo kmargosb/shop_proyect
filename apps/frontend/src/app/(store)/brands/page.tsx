@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { apiFetch } from '@/shared/lib/api';
+import { brandsApi } from '@/features/brands/api/brands.api';
 import BrandsLanding from '@/features/brands/BrandsLanding';
 
 export const metadata: Metadata = {
@@ -8,9 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BrandsPage() {
-  const res = await apiFetch('/brands');
-
-  const brands = res && res.ok ? await res.json() : [];
+  const brands = await brandsApi.getAll();
 
   return <BrandsLanding brands={brands} />;
 }

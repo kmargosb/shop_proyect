@@ -47,3 +47,31 @@ export type CartContextType = {
   totalItems: number;
   totalPrice: number;
 };
+
+export type CartResponseItem = {
+  id: string;
+  productId: string;
+  variantId: string;
+  price: number;
+  quantity: number;
+  createdAt: string;
+
+  product?: {
+    name: string;
+    images: {
+      url: string;
+      isPrimary: boolean;
+    }[];
+  };
+
+  variant?: {
+    stock: number;
+    size: string;
+    color: string;
+  };
+};
+
+export type CartResponse = {
+  id: string;
+  items: CartResponseItem[];
+};

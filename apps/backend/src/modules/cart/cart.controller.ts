@@ -201,9 +201,9 @@ export const removeItemController = async (req: AuthRequest, res: Response) => {
     });
   }
 
-  const item = await CartService.removeItem(itemId);
+  const cart = await CartService.removeItem(itemId);
 
-  res.json(item);
+  return res.json(cart);
 };
 
 /* =========================================================

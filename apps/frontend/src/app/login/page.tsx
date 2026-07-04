@@ -3,18 +3,20 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import GoogleLoginButton from '@/features/auth/components/GoogleLoginButton';
-import { apiFetch } from '@/shared/lib/api';
+import { request } from '@/shared/lib/request';
+import { ApiError, ApiErrorCode } from '@/shared/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 import LoadingOverlay from '@/components/loader/LoadingOverlay';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 function LoginContent() {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const { t } = useLanguage();
 
   /* =========================
@@ -22,23 +24,6 @@ function LoginContent() {
   ========================= */
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const res = await apiFetch('/auth/me');
-
-        if (res?.ok) {
-          window.location.replace(redirect);
-          return;
-        }
-      } finally {
-        setCheckingSession(false);
-      }
-    };
-
-    checkSession();
-  }, [redirect]);
 
   /* =========================
      EMAIL LOGIN
@@ -49,36 +34,53 @@ function LoginContent() {
     setLoading(true);
     setError('');
 
-    const res = await apiFetch(mode === 'login' ? '/auth/login' : '/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
+    try {
+      await request(mode === 'login' ? '/auth/login' : '/auth/register', {
+        method: 'POST',
+        auth: false,
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    setLoading(false);
+      await refreshUser();
 
-    if (!res) {
-      setError(t.auth.connectionError);
-      return;
+      window.location.replace(redirect);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        switch (error.code) {
+          case ApiErrorCode.UNAUTHORIZED:
+            setError(t.auth.invalidCredentials);
+            break;
+
+          case ApiErrorCode.NETWORK:
+          case ApiErrorCode.TIMEOUT:
+          case ApiErrorCode.SERVER:
+          case ApiErrorCode.OFFLINE:
+            setError(t.auth.connectionError);
+            break;
+
+          default:
+            setError(error.message);
+        }
+      } else {
+        setError(t.auth.connectionError);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data?.error || t.auth.invalidCredentials);
-      return;
-    }
-
-    /* =========================
-       🔥 REDIRECT + REFRESH APP
-    ========================= */
-    window.location.replace(redirect);
   };
 
-  if (checkingSession) {
+  if (authLoading) {
     return <LoadingOverlay open text="Comprobando sesión..." />;
   }
+
+  useEffect(() => {
+    if (user) {
+      window.location.replace(redirect);
+    }
+  }, [user, redirect]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] px-6 text-white">

@@ -33,4 +33,12 @@ export const productsApi = {
 
     return response.json();
   },
+
+  async getRelated(productId: string): Promise<Product[]> {
+    const response = await request(`/products/${productId}/related`, {
+      auth: false,
+    });
+
+    return response.json();
+  },
 };

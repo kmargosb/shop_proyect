@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import type { Product } from '@/types/product';
-
-import { productsApi } from '@/features/products/api/products.api';
-import { useProductsLive } from '../hooks/useProductsLive';
+import { useMemo } from 'react';
+import { useProducts } from '../hooks/useProducts';
 
 import ProductCard from './ProductCard';
 import ProductsSkeleton from './ProductsSkeleton';
+import QueryErrorState from '@/shared/components/query/QueryErrorState';
 
 type Props = {
   brand?: string;
@@ -16,37 +14,41 @@ type Props = {
 };
 
 export default function ProductsClient({ brand, initialProducts }: Props) {
-  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
-  const [loading, setLoading] = useState(!initialProducts);
+  const queryString = useMemo(() => {
+    if (!brand) return '';
 
-  const loadProducts = async () => {
-    if (initialProducts && !brand) {
-      return;
-    }
+    return new URLSearchParams({
+      brand,
+    }).toString();
+  }, [brand]);
 
-    try {
-      const data = brand ? await productsApi.getByBrand(brand) : await productsApi.getAll();
-
-      setProducts(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (initialProducts && !brand) {
-      return;
-    }
-
-    loadProducts();
-  }, [brand, initialProducts]);
-
-  useProductsLive(!(initialProducts && !brand), loadProducts);
+  const {
+    data: products = [],
+    isPending: loading,
+    isError,
+    error,
+    refetch,
+  } = useProducts({
+    queryString,
+    enabled: !initialProducts || !!brand,
+    initialData: initialProducts,
+  });
 
   if (loading) {
     return <ProductsSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="w-full">
+        <QueryErrorState
+          error={error}
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </div>
+    );
   }
 
   return (

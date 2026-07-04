@@ -1,17 +1,22 @@
 import { ApiError, ApiErrorCode, createApiError, type ApiFetchOptions } from '@/shared/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error('NEXT_PUBLIC_API_URL is not defined');
+}
+const DEFAULT_TIMEOUT = 30_000;
 
 /* ============================================
    PRIVATE EXECUTE FETCH
 ============================================ */
 
 async function executeFetch(endpoint: string, options: ApiFetchOptions): Promise<Response> {
-  const { timeout = 30000, ...fetchOptions } = options;
+  const { timeout = DEFAULT_TIMEOUT, ...fetchOptions } = options;
 
   const controller = new AbortController();
 
-  const timeoutId = window.setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     controller.abort();
   }, timeout);
 

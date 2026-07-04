@@ -310,31 +310,29 @@ export const CartService = {
   async removeItem(cartItemId: string) {
     return prisma.$transaction(async (tx) => {
       const item = await tx.cartItem.findUnique({
-        where: { id: cartItemId },
+        where: {
+          id: cartItemId,
+        },
       });
 
       if (!item) {
-        return { success: true, cart: null };
+        return null;
       }
 
       await tx.cartItem.delete({
-        where: { id: cartItemId },
+        where: {
+          id: cartItemId,
+        },
       });
 
-      const cart = await tx.cart.findUnique({
+      return tx.cart.findUnique({
         where: {
           id: item.cartId,
         },
         include: CART_INCLUDE,
       });
-
-      return {
-        success: true,
-        cart,
-      };
     });
   },
-
   /* =========================================================
      GET CART
   ========================================================= */

@@ -1,37 +1,31 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '@/shared/lib/api';
-import ProductCard from './ProductCard';
-import { Product } from '@/types/product';
+import { useEffect, useRef } from 'react';
+
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+
+import QueryErrorState from '@/shared/components/query/QueryErrorState';
+
+import { useRelatedProducts } from '../hooks/useRelatedProducts';
+
+import ProductCard from './ProductCard';
 
 interface Props {
   productId: string;
 }
 
 export default function RelatedProducts({ productId }: Props) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const carouselRef = useRef<HTMLDivElement>(null);
+
   const { t } = useLanguage();
 
-  useEffect(() => {
-    const loadRelated = async () => {
-      const res = await apiFetch(`/products/${productId}/related`);
-
-      if (!res || !res.ok) {
-        console.error('Related products fetch failed');
-        return;
-      }
-
-      const data = await res.json();
-      setProducts(data);
-      setLoading(false);
-    };
-
-    loadRelated();
-  }, [productId]);
+  const {
+    data: products = [],
+    isPending: loading,
+    isError,
+    error,
+    refetch,
+  } = useRelatedProducts(productId);
 
   useEffect(() => {
     if (window.innerWidth >= 768) return;
@@ -50,7 +44,22 @@ export default function RelatedProducts({ productId }: Props) {
     return () => clearTimeout(timer);
   }, [products]);
 
-  if (loading || products.length === 0) return null;
+  if (loading || products.length === 0) {
+    return null;
+  }
+
+  if (isError) {
+    return (
+      <section className="mt-20">
+        <QueryErrorState
+          error={error}
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className="mt-20 border-t border-neutral-800 pt-16">

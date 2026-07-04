@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { fetchCurrentUser } from '../auth.service';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { User, AuthContextType, Props } from '../types';
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -13,27 +13,24 @@ export function AuthProvider({ children, initialUser = null }: Props) {
 
   const [loading, setLoading] = useState(!hasInitialUser);
 
-  const fetchUser = async () => {
-    const user = await fetchCurrentUser();
+  const { data: currentUser, isPending, refetch } = useCurrentUser(!hasInitialUser);
 
-    setUser(user);
+  const refreshUser = async () => {
+    const { data } = await refetch();
+    setUser(data ?? null);
   };
-
-  const loadUser = async () => {
-    try {
-      await fetchUser();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshUser = fetchUser;
 
   useEffect(() => {
-    if (!hasInitialUser) {
-      loadUser();
+    if (hasInitialUser) {
+      return;
     }
-  }, []);
+
+    if (currentUser !== undefined) {
+      setUser(currentUser);
+    }
+
+    setLoading(isPending);
+  }, [currentUser, hasInitialUser, isPending]);
 
   return (
     <AuthContext.Provider

@@ -1,10 +1,14 @@
 import { apiFetch } from '@/shared/lib/api';
-import { CartItem } from './types';
+import { request } from '@/shared/lib/request';
+import type { CartItem, CartResponse, CartResponseItem } from './types';
 
-export const mapItems = (cart: any): CartItem[] =>
+export const mapItems = (cart: CartResponse): CartItem[] =>
   (cart.items ?? [])
-    .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .map((item: any) => ({
+    .sort(
+      (a: CartResponseItem, b: CartResponseItem) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    )
+    .map((item: CartResponseItem) => ({
       id: item.id,
       productId: item.productId,
       variantId: item.variantId,
@@ -13,7 +17,7 @@ export const mapItems = (cart: any): CartItem[] =>
       quantity: item.quantity,
       stock: item.variant?.stock ?? 0,
       image:
-        item.product?.images?.find((img: any) => img.isPrimary)?.url ??
+        item.product?.images?.find((img) => img.isPrimary)?.url ??
         item.product?.images?.[0]?.url ??
         null,
       size: item.variant?.size ?? null,

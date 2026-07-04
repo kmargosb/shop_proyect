@@ -3,6 +3,7 @@
 import { AuthProvider } from '@/features/auth/context/AuthContext';
 import { LanguageProvider } from '@/shared/i18n/LanguageContext';
 import StoreClientProviders from './StoreClientProviders';
+import QueryProvider from './QueryProvider';
 
 type User = {
   id: string;
@@ -18,10 +19,12 @@ type Props = {
 
 export default function AppClientProviders({ children, initialUser }: Props) {
   return (
-    <AuthProvider initialUser={initialUser}>
-      <LanguageProvider>
-        <StoreClientProviders>{children}</StoreClientProviders>
-      </LanguageProvider>
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider initialUser={initialUser}>
+        <LanguageProvider>
+          <StoreClientProviders>{children}</StoreClientProviders>
+        </LanguageProvider>
+      </AuthProvider>
+    </QueryProvider>
   );
 }

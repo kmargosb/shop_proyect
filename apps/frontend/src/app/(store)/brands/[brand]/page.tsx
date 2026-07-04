@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import ProductView from '@/features/products/components/ProductsView';
-import { apiFetch } from '@/shared/lib/api';
+import { brandsApi } from '@/features/brands/api/brands.api';
 import { notFound } from 'next/navigation';
 
 const BRAND_CONTENT: Record<
@@ -46,13 +46,13 @@ const BRAND_CONTENT: Record<
 export default async function BrandPage({ params }: { params: Promise<{ brand: string }> }) {
   const { brand } = await params;
 
-  const res = await apiFetch(`/brands/${brand}`);
+  let brandData;
 
-  if (!res || res.status === 404) {
+  try {
+    brandData = await brandsApi.getBySlug(brand);
+  } catch {
     notFound();
   }
-
-  const brandData = await res.json();
 
   const content = BRAND_CONTENT[brand] ?? BRAND_CONTENT.camarguette;
 
