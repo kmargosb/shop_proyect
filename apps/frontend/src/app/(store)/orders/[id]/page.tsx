@@ -2,11 +2,19 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import ShipmentStatusCard from '@/features/orders/components/ShipmentStatusCard';
 import { socket } from '@/shared/lib/socket';
 import type { DashboardUpdatePayload, OrderUpdatedPayload } from '@/shared/lib/socket';
 import { toast } from 'sonner';
-
+import {
+  cancelOrder,
+  markRefundSent,
+  retryPayment,
+  getOrder,
+  getGuestOrder,
+} from '@/features/orders/orders.service';
+import { useOrder } from '@/features/orders/hooks/useOrder';
+import { apiFetch, publicFetch } from '@/shared/lib/api';
+import { Button } from '@/shared/ui/button';
 import {
   CheckCircle2,
   Clock3,
@@ -16,9 +24,6 @@ import {
   Truck,
   XCircle,
 } from 'lucide-react';
-
-import { apiFetch, publicFetch } from '@/shared/lib/api';
-import { Button } from '@/shared/ui/button';
 
 type OrderEvent = {
   id: string;
@@ -56,39 +61,23 @@ export default function Page() {
   const loadOrder = async () => {
     try {
       const queryEmail = searchParams.get('email');
-
       const storedOrderId = localStorage.getItem('orderEmailOrderId');
       const storedEmail = localStorage.getItem('orderEmail');
-
       const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
-      /* GUEST */
-
       if (email) {
-        const publicRes = await publicFetch(
-          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
-        );
-
-        const data = await publicRes.json();
+        const data = await getGuestOrder(id, email);
 
         setOrder(data);
 
         return data;
       }
 
-      /* AUTH USER */
+      const data = await getOrder(id);
 
-      const res = await apiFetch(`/orders/${id}`);
+      setOrder(data);
 
-      if (res?.ok) {
-        const data = await res.json();
-
-        setOrder(data);
-
-        return data;
-      }
-
-      return null;
+      return data;
     } catch (err) {
       console.error(err);
       return null;
@@ -192,7 +181,7 @@ export default function Page() {
     order.status === 'PENDING' ||
     (order.status === 'PAYMENT_PROCESSING' && searchParams.get('processing') !== 'true');
 
-  const markRefundSent = async () => {
+  const handleMarkRefundSent = async () => {
     if (!selectedRefund) return;
 
     if (!carrier.trim()) {
@@ -208,16 +197,7 @@ export default function Page() {
     try {
       setSendingRefund(true);
 
-      await apiFetch(`/refunds/${selectedRefund.id}/sent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          carrier,
-          trackingNumber,
-        }),
-      });
+      await markRefundSent(selectedRefund.id, carrier, trackingNumber);
 
       setShowSentModal(false);
 
@@ -234,21 +214,13 @@ export default function Page() {
       const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
       if (email) {
-        const publicRes = await publicFetch(
-          `/orders/public/${id}?email=${encodeURIComponent(email)}`,
-        );
-
-        const updatedOrder = await publicRes.json();
+        const updatedOrder = await getGuestOrder(id, email);
 
         setOrder(updatedOrder);
       } else {
-        const refreshed = await apiFetch(`/orders/${order.id}`);
+        const updatedOrder = await getOrder(order.id);
 
-        if (refreshed?.ok) {
-          const updatedOrder = await refreshed.json();
-
-          setOrder(updatedOrder);
-        }
+        setOrder(updatedOrder);
       }
 
       toast.success('Information submitted');
@@ -285,25 +257,9 @@ export default function Page() {
     try {
       setCancelling(true);
 
-      const res = await apiFetch(`/orders/${order.id}/cancel`, {
-        method: 'POST',
+      await cancelOrder(order.id, cancelReason);
 
-        body: JSON.stringify({
-          reason: cancelReason,
-        }),
-      });
-
-      if (!res || !res.ok) {
-        throw new Error();
-      }
-
-      const refreshed = await apiFetch(`/orders/${order.id}`);
-
-      if (!refreshed || !refreshed.ok) {
-        throw new Error();
-      }
-
-      const updatedOrder = await refreshed.json();
+      const updatedOrder = await getOrder(order.id);
 
       setOrder(updatedOrder);
     } catch (error) {
@@ -840,16 +796,7 @@ export default function Page() {
               className="h-12 w-full rounded-2xl bg-yellow-500 text-black hover:bg-yellow-400"
               onClick={async () => {
                 try {
-                  const res = await apiFetch(`/api/payments/retry/${order.id}`, {
-                    method: 'POST',
-                  });
-
-                  if (!res || !res.ok) {
-                    throw new Error();
-                  }
-
-                  const data = await res.json();
-                  console.log('RETRY PAYMENT', data);
+                  const data = await retryPayment(order.id);
 
                   router.push(`/orders/${order.id}/pay?clientSecret=${data.clientSecret}`);
                 } catch {
@@ -979,7 +926,7 @@ export default function Page() {
                   Cancel
                 </Button>
 
-                <Button className="w-full" disabled={sendingRefund} onClick={markRefundSent}>
+                <Button className="w-full" disabled={sendingRefund} onClick={handleMarkRefundSent}>
                   {sendingRefund ? 'Sending...' : 'Confirm'}
                 </Button>
               </div>
