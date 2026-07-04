@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/react-query/query-keys';
 import { productsApi } from '../api/products.api';
+import { shouldRetry } from '@/shared/react-query/retry';
 
 type UseProductsOptions = {
   queryString: string;
@@ -18,5 +19,6 @@ export function useProducts({ queryString, enabled = true }: UseProductsOptions)
      * el queryString (búsqueda, filtros, etc.)
      */
     placeholderData: (previousData) => previousData,
+    retry: shouldRetry,
   });
 }

@@ -2,12 +2,14 @@
 
 import Image from 'next/image';
 import RelatedProducts from '@/features/products/components/RelatedProducts';
+import QueryErrorState from '@/shared/components/query/QueryErrorState';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/shared/ui/button';
 import { useCart } from '@/features/cart/CartContext';
 import { apiFetch } from '@/shared/lib/api';
+import { useProduct } from '@/features/products/hooks/useProduct';
 import { socket } from '@/shared/lib/socket';
 import { Heart } from 'lucide-react';
 import { useWishlist } from '@/features/wishlist/WishListContext';
@@ -18,13 +20,12 @@ export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
   const { addItem } = useCart();
-  const [product, setProduct] = useState<any>(null);
+  const { data: product, isPending: loading, isError, error, refetch } = useProduct(id as string);
   const [viewTracked, setViewTracked] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
-  const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const { isWishlisted, toggleWishlist } = useWishlist();
@@ -34,58 +35,6 @@ export default function ProductPage() {
   /* ===============================
      LOAD PRODUCT
   =============================== */
-
-  const loadProduct = async () => {
-    const res = await apiFetch(`/products/${id}`);
-
-    if (!res || !res.ok) {
-      setLoading(false);
-      return;
-    }
-
-    const data = await res.json();
-
-    setProduct(data);
-
-    if (data.variants?.length) {
-      const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-
-      const COLOR_ORDER = [
-        'WHITE',
-        'BLACK',
-        'CREAM',
-        'BEIGE',
-        'GREY',
-        'GRAY',
-        'BROWN',
-        'GREEN',
-        'BLUE',
-        'RED',
-      ];
-
-      const sortedVariants = [...data.variants].sort((a: any, b: any) => {
-        const colorDiff =
-          COLOR_ORDER.indexOf(a.color?.toUpperCase()) - COLOR_ORDER.indexOf(b.color?.toUpperCase());
-
-        if (colorDiff !== 0) return colorDiff;
-
-        return SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size);
-      });
-
-      const firstAvailableVariant =
-        sortedVariants.find((variant: any) => variant.stock - variant.reservedStock > 0) ??
-        sortedVariants[0];
-
-      setSelectedSize(firstAvailableVariant.size);
-      setSelectedColor(firstAvailableVariant.color);
-    }
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadProduct();
-  }, [id]);
 
   useEffect(() => {
     if (!product || viewTracked) return;
@@ -108,7 +57,7 @@ export default function ProductPage() {
   useEffect(() => {
     const handleProductUpdated = (payload: { productId: string }) => {
       if (payload.productId === id) {
-        loadProduct();
+        void refetch();
       }
     };
 
@@ -118,6 +67,41 @@ export default function ProductPage() {
       socket.off('productUpdated', handleProductUpdated);
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!product?.variants?.length) return;
+
+    const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+    const COLOR_ORDER = [
+      'WHITE',
+      'BLACK',
+      'CREAM',
+      'BEIGE',
+      'GREY',
+      'GRAY',
+      'BROWN',
+      'GREEN',
+      'BLUE',
+      'RED',
+    ];
+
+    const sortedVariants = [...product.variants].sort((a: any, b: any) => {
+      const colorDiff =
+        COLOR_ORDER.indexOf(a.color?.toUpperCase()) - COLOR_ORDER.indexOf(b.color?.toUpperCase());
+
+      if (colorDiff !== 0) return colorDiff;
+
+      return SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size);
+    });
+
+    const firstAvailableVariant =
+      sortedVariants.find((variant: any) => variant.stock - variant.reservedStock > 0) ??
+      sortedVariants[0];
+
+    setSelectedSize(firstAvailableVariant.size);
+    setSelectedColor(firstAvailableVariant.color);
+  }, [product]);
 
   if (loading) {
     return <div className="mx-auto max-w-7xl px-6 py-20 text-center">{t.product.loading}</div>;
@@ -218,19 +202,21 @@ export default function ProductPage() {
         return;
       }
 
-      await addItem(product.id, selectedVariant.id, quantity, true, {
+      const variant = selectedVariant;
+
+      await addItem(product.id, variant.id, quantity, true, {
         productId: product.id,
-        variantId: selectedVariant.id,
+        variantId: variant.id,
         quantity,
-        stock: selectedVariant.stock,
+        stock: variant.stock,
         name: product.name,
         price: product.price,
         image:
           product.images?.find((i: ProductImage) => i.isPrimary)?.url ??
           product.images?.[0]?.url ??
           null,
-        size: selectedVariant.size,
-        color: selectedVariant.color,
+        size: variant.size,
+        color: variant.color,
       });
       toast.success(t.toast.addedToCart);
 
@@ -246,7 +232,7 @@ export default function ProductPage() {
           event: 'ADD_TO_CART',
           productId: product.id,
           metadata: {
-            variantId: selectedVariant.id,
+            variantId: variant.id,
             quantity,
           },
         }),
@@ -266,21 +252,24 @@ export default function ProductPage() {
         toast.error(t.toast.selectVariant);
         return;
       }
+
+      const variant = selectedVariant;
+
       setBuyingNow(true);
 
-      await addItem(product.id, selectedVariant.id, quantity, false, {
+      await addItem(product.id, variant.id, quantity, false, {
         productId: product.id,
-        variantId: selectedVariant.id,
+        variantId: variant.id,
         quantity,
-        stock: selectedVariant.stock,
+        stock: variant.stock,
         name: product.name,
         price: product.price,
         image:
           product.images?.find((i: ProductImage) => i.isPrimary)?.url ??
           product.images?.[0]?.url ??
           null,
-        size: selectedVariant.size,
-        color: selectedVariant.color,
+        size: variant.size,
+        color: variant.color,
       });
 
       toast.success(t.toast.addedToCart);
@@ -295,7 +284,7 @@ export default function ProductPage() {
           event: 'ADD_TO_CART',
           productId: product.id,
           metadata: {
-            variantId: selectedVariant.id,
+            variantId: variant.id,
             quantity,
             buyNow: true,
           },

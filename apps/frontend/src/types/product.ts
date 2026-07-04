@@ -13,7 +13,7 @@ export type ProductBrand = {
 };
 
 export type ProductVariant = {
-  id?: string;
+  id: string;
   size: string;
   color: string;
   stock: number;
