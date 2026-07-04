@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-import type { Order } from '../AccountPage';
+import type { Order } from '../types';
 
 type Props = {
   orders: Order[];

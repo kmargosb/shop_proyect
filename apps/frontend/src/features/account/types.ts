@@ -18,7 +18,21 @@ export type Order = {
   status: string;
   totalAmount: number;
   createdAt: string;
-  items: OrderItem[];
+
+  items: {
+    id: string;
+    quantity: number;
+
+    size?: string;
+    color?: string;
+
+    product?: {
+      name?: string;
+      images?: {
+        url: string;
+      }[];
+    };
+  }[];
 };
 
 export type Address = {
