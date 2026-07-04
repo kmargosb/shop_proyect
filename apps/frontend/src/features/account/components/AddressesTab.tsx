@@ -13,18 +13,7 @@ import {
   setFavoriteAddress,
 } from '../addresses.service';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-
-type Address = {
-  id: string;
-  fullName: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  isDefault?: boolean;
-};
+import type { Address } from '../types';
 
 const emptyForm = {
   fullName: '',

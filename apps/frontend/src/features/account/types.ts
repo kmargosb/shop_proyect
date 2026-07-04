@@ -20,3 +20,15 @@ export type Order = {
   createdAt: string;
   items: OrderItem[];
 };
+
+export type Address = {
+  id: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  isDefault?: boolean;
+};
