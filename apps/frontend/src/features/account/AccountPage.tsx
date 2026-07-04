@@ -1,88 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { apiFetch } from '@/shared/lib/api';
+import { useEffect, useState } from 'react';
+import { useMyOrders } from './hooks/useMyOrders';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { socket } from '@/shared/lib/socket';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-
 import AccountSidebar from './components/AccountSidebar';
 import OrdersTab from './components/OrdersTab';
 import ProfileTab from './components/ProfileTab';
 import WishlistTab from './components/WishlistTab';
 import SecurityTab from './components/SecurityTab';
 import SettingsTab from './components/SettingsTab';
-
-export type Order = {
-  id: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-
-  items: {
-    id: string;
-    quantity: number;
-
-    size?: string;
-    color?: string;
-
-    product?: {
-      name?: string;
-      images?: {
-        url: string;
-      }[];
-    };
-  }[];
-};
+import type { Order } from './types';
 
 export default function AccountPage() {
   const { user } = useAuth();
+  const { data: orders = [], isPending: loading, refetch } = useMyOrders(!!user);
   const searchParams = useSearchParams();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'orders');
   const { t } = useLanguage();
 
-  const loadData = useCallback(async () => {
-    try {
-      const authRes = await apiFetch('/auth/me');
-
-      if (!authRes) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const authData = await authRes.json();
-
-      if (!authData?.user) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const res = await apiFetch('/orders/me');
-
-      if (!res) return;
-
-      const data = await res.json();
-
-      setOrders(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
-
   useEffect(() => {
     const refreshOrders = () => {
-      void loadData();
+      void refetch();
     };
 
     socket.on('dashboard:update', refreshOrders);
@@ -92,7 +35,7 @@ export default function AccountPage() {
       socket.off('dashboard:update', refreshOrders);
       socket.off('orderUpdated', refreshOrders);
     };
-  }, [loadData]);
+  }, [refetch]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
