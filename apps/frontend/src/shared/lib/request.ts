@@ -7,7 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 ============================================ */
 
 async function executeFetch(endpoint: string, options: ApiFetchOptions): Promise<Response> {
-  const { timeout = 10000, ...fetchOptions } = options;
+  const { timeout = 30000, ...fetchOptions } = options;
 
   const controller = new AbortController();
 

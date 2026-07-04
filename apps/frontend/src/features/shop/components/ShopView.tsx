@@ -5,11 +5,9 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavbar } from '@/hooks/useNavbar';
-import { useQuery } from '@tanstack/react-query';
+import { useProducts } from '@/features/products/hooks/useProducts';
+import QueryErrorState from '@/shared/components/query/QueryErrorState';
 import type { Product } from '@/types/product';
-
-import { productsApi } from '@/features/products/api/products.api'; // ✅ NEW
-
 import ProductCardSkeleton from '@/features/products/components/ProductCardSkeleton';
 import ProductCard from '@/features/products/components/ProductCard';
 import ShopFilters from '@/features/products/components/ShopFilters';
@@ -80,18 +78,36 @@ export function ShopView() {
     return params.toString();
   }, [debouncedFilters]);
 
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', queryString],
-    queryFn: () => productsApi.search(queryString), // ✅ CLEAN
+  const {
+    data: products,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useProducts({
+    queryString,
     enabled: initialized,
   });
 
+  if (isError) {
+    return (
+      <main className="mx-auto max-w-7xl px-6 pt-24 pb-16">
+        <QueryErrorState
+          error={error}
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </main>
+    );
+  }
+
   const content = useMemo(() => {
-    if (isLoading) {
+    if (isPending) {
       return Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />);
     }
 
-    return products.map((product: Product) => (
+    return products?.map((product: Product) => (
       <motion.div
         key={product.id}
         initial={{ opacity: 0, y: 15 }}
@@ -101,7 +117,7 @@ export function ShopView() {
         <ProductCard product={product} />
       </motion.div>
     ));
-  }, [isLoading, products]);
+  }, [isPending, products]);
 
   const updateFilter = (key: string, value: any) => {
     setFilters((prev) => ({
@@ -147,7 +163,7 @@ export function ShopView() {
             {content}
           </motion.div>
 
-          {!isLoading && products.length === 0 && (
+          {!isPending && products?.length === 0 && (
             <p className="mt-10 text-neutral-500">No products found</p>
           )}
         </div>

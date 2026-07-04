@@ -185,9 +185,12 @@ export default function Page() {
 
   const isPaid = order.status !== 'PENDING' && order.status !== 'PAYMENT_PROCESSING';
 
-  const canContinuePayment = order.status === 'PENDING';
+  const paymentProcessing =
+    order.status === 'PAYMENT_PROCESSING' && searchParams.get('processing') === 'true';
 
-  const paymentProcessing = order.status === 'PAYMENT_PROCESSING';
+  const canContinuePayment =
+    order.status === 'PENDING' ||
+    (order.status === 'PAYMENT_PROCESSING' && searchParams.get('processing') !== 'true');
 
   const markRefundSent = async () => {
     if (!selectedRefund) return;
