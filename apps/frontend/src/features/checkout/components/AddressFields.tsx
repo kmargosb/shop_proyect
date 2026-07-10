@@ -8,7 +8,7 @@ import AddressAutocomplete from './AddressAutocomplete';
 
 type Props<T extends FieldValues> = {
   form: UseFormReturn<T>;
-  prefix: string;
+  prefix: '' | 'billing';
   compact?: boolean;
 };
 
@@ -24,20 +24,30 @@ export default function AddressFields<T extends FieldValues>({
     formState: { errors },
   } = form;
 
-  const field = (name: string) => `${prefix}${name}` as FieldPath<T>;
+  const field = (name: 'addressLine1' | 'addressLine2' | 'city' | 'postalCode' | 'country') =>
+    (prefix ? `${prefix}${name.charAt(0).toUpperCase()}${name.slice(1)}` : name) as FieldPath<T>;
+
+  const error = (name: 'addressLine1' | 'addressLine2' | 'city' | 'postalCode' | 'country') =>
+    (errors as Record<string, { message?: string }>)[field(name)]?.message;
 
   return (
     <>
       <AddressAutocomplete
-        value={watch(field('addressLine1')) as string}
+        value={(watch(field('addressLine1')) as string) ?? ''}
         onChange={(data) => {
-          setValue(field('addressLine1'), data.addressLine1 as any);
+          setValue(field('addressLine1'), data.addressLine1 as never);
 
-          if (data.city) setValue(field('city'), data.city as any);
+          if (data.city) {
+            setValue(field('city'), data.city as never);
+          }
 
-          if (data.postalCode) setValue(field('postalCode'), data.postalCode as any);
+          if (data.postalCode) {
+            setValue(field('postalCode'), data.postalCode as never);
+          }
 
-          if (data.country) setValue(field('Country'), data.country as any);
+          if (data.country) {
+            setValue(field('country'), data.country as never);
+          }
         }}
       />
 
@@ -47,21 +57,21 @@ export default function AddressFields<T extends FieldValues>({
         <Input
           compact={compact}
           placeholder="City"
-          error={(errors as any)[`${prefix}city`]?.message}
+          error={error('city')}
           {...register(field('city'))}
         />
 
         <Input
           compact={compact}
           placeholder="ZIP Code"
-          error={(errors as any)[`${prefix}postalCode`]?.message}
+          error={error('postalCode')}
           {...register(field('postalCode'))}
         />
       </div>
 
       <select
         {...register(field('country'))}
-        className="h-11 w-full rounded-xl border border-white/10 bg-neutral-950 px-4 md:h-12"
+        className="h-11 w-full rounded-xl border border-white/10 bg-neutral-950 px-4 text-sm md:h-12"
       >
         {COUNTRIES.map((country) => (
           <option key={country.code} value={country.code}>
