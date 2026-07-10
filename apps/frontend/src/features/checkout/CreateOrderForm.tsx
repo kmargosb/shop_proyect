@@ -7,36 +7,33 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import LoginInline from '@/features/auth/components/LoginInline';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 import CheckoutSummary from './components/CheckoutSummary';
-import { useCheckout } from './hooks/useCheckout';
 import CheckoutForm from './components/CheckoutForm';
+import { useCheckoutController } from './hooks/useCheckoutController';
 
 export default function CreateOrderForm() {
   const { items, clearCart, totalPrice, increaseQuantity, decreaseQuantity, removeItem } =
     useCart();
   const { refreshUser } = useAuth();
   const { t } = useLanguage();
-
   const {
+    checkoutForm,
+    submit,
     loading,
-    setLoading,
-    form,
-    setForm,
     addresses,
-    setAddresses,
     selectedAddressId,
     setSelectedAddressId,
+    deleteAddress,
+    setFavorite,
+    loadAddresses,
+    handleAddressChange,
     isLogged,
     setIsLogged,
     showLogin,
     setShowLogin,
-    handleChange,
-    handleAddressChange,
     isValid,
-    deleteAddress,
-    setFavorite,
-    handleSubmit,
-    loadAddresses,
-  } = useCheckout();
+    reset,
+    watch,
+  } = useCheckoutController();
 
   /* ================= AUTOFILL ================= */
 
@@ -46,7 +43,7 @@ export default function CreateOrderForm() {
       try {
         const parsed = JSON.parse(saved);
 
-        setForm({
+        reset({
           firstName: parsed.firstName ?? '',
           lastName: parsed.lastName ?? '',
           email: parsed.email ?? '',
@@ -66,8 +63,12 @@ export default function CreateOrderForm() {
   /* ================= AUTO SAVE ================= */
 
   useEffect(() => {
-    localStorage.setItem('checkoutData', JSON.stringify(form));
-  }, [form]);
+    const subscription = watch((values) => {
+      localStorage.setItem('checkoutData', JSON.stringify(values));
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
@@ -155,19 +156,17 @@ export default function CreateOrderForm() {
 
                     const [firstName = '', ...lastParts] = (addr.fullName ?? '').split(' ');
 
-                    setForm((prev) => ({
-                      ...prev,
-
+                    checkoutForm.reset({
                       firstName,
                       lastName: lastParts.join(' '),
-
+                      email: checkoutForm.getValues('email'),
                       phone: addr.phone ?? '',
                       addressLine1: addr.addressLine1 ?? '',
                       addressLine2: addr.addressLine2 ?? '',
                       city: addr.city ?? '',
                       postalCode: addr.postalCode ?? '',
                       country: addr.country ?? 'ES',
-                    }));
+                    });
                   }}
                   className={`relative cursor-pointer rounded-xl border p-4 pr-4 pl-10 ${
                     selected
@@ -214,13 +213,7 @@ export default function CreateOrderForm() {
             })}
           </div>
         )}
-        <CheckoutForm
-          form={form}
-          handleChange={handleChange}
-          handleAddressChange={handleAddressChange}
-          handleSubmit={handleSubmit}
-          clearCart={clearCart}
-        />
+        <CheckoutForm checkoutForm={checkoutForm} onSubmit={submit} />
       </div>
       <CheckoutSummary
         items={items}
