@@ -1,11 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiFetch } from '@/shared/lib/api';
 import { toast } from 'sonner';
 import type { ChangeEvent } from 'react';
 import type { CheckoutFormData, Address, AddressData, CheckoutResponse } from '../types';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { apiFetch } from '@/shared/lib/api';
+import {
+  checkout,
+  deleteAddress as deleteAddressRequest,
+  fetchAddresses,
+  setFavoriteAddress,
+} from '../services/checkout.service';
 
 export function useCheckout() {
   const [loading, setLoading] = useState(false);
@@ -44,11 +50,9 @@ export function useCheckout() {
   };
 
   const deleteAddress = async (id: string) => {
-    const res = await apiFetch(`/addresses/${id}`, {
-      method: 'DELETE',
-    });
+    const ok = await deleteAddressRequest(id);
 
-    if (!res || !res.ok) {
+    if (!ok) {
       return false;
     }
 
@@ -65,13 +69,8 @@ export function useCheckout() {
     console.time('loadAddresses');
 
     try {
-      const res = await apiFetch('/customers/me/addresses');
+      const data = await fetchAddresses();
 
-      if (!res || !res.ok) {
-        return;
-      }
-
-      const data: Address[] = await res.json();
       setAddresses(data);
 
       if (data.length > 0) {
@@ -103,8 +102,8 @@ export function useCheckout() {
       }
 
       console.timeEnd('loadAddresses');
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -124,11 +123,9 @@ export function useCheckout() {
   }, [authLoading, user]);
 
   const setFavorite = async (id: string) => {
-    await apiFetch(`/customers/me/addresses/${id}/favorite`, {
-      method: 'PATCH',
-    });
+    await setFavoriteAddress(id);
 
-    loadAddresses();
+    await loadAddresses();
   };
 
   const isValid =
