@@ -25,11 +25,18 @@ export function useCheckoutForm() {
       lastName: '',
       email: '',
       phone: '',
+
       addressLine1: '',
       addressLine2: '',
       city: '',
       postalCode: '',
       country: 'ES',
+
+      billingAddressLine1: '',
+      billingAddressLine2: '',
+      billingCity: '',
+      billingPostalCode: '',
+      billingCountry: '',
     },
   });
 
@@ -42,7 +49,7 @@ export function useCheckoutForm() {
       return;
     }
 
-    const first = addresses[0];
+    const first = addresses.find((a) => a.isDefault) ?? addresses[0];
 
     setSelectedAddressId(first.id);
 

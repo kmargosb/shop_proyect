@@ -29,38 +29,38 @@ export default function AddressFields<T extends FieldValues>({
   return (
     <>
       <AddressAutocomplete
-        value={watch(field('AddressLine1')) as string}
+        value={watch(field('addressLine1')) as string}
         onChange={(data) => {
-          setValue(field('AddressLine1'), data.addressLine1 as any);
+          setValue(field('addressLine1'), data.addressLine1 as any);
 
-          if (data.city) setValue(field('City'), data.city as any);
+          if (data.city) setValue(field('city'), data.city as any);
 
-          if (data.postalCode) setValue(field('PostalCode'), data.postalCode as any);
+          if (data.postalCode) setValue(field('postalCode'), data.postalCode as any);
 
           if (data.country) setValue(field('Country'), data.country as any);
         }}
       />
 
-      <Input compact={compact} placeholder="Apartment" {...register(field('AddressLine2'))} />
+      <Input compact={compact} placeholder="Apartment" {...register(field('addressLine2'))} />
 
       <div className="grid gap-3 md:grid-cols-2">
         <Input
           compact={compact}
           placeholder="City"
-          error={(errors as any)[`${prefix}City`]?.message}
-          {...register(field('City'))}
+          error={(errors as any)[`${prefix}city`]?.message}
+          {...register(field('city'))}
         />
 
         <Input
           compact={compact}
           placeholder="ZIP Code"
-          error={(errors as any)[`${prefix}PostalCode`]?.message}
-          {...register(field('PostalCode'))}
+          error={(errors as any)[`${prefix}postalCode`]?.message}
+          {...register(field('postalCode'))}
         />
       </div>
 
       <select
-        {...register(field('Country'))}
+        {...register(field('country'))}
         className="h-11 w-full rounded-xl border border-white/10 bg-neutral-950 px-4 md:h-12"
       >
         {COUNTRIES.map((country) => (

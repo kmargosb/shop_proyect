@@ -102,7 +102,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
   return (
     <div className="relative">
       <Input
-        value={value}
+        value={value ?? ''}
         placeholder="Address"
         onChange={(e) => void handleSearch(e.target.value)}
         onKeyDown={handleKeyDown}
