@@ -6,6 +6,9 @@ import type { ChangeEvent } from 'react';
 import type { CheckoutFormData, Address, AddressData, CheckoutResponse } from '../types';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { apiFetch } from '@/shared/lib/api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { checkoutSchema, type CheckoutSchema } from '../schemas/checkout.schema';
 import {
   checkout,
   deleteAddress as deleteAddressRequest,
@@ -31,6 +34,22 @@ export function useCheckout() {
     city: '',
     postalCode: '',
     country: 'ES',
+  });
+
+  const checkoutForm = useForm<CheckoutSchema>({
+    resolver: zodResolver(checkoutSchema),
+
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      postalCode: '',
+      country: 'ES',
+    },
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

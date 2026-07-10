@@ -1,47 +1,33 @@
-import { apiFetch } from '@/shared/lib/api';
+import { request } from '@/shared/lib/request';
 import type { Address, CheckoutResponse } from '../types';
 
 export async function fetchAddresses(): Promise<Address[]> {
-  const res = await apiFetch('/customers/me/addresses');
+  const response = await request('/customers/me/addresses');
 
-  if (!res || !res.ok) {
-    return [];
-  }
-
-  return res.json();
+  return response.json();
 }
 
 export async function deleteAddress(id: string) {
-  const res = await apiFetch(`/addresses/${id}`, {
+  await request(`/addresses/${id}`, {
     method: 'DELETE',
   });
 
-  return !!res?.ok;
+  return true;
 }
 
 export async function setFavoriteAddress(id: string) {
-  const res = await apiFetch(`/customers/me/addresses/${id}/favorite`, {
+  await request(`/customers/me/addresses/${id}/favorite`, {
     method: 'PATCH',
   });
 
-  return !!res?.ok;
+  return true;
 }
 
 export async function checkout(payload: any): Promise<CheckoutResponse> {
-  const res = await apiFetch('/cart/checkout', {
+  const response = await request('/cart/checkout', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
-  if (!res) {
-    throw new Error('Connection error');
-  }
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => null);
-
-    throw new Error(data?.error || 'Unable to process checkout');
-  }
-
-  return res.json();
+  return response.json();
 }
