@@ -1,23 +1,22 @@
 import { z } from 'zod';
 
 export const checkoutSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-
-  lastName: z.string().min(1, 'Last name is required'),
-
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
-
   phone: z.string().min(5),
 
   addressLine1: z.string().min(1),
-
   addressLine2: z.string().optional(),
-
   city: z.string().min(1),
-
   postalCode: z.string().min(1),
-
   country: z.string().min(1),
+
+  billingAddressLine1: z.string().optional(),
+  billingAddressLine2: z.string().optional(),
+  billingCity: z.string().optional(),
+  billingPostalCode: z.string().optional(),
+  billingCountry: z.string().optional(),
 });
 
 export type CheckoutSchema = z.infer<typeof checkoutSchema>;

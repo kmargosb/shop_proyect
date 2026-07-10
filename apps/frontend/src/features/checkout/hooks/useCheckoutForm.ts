@@ -1,21 +1,18 @@
+import type { Address, AddressData } from '../types';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
+import { useAddressesQuery } from './useAddressesQuery';
+import { useDeleteAddress } from './useDeleteAddress';
+import { useFavoriteAddress } from './useFavoriteAddress';
 import { useAuth } from '@/features/auth/context/AuthContext';
-
-import type { Address, AddressData } from '../types';
 import { checkoutSchema, type CheckoutSchema } from '../schemas/checkout.schema';
-import {
-  fetchAddresses,
-  deleteAddress as deleteAddressRequest,
-  setFavoriteAddress,
-} from '../services/checkout.service';
 
 export function useCheckoutForm() {
   const { user, loading: authLoading } = useAuth();
-
-  const [addresses, setAddresses] = useState<Address[]>([]);
+  const { data: addresses = [] } = useAddressesQuery();
+  const deleteAddressMutation = useDeleteAddress();
+  const favoriteAddressMutation = useFavoriteAddress();
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isLogged, setIsLogged] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -37,25 +34,15 @@ export function useCheckoutForm() {
   });
 
   const { reset, setValue } = form;
+  useEffect(() => {
+    if (!user) return;
 
-  const {
-    register,
-    watch,
-    handleSubmit,
-    formState: { errors, isValid },
-  } = form;
-
-  async function loadAddresses() {
-    const data = await fetchAddresses();
-
-    setAddresses(data);
-
-    if (!data.length) {
-      setValue('email', user?.email ?? '');
+    if (!addresses.length) {
+      setValue('email', user.email ?? '');
       return;
     }
 
-    const first = data[0];
+    const first = addresses[0];
 
     setSelectedAddressId(first.id);
 
@@ -64,20 +51,31 @@ export function useCheckoutForm() {
     reset({
       firstName,
       lastName: last.join(' '),
-      email: user?.email ?? '',
+      email: user.email ?? '',
       phone: first.phone,
       addressLine1: first.addressLine1,
       addressLine2: first.addressLine2 ?? '',
       city: first.city,
       postalCode: first.postalCode,
       country: first.country,
+
+      billingAddressLine1: '',
+      billingAddressLine2: '',
+      billingCity: '',
+      billingPostalCode: '',
+      billingCountry: '',
     });
-  }
+  }, [addresses, user, reset, setValue]);
+
+  const {
+    register,
+    watch,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = form;
 
   async function deleteAddress(id: string) {
-    await deleteAddressRequest(id);
-
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
+    await deleteAddressMutation.mutateAsync(id);
 
     if (selectedAddressId === id) {
       setSelectedAddressId(null);
@@ -85,8 +83,7 @@ export function useCheckoutForm() {
   }
 
   async function setFavorite(id: string) {
-    await setFavoriteAddress(id);
-    await loadAddresses();
+    await favoriteAddressMutation.mutateAsync(id);
   }
 
   function handleAddressChange(data: AddressData) {
@@ -99,14 +96,7 @@ export function useCheckoutForm() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user) {
-      setIsLogged(false);
-      return;
-    }
-
-    setIsLogged(true);
-
-    void loadAddresses();
+    setIsLogged(!!user);
   }, [authLoading, user]);
 
   return {
@@ -122,7 +112,6 @@ export function useCheckoutForm() {
     deleteAddress,
     setFavorite,
     handleAddressChange,
-    loadAddresses,
 
     isLogged,
     setIsLogged,

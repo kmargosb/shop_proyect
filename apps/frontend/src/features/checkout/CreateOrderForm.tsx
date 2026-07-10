@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/features/cart/CartContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -11,8 +11,9 @@ import CheckoutForm from './components/CheckoutForm';
 import { useCheckoutController } from './hooks/useCheckoutController';
 
 export default function CreateOrderForm() {
-  const { items, clearCart, totalPrice, increaseQuantity, decreaseQuantity, removeItem } =
-    useCart();
+  const { items, totalPrice, increaseQuantity, decreaseQuantity, removeItem } = useCart();
+  const [showAddresses, setShowAddresses] = useState(false);
+  const [sameAsShipping, setSameAsShipping] = useState(true);
   const { refreshUser } = useAuth();
   const { t } = useLanguage();
   const {
@@ -24,13 +25,11 @@ export default function CreateOrderForm() {
     setSelectedAddressId,
     deleteAddress,
     setFavorite,
-    loadAddresses,
     handleAddressChange,
     isLogged,
     setIsLogged,
     showLogin,
     setShowLogin,
-    isValid,
     reset,
     watch,
   } = useCheckoutController();
@@ -115,7 +114,6 @@ export default function CreateOrderForm() {
                       onSuccess={async () => {
                         await refreshUser();
                         setIsLogged(true);
-                        await loadAddresses();
                         setShowLogin(false);
                       }}
                     />
@@ -135,82 +133,100 @@ export default function CreateOrderForm() {
 
         {/* ADDRESSES */}
         {addresses.length > 0 && (
-          <div className="space-y-3 rounded-xl bg-neutral-900 p-4">
-            <h3 className="text-sm text-neutral-400">{t.checkout.savedAddresses}</h3>
+          <div className="rounded-xl border border-white/10 bg-neutral-900">
+            <button
+              type="button"
+              onClick={() => setShowAddresses((v) => !v)}
+              className="flex w-full items-center justify-between p-4 md:hidden"
+            >
+              <span className="text-sm font-medium">
+                {t.checkout.savedAddresses} ({addresses.length})
+              </span>
 
-            {addresses.map((addr) => {
-              const selected = selectedAddressId === addr.id;
+              <span className={`transition-transform ${showAddresses ? 'rotate-180' : ''}`}>▼</span>
+            </button>
 
-              return (
-                <motion.div
-                  key={addr.id}
-                  layout
-                  transition={{
-                    duration: 0.35,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  whileHover={{ scale: 1.015 }}
-                  whileTap={{ scale: 0.985 }}
-                  onClick={() => {
-                    setSelectedAddressId(addr.id);
+            <div className={`${showAddresses ? 'block' : 'hidden'} md:block`}>
+              <div className="space-y-3 p-4 pt-0 md:pt-4">
+                <h3 className="hidden text-sm text-neutral-400 md:block">
+                  {t.checkout.savedAddresses}
+                </h3>
 
-                    const [firstName = '', ...lastParts] = (addr.fullName ?? '').split(' ');
+                {addresses.map((addr) => {
+                  const selected = selectedAddressId === addr.id;
 
-                    checkoutForm.reset({
-                      firstName,
-                      lastName: lastParts.join(' '),
-                      email: checkoutForm.getValues('email'),
-                      phone: addr.phone ?? '',
-                      addressLine1: addr.addressLine1 ?? '',
-                      addressLine2: addr.addressLine2 ?? '',
-                      city: addr.city ?? '',
-                      postalCode: addr.postalCode ?? '',
-                      country: addr.country ?? 'ES',
-                    });
-                  }}
-                  className={`relative cursor-pointer rounded-xl border p-4 pr-4 pl-10 ${
-                    selected
-                      ? 'border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]'
-                      : 'border-white/10 hover:border-white/30'
-                  }`}
-                >
-                  <motion.div
-                    layout
-                    className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 rounded-full border"
-                    animate={{
-                      backgroundColor: selected ? '#ffffff' : 'rgba(255,255,255,0)',
-                      borderColor: selected ? '#fff' : 'rgba(255,255,255,0.4)',
-                    }}
-                  />
+                  return (
+                    <motion.div
+                      key={addr.id}
+                      layout
+                      transition={{
+                        duration: 0.35,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      whileHover={{ scale: 1.015 }}
+                      whileTap={{ scale: 0.985 }}
+                      onClick={() => {
+                        setSelectedAddressId(addr.id);
 
-                  <div className="flex justify-between">
-                    <p className="font-medium">{addr.fullName}</p>
+                        const [firstName = '', ...lastParts] = (addr.fullName ?? '').split(' ');
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFavorite(addr.id);
+                        checkoutForm.reset({
+                          firstName,
+                          lastName: lastParts.join(' '),
+                          email: checkoutForm.getValues('email'),
+                          phone: addr.phone ?? '',
+                          addressLine1: addr.addressLine1 ?? '',
+                          addressLine2: addr.addressLine2 ?? '',
+                          city: addr.city ?? '',
+                          postalCode: addr.postalCode ?? '',
+                          country: addr.country ?? 'ES',
+                        });
+                      }}
+                      className={`relative cursor-pointer rounded-xl border p-4 pr-4 pl-10 ${
+                        selected
+                          ? 'border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+                          : 'border-white/10 hover:border-white/30'
+                      }`}
+                    >
+                      <motion.div
+                        layout
+                        className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 rounded-full border"
+                        animate={{
+                          backgroundColor: selected ? '#ffffff' : 'rgba(255,255,255,0)',
+                          borderColor: selected ? '#fff' : 'rgba(255,255,255,0.4)',
                         }}
-                      >
-                        {addr.isDefault ? '⭐' : '☆'}
-                      </button>
+                      />
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteAddress(addr.id);
-                        }}
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </div>
+                      <div className="flex justify-between">
+                        <p className="font-medium">{addr.fullName}</p>
 
-                  <p className="mt-1 text-xs text-neutral-400">{addr.addressLine1}</p>
-                </motion.div>
-              );
-            })}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFavorite(addr.id);
+                            }}
+                          >
+                            {addr.isDefault ? '⭐' : '☆'}
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAddress(addr.id);
+                            }}
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="mt-1 text-xs text-neutral-400">{addr.addressLine1}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
         <CheckoutForm checkoutForm={checkoutForm} onSubmit={submit} />
@@ -219,7 +235,7 @@ export default function CreateOrderForm() {
         items={items}
         totalPrice={totalPrice}
         loading={loading}
-        isValid={!!isValid}
+        isValid={checkoutForm.formState.isValid}
         increaseQuantity={increaseQuantity}
         decreaseQuantity={decreaseQuantity}
         removeItem={removeItem}

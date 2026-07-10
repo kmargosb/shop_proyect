@@ -18,4 +18,12 @@ export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
   },
+
+  cart: {
+    all: ['cart'] as const,
+  },
+
+  addresses: {
+    all: ['addresses'] as const,
+  },
 };

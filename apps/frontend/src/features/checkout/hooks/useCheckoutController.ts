@@ -24,8 +24,6 @@ export function useCheckoutController() {
     deleteAddress: checkoutForm.deleteAddress,
     setFavorite: checkoutForm.setFavorite,
 
-    loadAddresses: checkoutForm.loadAddresses,
-
     handleAddressChange: checkoutForm.handleAddressChange,
 
     isLogged: checkoutForm.isLogged,

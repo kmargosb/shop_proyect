@@ -289,6 +289,17 @@ export const es = {
     stripe: 'Procesado por Stripe',
     fastShipping: 'Envío rápido en Europa',
     pay: 'Pagar',
+    contact: 'Contacto',
+    contactDescription: 'Usaremos esta información para tu pedido.',
+    shippingAddress: 'Dirección de envío',
+    shippingDescription: '¿Dónde debemos entregar tu pedido?',
+    country: 'País',
+    billingAddress: 'Dirección de facturación',
+    billingDescription: 'Datos para la factura.',
+    sameAsShipping: 'La dirección de facturación es la misma que la de envío',
+    continuePayment: 'Continuar al pago',
+    sameBillingAddress: 'La dirección de facturación es la misma que la de envío',
+    billingDescription2: 'Solo complétala si es diferente a la dirección de envío',
   },
 
   brandsShowcase: {

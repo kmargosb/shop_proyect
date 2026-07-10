@@ -1,22 +1,40 @@
-import * as React from "react"
+import * as React from 'react';
+import { cn } from '@/shared/lib/utils';
 
-import { cn } from "@/shared/lib/utils"
+type InputProps = React.ComponentProps<'input'> & {
+  label?: string;
+  error?: string;
+  helper?: string;
+  compact?: boolean;
+};
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, label, error, helper, compact = false, ...props }, ref) => {
     return (
-      <input
-        type={type}
-        className={cn(
-          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          className
+      <div className="space-y-2">
+        {label && !compact && (
+          <label className="block text-sm font-medium text-white">{label}</label>
         )}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Input.displayName = "Input"
 
-export { Input }
+        <input
+          ref={ref}
+          type={type}
+          className={cn(
+            'h-11 w-full rounded-xl border border-white/10 bg-neutral-950 px-4 text-sm text-white transition-all outline-none placeholder:text-neutral-500 focus:border-white/40 focus:ring-2 focus:ring-white/10 disabled:opacity-50 md:h-12',
+            error && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
+            className,
+          )}
+          {...props}
+        />
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
+
+        {!error && helper && <p className="text-xs text-neutral-500">{helper}</p>}
+      </div>
+    );
+  },
+);
+
+Input.displayName = 'Input';
+
+export { Input };
