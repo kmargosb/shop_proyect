@@ -1,8 +1,11 @@
 export type Address = {
   id: string;
+  type: 'SHIPPING' | 'BILLING';
   label: string;
   fullName: string;
-  phone: string;
+  phone?: string;
+  companyName?: string | null;
+  vatNumber?: string | null;
   addressLine1: string;
   addressLine2?: string;
   city: string;

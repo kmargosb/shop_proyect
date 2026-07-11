@@ -1,8 +1,10 @@
 'use client';
 
+import AddressAutocomplete from '@/features/checkout/components/AddressAutocomplete';
+import AddressesSection from './AddressesSection';
+import AddressCard from './AddressCard';
 import { useState } from 'react';
 import { useAddresses } from '../hooks/useAddresses';
-import AddressAutocomplete from '@/features/checkout/components/AddressAutocomplete';
 import { COUNTRIES } from '@/shared/constants/countries';
 import { MapPin, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import {
@@ -13,13 +15,19 @@ import {
   setFavoriteAddress,
 } from '../addresses.service';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-import type { Address } from '../types';
+import type { Address, AddressPayload } from '../types';
 
-const emptyForm = {
-  label: 'Casa',
+const emptyForm: AddressPayload = {
+  type: 'SHIPPING',
+
+  label: '',
 
   fullName: '',
   phone: '',
+
+  companyName: '',
+  vatNumber: '',
+
   addressLine1: '',
   addressLine2: '',
   city: '',
@@ -31,8 +39,10 @@ export default function AddressesTab() {
   const { data: addresses = [], isPending: loading, refetch } = useAddresses();
   const [openModal, setOpenModal] = useState(false);
   const [editing, setEditing] = useState<Address | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const { t } = useLanguage();
+  const shippingAddresses = addresses.filter((a) => a.type === 'SHIPPING');
+  const billingAddresses = addresses.filter((a) => a.type === 'BILLING');
 
   /* ================= INPUT ================= */
 
@@ -59,9 +69,16 @@ export default function AddressesTab() {
     setEditing(address);
 
     setForm({
+      type: address.type,
+
       label: address.label || 'Casa',
+
       fullName: address.fullName || '',
       phone: address.phone || '',
+
+      companyName: address.companyName || '',
+      vatNumber: address.vatNumber || '',
+
       addressLine1: address.addressLine1 || '',
       addressLine2: address.addressLine2 || '',
       city: address.city || '',
@@ -123,14 +140,6 @@ export default function AddressesTab() {
 
             <p className="mt-2 text-sm text-neutral-500">{t.addresses.description}</p>
           </div>
-
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
-          >
-            <Plus size={16} />
-            {t.addresses.add}
-          </button>
         </div>
 
         {/* EMPTY */}
@@ -142,73 +151,51 @@ export default function AddressesTab() {
             <p className="mt-4 text-neutral-400">{t.addresses.empty}</p>
           </div>
         ) : (
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {addresses.map((address) => (
-              <div
-                key={address.id}
-                className="rounded-3xl border border-white/10 bg-black/30 p-5 transition hover:border-white/20"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-white">{address.label}</h3>
+          <>
+            <AddressesSection
+              title="📦 Direcciones de envío"
+              buttonText="Nueva dirección de envío"
+              addresses={shippingAddresses}
+              onCreate={() => {
+                setForm({
+                  ...emptyForm,
+                  type: 'SHIPPING',
+                });
 
-                    <p className="mt-1 text-sm text-neutral-500">{address.phone}</p>
-                  </div>
+                setEditing(null);
+                setOpenModal(true);
+              }}
+              onEdit={openEdit}
+              onDelete={deleteAddress}
+              onFavorite={setFavorite}
+              defaultText={t.addresses.default}
+              setDefaultText={t.addresses.setDefault}
+              editText={t.addresses.edit}
+              deleteText={t.addresses.delete}
+            />
 
-                  {address.isDefault && (
-                    <div className="rounded-full bg-white px-3 py-1 text-[10px] font-bold tracking-wide text-black uppercase">
-                      {t.addresses.default}
-                    </div>
-                  )}
-                </div>
+            <AddressesSection
+              title="🧾 Direcciones de facturación"
+              buttonText="Nueva dirección de facturación"
+              addresses={billingAddresses}
+              onCreate={() => {
+                setForm({
+                  ...emptyForm,
+                  type: 'BILLING',
+                });
 
-                <div className="mt-5 space-y-1 text-sm text-neutral-300">
-                  <p>{address.addressLine1}</p>
-
-                  {address.addressLine2 && <p>{address.addressLine2}</p>}
-
-                  <p>
-                    {address.city}, {address.postalCode}
-                  </p>
-
-                  <p>{address.country}</p>
-                </div>
-
-                {/* ACTIONS */}
-
-                <div className="mt-6 flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => setFavorite(address.id)}
-                    className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
-                      address.isDefault
-                        ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300'
-                        : 'border-white/10 text-neutral-300 hover:bg-white/10'
-                    }`}
-                  >
-                    <Star size={15} />
-
-                    {address.isDefault ? t.addresses.default : t.addresses.setDefault}
-                  </button>
-
-                  <button
-                    onClick={() => openEdit(address)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:bg-white/10"
-                  >
-                    <Pencil size={15} />
-                    {t.addresses.edit}
-                  </button>
-
-                  <button
-                    onClick={() => deleteAddress(address.id)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10"
-                  >
-                    <Trash2 size={15} />
-                    {t.addresses.delete}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                setEditing(null);
+                setOpenModal(true);
+              }}
+              onEdit={openEdit}
+              onDelete={deleteAddress}
+              onFavorite={setFavorite}
+              defaultText={t.addresses.default}
+              setDefaultText={t.addresses.setDefault}
+              editText={t.addresses.edit}
+              deleteText={t.addresses.delete}
+            />
+          </>
         )}
       </div>
 
@@ -239,11 +226,21 @@ export default function AddressesTab() {
             {/* FORM */}
 
             <div className="mt-6 grid gap-4">
+              <div
+                className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+                  form.type === 'SHIPPING'
+                    ? 'border-blue-500/20 bg-blue-500/10 text-blue-300'
+                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                }`}
+              >
+                {form.type === 'SHIPPING' ? '📦 Dirección de envío' : '🧾 Dirección de facturación'}
+              </div>
+
               <input
                 name="label"
                 value={form.label}
                 onChange={handleChange}
-                placeholder="Casa, Trabajo, Oficina..."
+                placeholder="Ej. Casa, Trabajo, Oficina..."
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
 
@@ -266,6 +263,26 @@ export default function AddressesTab() {
                 placeholder={t.addresses.phone}
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
               />
+
+              {form.type === 'BILLING' && (
+                <>
+                  <input
+                    name="companyName"
+                    value={form.companyName}
+                    onChange={handleChange}
+                    placeholder="Razón social"
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                  />
+
+                  <input
+                    name="vatNumber"
+                    value={form.vatNumber}
+                    onChange={handleChange}
+                    placeholder="VAT / NIF / CIF"
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+                  />
+                </>
+              )}
 
               {/* ADDRESS AUTOCOMPLETE */}
 

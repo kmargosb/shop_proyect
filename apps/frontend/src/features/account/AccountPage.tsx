@@ -13,6 +13,7 @@ import ProfileTab from './components/ProfileTab';
 import WishlistTab from './components/WishlistTab';
 import SecurityTab from './components/SecurityTab';
 import SettingsTab from './components/SettingsTab';
+import AddressesTab from './components/AddressesTab';
 
 export default function AccountPage() {
   const { user } = useAuth();
@@ -89,6 +90,8 @@ export default function AccountPage() {
           {activeTab === 'orders' && <OrdersTab orders={orders} />}
 
           {activeTab === 'profile' && <ProfileTab user={user} orders={orders} />}
+
+          {activeTab === 'addresses' && <AddressesTab />}
 
           {activeTab === 'wishlist' && <WishlistTab />}
 

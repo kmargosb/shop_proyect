@@ -2,7 +2,7 @@
 
 import { apiFetch } from '@/shared/lib/api';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-import { Heart, LogOut, Package, Settings, Shield, User } from 'lucide-react';
+import { Heart, LogOut, MapPin, Package, Settings, Shield, User } from 'lucide-react';
 
 type Props = {
   user: any;
@@ -14,14 +14,19 @@ export default function AccountSidebar({ user, activeTab, setActiveTab }: Props)
   const { t } = useLanguage();
   const menuItems = [
     {
+      key: 'orders',
+      label: t.account.orders,
+      icon: Package,
+    },
+    {
       key: 'profile',
       label: t.account.profile,
       icon: User,
     },
     {
-      key: 'orders',
-      label: t.account.orders,
-      icon: Package,
+      key: 'addresses',
+      label: 'Direcciones',
+      icon: MapPin,
     },
     {
       key: 'wishlist',

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { apiFetch } from '@/shared/lib/api';
 import { toast } from 'sonner';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
-import AddressesTab from './AddressesTab';
 
 type Props = {
   user: any;
@@ -136,8 +135,6 @@ export default function ProfileTab({ user, orders }: Props) {
           </div>
         </div>
       </div>
-
-      <AddressesTab />
     </div>
   );
 }

@@ -144,8 +144,19 @@ export const createAddressController = asyncHandler(async (req: AuthRequest, res
 
   const normalize = (str?: string) => str?.trim().toLowerCase();
 
-  const { label, fullName, phone, addressLine1, addressLine2, city, postalCode, country } =
-    req.body;
+  const {
+    type,
+    label,
+    fullName,
+    phone,
+    companyName,
+    vatNumber,
+    addressLine1,
+    addressLine2,
+    city,
+    postalCode,
+    country,
+  } = req.body;
 
   const existingCount = await prisma.address.count({
     where: { userId },
@@ -171,15 +182,21 @@ export const createAddressController = asyncHandler(async (req: AuthRequest, res
 
   const address = await prisma.address.create({
     data: {
+      type: type ?? 'SHIPPING',
       label: label?.trim() || 'Casa',
       userId,
       fullName,
       phone,
+
+      companyName: companyName?.trim() || null,
+      vatNumber: vatNumber?.trim() || null,
+
       addressLine1: normalize(addressLine1) || '',
       addressLine2: addressLine2 || '',
       city: normalize(city) || '',
       postalCode: normalize(postalCode) || '',
       country,
+
       isDefault: existingCount === 0,
     },
   });
@@ -248,9 +265,14 @@ export const updateAddressController = asyncHandler(
       where: { id },
 
       data: {
+        type: req.body.type ?? address.type,
+
         label: req.body.label?.trim() || 'Casa',
         fullName: req.body.fullName,
         phone: req.body.phone,
+
+        companyName: req.body.companyName?.trim() || null,
+        vatNumber: req.body.vatNumber?.trim() || null,
         addressLine1: normalize(req.body.addressLine1) || '',
         addressLine2: req.body.addressLine2 || '',
         city: normalize(req.body.city) || '',

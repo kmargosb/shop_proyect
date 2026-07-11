@@ -37,13 +37,42 @@ export type Order = {
 
 export type Address = {
   id: string;
+
+  type: 'SHIPPING' | 'BILLING';
+
   label: string;
+
   fullName: string;
-  phone: string;
+  phone?: string;
+
+  companyName?: string | null;
+  vatNumber?: string | null;
+
   addressLine1: string;
   addressLine2?: string;
+
   city: string;
   postalCode: string;
   country: string;
+
   isDefault?: boolean;
+};
+
+export type AddressPayload = {
+  type: 'SHIPPING' | 'BILLING';
+
+  label: string;
+
+  fullName: string;
+  phone: string;
+
+  companyName?: string;
+  vatNumber?: string;
+
+  addressLine1: string;
+  addressLine2?: string;
+
+  city: string;
+  postalCode: string;
+  country: string;
 };

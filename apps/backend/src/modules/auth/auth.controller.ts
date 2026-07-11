@@ -72,6 +72,7 @@ export const me = asyncHandler(async (req: AuthRequest, res: Response) => {
       email: true,
       role: true,
       name: true,
+      phone: true,
       provider: true,
       createdAt: true,
     },

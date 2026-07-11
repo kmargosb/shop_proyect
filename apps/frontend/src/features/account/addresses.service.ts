@@ -1,4 +1,5 @@
 import { request } from '@/shared/lib/request';
+import type { AddressPayload } from './types';
 
 export async function getAddresses() {
   const response = await request('/customers/me/addresses');
@@ -6,7 +7,7 @@ export async function getAddresses() {
   return response.json();
 }
 
-export async function createAddress(data: unknown) {
+export async function createAddress(data: AddressPayload) {
   const response = await request('/customers/me/addresses', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -15,7 +16,7 @@ export async function createAddress(data: unknown) {
   return response.json();
 }
 
-export async function updateAddress(id: string, data: unknown) {
+export async function updateAddress(id: string, data: AddressPayload) {
   const response = await request(`/customers/me/addresses/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),

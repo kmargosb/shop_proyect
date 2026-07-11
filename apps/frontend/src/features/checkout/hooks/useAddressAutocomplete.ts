@@ -49,9 +49,21 @@ export function useAddressAutocomplete(onChange: (data: AddressData) => void) {
     let country = '';
 
     place.addressComponents?.forEach((c: any) => {
-      if (c.types.includes('locality')) city = c.longText;
-      if (c.types.includes('postal_code')) postalCode = c.longText;
-      if (c.types.includes('country')) country = c.shortText;
+      if (
+        c.types.includes('locality') ||
+        c.types.includes('postal_town') ||
+        c.types.includes('administrative_area_level_2')
+      ) {
+        city = c.longText;
+      }
+
+      if (c.types.includes('postal_code')) {
+        postalCode = c.longText;
+      }
+
+      if (c.types.includes('country')) {
+        country = c.shortText;
+      }
     });
 
     onChange({
