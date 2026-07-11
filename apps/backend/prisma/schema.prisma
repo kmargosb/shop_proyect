@@ -359,7 +359,8 @@ model Address {
   postalCode   String
   country      String
   createdAt    DateTime @default(now())
-  isDefault    Boolean  @default(false)
+  isDefaultShipping Boolean @default(false)
+  isDefaultBilling  Boolean @default(false)
   user         User     @relation(fields: [userId], references: [id])
 
   @@index([userId])

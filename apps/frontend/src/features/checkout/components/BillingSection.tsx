@@ -1,20 +1,30 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import CheckoutSection from './sections/CheckoutSection';
-import AddressFields from './AddressFields';
+import { useLanguage } from '@/shared/i18n/LanguageContext';
+import { Input } from '@/shared/ui/input';
 import type { UseFormReturn } from 'react-hook-form';
 import type { CheckoutSchema } from '../schemas/checkout.schema';
-import { useLanguage } from '@/shared/i18n/LanguageContext';
+import type { Address } from '../types';
+import CheckoutSection from './sections/CheckoutSection';
+import AddressFields from './AddressFields';
+import SavedAddresses from './SavedAddresses';
 
 type Props = {
   enabled: boolean;
   setEnabled: (value: boolean) => void;
   checkoutForm: UseFormReturn<CheckoutSchema>;
+  billingAddresses: Address[];
 };
 
-export default function BillingSection({ enabled, setEnabled, checkoutForm }: Props) {
+export default function BillingSection({
+  enabled,
+  setEnabled,
+  checkoutForm,
+  billingAddresses,
+}: Props) {
   const { t } = useLanguage();
+  const { setValue, getValues } = checkoutForm;
 
   return (
     <>
@@ -41,6 +51,34 @@ export default function BillingSection({ enabled, setEnabled, checkoutForm }: Pr
               title={t.checkout.billingAddress}
               subtitle={t.checkout.billingDescription2}
             >
+              <SavedAddresses
+                title="Direcciones de facturación"
+                addresses={billingAddresses}
+                selectedId={null}
+                onSelect={(addr) => {
+                  setValue('billingAddressLine1', addr.addressLine1);
+                  setValue('billingAddressLine2', addr.addressLine2 ?? '');
+                  setValue('billingCity', addr.city);
+                  setValue('billingPostalCode', addr.postalCode);
+                  setValue('billingCountry', addr.country);
+                  setValue('billingCompanyName', addr.companyName ?? '');
+                  setValue('billingVatNumber', addr.vatNumber ?? '');
+                }}
+              />
+
+              <div className="mb-4 grid gap-3 md:grid-cols-2">
+                <Input
+                  compact
+                  placeholder="Company name"
+                  {...checkoutForm.register('billingCompanyName')}
+                />
+
+                <Input
+                  compact
+                  placeholder="VAT / NIF"
+                  {...checkoutForm.register('billingVatNumber')}
+                />
+              </div>
               <AddressFields form={checkoutForm} prefix="billing" compact />
             </CheckoutSection>
           </motion.div>

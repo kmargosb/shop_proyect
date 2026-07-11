@@ -49,7 +49,8 @@ export function useCheckoutForm() {
       return;
     }
 
-    const first = addresses.find((a) => a.isDefault) ?? addresses[0];
+    const first =
+      addresses.find((a) => a.isDefaultShipping) ?? shippingAddresses[0] ?? addresses[0];
 
     setSelectedAddressId(first.id);
 
@@ -72,6 +73,8 @@ export function useCheckoutForm() {
       billingCity: '',
       billingPostalCode: '',
       billingCountry: '',
+      billingCompanyName: '',
+      billingVatNumber: '',
     });
   }, [addresses, user, reset, setValue]);
 
@@ -90,8 +93,8 @@ export function useCheckoutForm() {
     }
   }
 
-  async function setFavorite(id: string) {
-    await favoriteAddressMutation.mutateAsync(id);
+  async function setFavorite(data: { id: string; type: 'SHIPPING' | 'BILLING' }) {
+    await favoriteAddressMutation.mutateAsync(data);
   }
 
   function handleAddressChange(data: AddressData) {
@@ -107,6 +110,10 @@ export function useCheckoutForm() {
     setIsLogged(!!user);
   }, [authLoading, user]);
 
+  const shippingAddresses = addresses.filter((a) => a.type === 'SHIPPING');
+
+  const billingAddresses = addresses.filter((a) => a.type === 'BILLING');
+
   return {
     ...form,
 
@@ -114,6 +121,9 @@ export function useCheckoutForm() {
     isValid,
 
     addresses,
+
+    shippingAddresses,
+    billingAddresses,
     selectedAddressId,
     setSelectedAddressId,
 

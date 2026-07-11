@@ -11,7 +11,8 @@ export type Address = {
   city: string;
   postalCode: string;
   country: string;
-  isDefault?: boolean;
+  isDefaultShipping?: boolean;
+  isDefaultBilling?: boolean;
 };
 
 export type AddressData = {

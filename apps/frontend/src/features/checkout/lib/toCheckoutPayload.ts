@@ -25,6 +25,8 @@ export function mapCheckoutToApi(data: CheckoutSchema) {
 
     billingFullName: shippingFullName,
     billingPhone: data.phone,
+    billingCompanyName: data.billingCompanyName,
+    billingVatNumber: data.billingVatNumber,
     billingAddressLine1: useShippingAsBilling ? data.addressLine1 : data.billingAddressLine1,
     billingAddressLine2: useShippingAsBilling ? data.addressLine2 : data.billingAddressLine2,
     billingCity: useShippingAsBilling ? data.city : data.billingCity,

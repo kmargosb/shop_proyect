@@ -18,6 +18,8 @@ export const checkoutSchema = z.object({
   billingCity: z.string().optional(),
   billingPostalCode: z.string().optional(),
   billingCountry: z.string().optional(),
+  billingCompanyName: z.string().optional(),
+  billingVatNumber: z.string().optional(),
 });
 
 export type CheckoutSchema = z.infer<typeof checkoutSchema>;

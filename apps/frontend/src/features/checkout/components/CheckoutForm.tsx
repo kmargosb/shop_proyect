@@ -8,13 +8,19 @@ import { useLanguage } from '@/shared/i18n/LanguageContext';
 import CheckoutSection from './sections/CheckoutSection';
 import AddressFields from './AddressFields';
 import BillingSection from './BillingSection';
+import type { Address } from '../types';
 
 type Props = {
   checkoutForm: UseFormReturn<CheckoutSchema>;
   onSubmit: () => void;
+  billingAddresses: Address[];
 };
 
-const CheckoutForm = memo(function CheckoutForm({ checkoutForm, onSubmit }: Props) {
+const CheckoutForm = memo(function CheckoutForm({
+  checkoutForm,
+  onSubmit,
+  billingAddresses,
+}: Props) {
   const [billingEnabled, setBillingEnabled] = useState(false);
   const { t } = useLanguage();
   const compact = true;
@@ -75,6 +81,7 @@ const CheckoutForm = memo(function CheckoutForm({ checkoutForm, onSubmit }: Prop
         enabled={billingEnabled}
         setEnabled={setBillingEnabled}
         checkoutForm={checkoutForm}
+        billingAddresses={billingAddresses}
       />
     </form>
   );

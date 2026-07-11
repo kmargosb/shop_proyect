@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCheckoutController } from './hooks/useCheckoutController';
 import { useCart } from '@/features/cart/CartContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import LoginInline from '@/features/auth/components/LoginInline';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+import LoginInline from '@/features/auth/components/LoginInline';
 import CheckoutSummary from './components/CheckoutSummary';
 import CheckoutForm from './components/CheckoutForm';
-import { useCheckoutController } from './hooks/useCheckoutController';
+import SavedAddresses from './components/SavedAddresses';
 
 export default function CreateOrderForm() {
   const { items, totalPrice, increaseQuantity, decreaseQuantity, removeItem } = useCart();
@@ -21,6 +22,8 @@ export default function CreateOrderForm() {
     submit,
     loading,
     addresses,
+    shippingAddresses,
+    billingAddresses,
     selectedAddressId,
     setSelectedAddressId,
     deleteAddress,
@@ -132,108 +135,44 @@ export default function CreateOrderForm() {
         )}
 
         {/* ADDRESSES */}
-        {addresses.length > 0 && (
-          <div className="rounded-xl border border-white/10 bg-neutral-900">
-            <button
-              type="button"
-              onClick={() => setShowAddresses((v) => !v)}
-              className="flex w-full items-center justify-between p-4 md:hidden"
-            >
-              <span className="text-sm font-medium">
-                {t.checkout.savedAddresses} ({addresses.length})
-              </span>
+        {shippingAddresses.length > 0 && (
+          <SavedAddresses
+            title={t.checkout.savedAddresses}
+            addresses={shippingAddresses}
+            selectedId={selectedAddressId}
+            onSelect={(addr) => {
+              setSelectedAddressId(addr.id);
 
-              <span className={`transition-transform ${showAddresses ? 'rotate-180' : ''}`}>▼</span>
-            </button>
+              const [firstName = '', ...lastParts] = (addr.fullName ?? '').split(' ');
 
-            <div className={`${showAddresses ? 'block' : 'hidden'} md:block`}>
-              <div className="space-y-3 p-4 pt-0 md:pt-4">
-                <h3 className="hidden text-sm text-neutral-400 md:block">
-                  {t.checkout.savedAddresses}
-                </h3>
-
-                {addresses.map((addr) => {
-                  const selected = selectedAddressId === addr.id;
-
-                  return (
-                    <motion.div
-                      key={addr.id}
-                      layout
-                      transition={{
-                        duration: 0.35,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                      whileHover={{ scale: 1.015 }}
-                      whileTap={{ scale: 0.985 }}
-                      onClick={() => {
-                        setSelectedAddressId(addr.id);
-
-                        const [firstName = '', ...lastParts] = (addr.fullName ?? '').split(' ');
-
-                        checkoutForm.reset({
-                          firstName,
-                          lastName: lastParts.join(' '),
-                          addressLabel: addr.label ?? 'Casa',
-                          email: checkoutForm.getValues('email'),
-                          phone: addr.phone ?? '',
-                          addressLine1: addr.addressLine1 ?? '',
-                          addressLine2: addr.addressLine2 ?? '',
-                          city: addr.city ?? '',
-                          postalCode: addr.postalCode ?? '',
-                          country: addr.country ?? 'ES',
-                        });
-                      }}
-                      className={`relative cursor-pointer rounded-xl border p-4 pr-4 pl-10 ${
-                        selected
-                          ? 'border-white bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]'
-                          : 'border-white/10 hover:border-white/30'
-                      }`}
-                    >
-                      <motion.div
-                        layout
-                        className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 rounded-full border"
-                        animate={{
-                          backgroundColor: selected ? '#ffffff' : 'rgba(255,255,255,0)',
-                          borderColor: selected ? '#fff' : 'rgba(255,255,255,0.4)',
-                        }}
-                      />
-
-                      <div className="flex justify-between">
-                        <p className="font-medium">{addr.label}</p>
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFavorite(addr.id);
-                            }}
-                          >
-                            {addr.isDefault ? '⭐' : '☆'}
-                          </button>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteAddress(addr.id);
-                            }}
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </div>
-
-                      <p className="mt-1 text-xs text-neutral-400">{addr.addressLine1}</p>
-                      <p className="text-xs text-neutral-500">
-                        {addr.city}, {addr.country}
-                      </p>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+              checkoutForm.reset({
+                firstName,
+                lastName: lastParts.join(' '),
+                addressLabel: addr.label ?? '',
+                email: checkoutForm.getValues('email'),
+                phone: addr.phone ?? '',
+                addressLine1: addr.addressLine1 ?? '',
+                addressLine2: addr.addressLine2 ?? '',
+                city: addr.city ?? '',
+                postalCode: addr.postalCode ?? '',
+                country: addr.country ?? 'ES',
+              });
+            }}
+            onFavorite={(id) =>
+              setFavorite({
+                id,
+                type: 'SHIPPING',
+              })
+            }
+            onDelete={deleteAddress}
+            isDefault={(address) => !!address.isDefaultShipping}
+          />
         )}
-        <CheckoutForm checkoutForm={checkoutForm} onSubmit={submit} />
+        <CheckoutForm
+          checkoutForm={checkoutForm}
+          onSubmit={submit}
+          billingAddresses={billingAddresses}
+        />
       </div>
       <CheckoutSummary
         items={items}

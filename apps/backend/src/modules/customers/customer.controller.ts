@@ -120,10 +120,7 @@ export const getMyAddressesController = asyncHandler(async (req: AuthRequest, re
 
   const addresses = await prisma.address.findMany({
     where: { userId },
-    orderBy: [
-      { isDefault: 'desc' }, // 🔥 favorita primero
-      { createdAt: 'desc' },
-    ],
+    orderBy: [{ createdAt: 'desc' }],
   });
 
   res.json(addresses);
@@ -197,7 +194,8 @@ export const createAddressController = asyncHandler(async (req: AuthRequest, res
       postalCode: normalize(postalCode) || '',
       country,
 
-      isDefault: existingCount === 0,
+      isDefaultShipping: type === 'SHIPPING' && existingCount === 0,
+      isDefaultBilling: type === 'BILLING' && existingCount === 0,
     },
   });
 
@@ -341,24 +339,48 @@ export const setDefaultAddressController = asyncHandler(
     /* ===============================
        🔥 SET FAVORITE (FIX REAL)
     =============================== */
+    const { type } = req.body;
     await prisma.$transaction(async (tx) => {
-      // quitar favorito a todas
-      await tx.address.updateMany({
-        where: { userId },
-        data: { isDefault: false },
-      });
+      if (type === 'SHIPPING') {
+        await tx.address.updateMany({
+          where: {
+            userId,
+            type: 'SHIPPING',
+          },
+          data: {
+            isDefaultShipping: false,
+          },
+        });
 
-      // poner favorito SOLO a esta (y validar userId)
-      const updated = await tx.address.updateMany({
-        where: {
-          id,
-          userId,
-        },
-        data: { isDefault: true },
-      });
+        await tx.address.update({
+          where: {
+            id,
+          },
+          data: {
+            isDefaultShipping: true,
+          },
+        });
+      }
 
-      if (updated.count === 0) {
-        throw new Error('No se pudo actualizar la dirección');
+      if (type === 'BILLING') {
+        await tx.address.updateMany({
+          where: {
+            userId,
+            type: 'BILLING',
+          },
+          data: {
+            isDefaultBilling: false,
+          },
+        });
+
+        await tx.address.update({
+          where: {
+            id,
+          },
+          data: {
+            isDefaultBilling: true,
+          },
+        });
       }
     });
 

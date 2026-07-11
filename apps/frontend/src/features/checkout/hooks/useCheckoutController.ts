@@ -18,6 +18,10 @@ export function useCheckoutController() {
     loading: mutation.isPending,
 
     addresses: checkoutForm.addresses,
+
+    shippingAddresses: checkoutForm.shippingAddresses,
+    billingAddresses: checkoutForm.billingAddresses,
+
     selectedAddressId: checkoutForm.selectedAddressId,
     setSelectedAddressId: checkoutForm.setSelectedAddressId,
 
