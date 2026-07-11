@@ -23,9 +23,9 @@ export function useCheckoutForm() {
     defaultValues: {
       firstName: '',
       lastName: '',
+      addressLabel: '',
       email: '',
       phone: '',
-
       addressLine1: '',
       addressLine2: '',
       city: '',
@@ -58,6 +58,7 @@ export function useCheckoutForm() {
     reset({
       firstName,
       lastName: last.join(' '),
+      addressLabel: first.label,
       email: user.email ?? '',
       phone: first.phone,
       addressLine1: first.addressLine1,
