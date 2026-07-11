@@ -37,6 +37,7 @@ export type Order = {
 
 export type Address = {
   id: string;
+  label: string;
   fullName: string;
   phone: string;
   addressLine1: string;

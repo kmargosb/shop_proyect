@@ -18,6 +18,7 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     userId,
     items,
     email,
+    label,
 
     shippingFullName,
     shippingPhone,
@@ -143,6 +144,7 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
       await tx.address.create({
         data: {
           userId,
+          label: label?.trim() || 'Casa',
           fullName: shippingFullName,
           phone: shippingPhone,
           addressLine1: normalize(shippingAddressLine1) || '',

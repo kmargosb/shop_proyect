@@ -16,6 +16,8 @@ import { useLanguage } from '@/shared/i18n/LanguageContext';
 import type { Address } from '../types';
 
 const emptyForm = {
+  label: 'Casa',
+
   fullName: '',
   phone: '',
   addressLine1: '',
@@ -57,6 +59,7 @@ export default function AddressesTab() {
     setEditing(address);
 
     setForm({
+      label: address.label || 'Casa',
       fullName: address.fullName || '',
       phone: address.phone || '',
       addressLine1: address.addressLine1 || '',
@@ -147,7 +150,7 @@ export default function AddressesTab() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-white">{address.fullName}</h3>
+                    <h3 className="font-semibold text-white">{address.label}</h3>
 
                     <p className="mt-1 text-sm text-neutral-500">{address.phone}</p>
                   </div>
@@ -236,6 +239,14 @@ export default function AddressesTab() {
             {/* FORM */}
 
             <div className="mt-6 grid gap-4">
+              <input
+                name="label"
+                value={form.label}
+                onChange={handleChange}
+                placeholder="Casa, Trabajo, Oficina..."
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white transition outline-none placeholder:text-neutral-500 focus:border-white/30"
+              />
+
               {/* FULL NAME */}
 
               <input

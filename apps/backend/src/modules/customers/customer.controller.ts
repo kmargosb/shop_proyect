@@ -1,26 +1,24 @@
-import { Request, Response } from "express";
-import { prisma } from "@/lib/prisma";
-import { asyncHandler } from "@/common/utils/asyncHandler";
-import { getCustomers } from "./customer.service";
-import { AuthRequest } from "@/common/middleware/auth.middleware";
+import { Request, Response } from 'express';
+import { prisma } from '@/lib/prisma';
+import { asyncHandler } from '@/common/utils/asyncHandler';
+import { getCustomers } from './customer.service';
+import { AuthRequest } from '@/common/middleware/auth.middleware';
 
 /* =========================================================
    ADMIN: GET CUSTOMERS
 ========================================================= */
 
-export const getCustomersController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { page, limit, search } = req.query;
+export const getCustomersController = asyncHandler(async (req: Request, res: Response) => {
+  const { page, limit, search } = req.query;
 
-    const result = await getCustomers({
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 10,
-      search: search as string | undefined,
-    });
+  const result = await getCustomers({
+    page: page ? Number(page) : 1,
+    limit: limit ? Number(limit) : 10,
+    search: search as string | undefined,
+  });
 
-    res.json(result);
-  },
-);
+  res.json(result);
+});
 
 /* =========================================================
    ADMIN: CUSTOMER ORDERS
@@ -47,14 +45,11 @@ export const getCustomerOrdersController = asyncHandler(
         refunds: true,
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
 
-    const totalSpent = orders.reduce(
-      (sum, order) => sum + order.totalAmount,
-      0,
-    );
+    const totalSpent = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
     res.json({
       customer: email,
@@ -76,7 +71,7 @@ export const getCustomerAnalyticsController = asyncHandler(
     const [orders, stats] = await prisma.$transaction([
       prisma.order.findMany({
         where: { email },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           totalAmount: true,
@@ -96,8 +91,7 @@ export const getCustomerAnalyticsController = asyncHandler(
     const totalOrders = stats._count;
     const totalSpent = stats._sum.totalAmount ?? 0;
 
-    const averageOrderValue =
-      totalOrders === 0 ? 0 : Math.round(totalSpent / totalOrders);
+    const averageOrderValue = totalOrders === 0 ? 0 : Math.round(totalSpent / totalOrders);
 
     const lastPurchase = orders.length > 0 ? orders[0].createdAt : null;
 
@@ -115,119 +109,109 @@ export const getCustomerAnalyticsController = asyncHandler(
    USER: GET MY ADDRESSES
 ========================================================= */
 
-export const getMyAddressesController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const getMyAddressesController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    const addresses = await prisma.address.findMany({
-      where: { userId },
-      orderBy: [
-        { isDefault: "desc" }, // 🔥 favorita primero
-        { createdAt: "desc" },
-      ],
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
     });
+  }
 
-    res.json(addresses);
-  },
-);
+  const addresses = await prisma.address.findMany({
+    where: { userId },
+    orderBy: [
+      { isDefault: 'desc' }, // 🔥 favorita primero
+      { createdAt: 'desc' },
+    ],
+  });
+
+  res.json(addresses);
+});
 
 /* =========================================================
    USER: CREATE ADDRESS
 ========================================================= */
 
-export const createAddressController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const createAddressController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    const normalize = (str?: string) => str?.trim().toLowerCase();
-
-    const {
-      fullName,
-      phone,
-      addressLine1,
-      addressLine2,
-      city,
-      postalCode,
-      country,
-    } = req.body;
-
-    const existingCount = await prisma.address.count({
-      where: { userId },
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
     });
+  }
 
-    /* ===============================
+  const normalize = (str?: string) => str?.trim().toLowerCase();
+
+  const { label, fullName, phone, addressLine1, addressLine2, city, postalCode, country } =
+    req.body;
+
+  const existingCount = await prisma.address.count({
+    where: { userId },
+  });
+
+  /* ===============================
        AVOID DUPLICATES
     =============================== */
 
-    const existingAddress = await prisma.address.findFirst({
-      where: {
-        userId,
-        addressLine1: normalize(addressLine1),
-        city: normalize(city),
-        postalCode: normalize(postalCode),
-        country,
-      },
-    });
+  const existingAddress = await prisma.address.findFirst({
+    where: {
+      userId,
+      addressLine1: normalize(addressLine1),
+      city: normalize(city),
+      postalCode: normalize(postalCode),
+      country,
+    },
+  });
 
-    if (existingAddress) {
-      return res.json(existingAddress);
-    }
+  if (existingAddress) {
+    return res.json(existingAddress);
+  }
 
-    const address = await prisma.address.create({
-      data: {
-        userId,
-        fullName,
-        phone,
-        addressLine1: normalize(addressLine1) || "",
-        addressLine2: addressLine2 || "",
-        city: normalize(city) || "",
-        postalCode: normalize(postalCode) || "",
-        country,
-        isDefault: existingCount === 0,
-      },
-    });
+  const address = await prisma.address.create({
+    data: {
+      label: label?.trim() || 'Casa',
+      userId,
+      fullName,
+      phone,
+      addressLine1: normalize(addressLine1) || '',
+      addressLine2: addressLine2 || '',
+      city: normalize(city) || '',
+      postalCode: normalize(postalCode) || '',
+      country,
+      isDefault: existingCount === 0,
+    },
+  });
 
-    /* ===============================
+  /* ===============================
    AUTO FILL USER PROFILE
 ================================= */
 
-    const user = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      name: true,
+      phone: true,
+    },
+  });
+
+  if (user && (!user.name || !user.phone)) {
+    await prisma.user.update({
       where: {
         id: userId,
       },
-      select: {
-        name: true,
-        phone: true,
+      data: {
+        ...(user.name ? {} : { name: fullName?.trim() || null }),
+        ...(user.phone ? {} : { phone: phone?.trim() || null }),
       },
     });
+  }
 
-    if (user && (!user.name || !user.phone)) {
-      await prisma.user.update({
-        where: {
-          id: userId,
-        },
-        data: {
-          ...(user.name ? {} : { name: fullName?.trim() || null }),
-          ...(user.phone ? {} : { phone: phone?.trim() || null }),
-        },
-      });
-    }
-
-    res.status(201).json(address);
-  },
-);
+  res.status(201).json(address);
+});
 
 /* =========================================================
    USER: UPDATE ADDRESS
@@ -241,7 +225,7 @@ export const updateAddressController = asyncHandler(
 
     if (!userId) {
       return res.status(401).json({
-        error: "Unauthorized",
+        error: 'Unauthorized',
       });
     }
 
@@ -254,7 +238,7 @@ export const updateAddressController = asyncHandler(
 
     if (!address) {
       return res.status(404).json({
-        error: "Dirección no encontrada",
+        error: 'Dirección no encontrada',
       });
     }
 
@@ -264,12 +248,13 @@ export const updateAddressController = asyncHandler(
       where: { id },
 
       data: {
+        label: req.body.label?.trim() || 'Casa',
         fullName: req.body.fullName,
         phone: req.body.phone,
-        addressLine1: normalize(req.body.addressLine1) || "",
-        addressLine2: req.body.addressLine2 || "",
-        city: normalize(req.body.city) || "",
-        postalCode: normalize(req.body.postalCode) || "",
+        addressLine1: normalize(req.body.addressLine1) || '',
+        addressLine2: req.body.addressLine2 || '',
+        city: normalize(req.body.city) || '',
+        postalCode: normalize(req.body.postalCode) || '',
         country: req.body.country,
       },
     });
@@ -288,7 +273,7 @@ export const deleteAddressController = asyncHandler(
     const { id } = req.params;
 
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     await prisma.address.deleteMany({
@@ -312,7 +297,7 @@ export const setDefaultAddressController = asyncHandler(
     const { id } = req.params;
 
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     /* ===============================
@@ -327,7 +312,7 @@ export const setDefaultAddressController = asyncHandler(
 
     if (!address) {
       return res.status(404).json({
-        error: "Dirección no encontrada",
+        error: 'Dirección no encontrada',
       });
     }
 
@@ -351,7 +336,7 @@ export const setDefaultAddressController = asyncHandler(
       });
 
       if (updated.count === 0) {
-        throw new Error("No se pudo actualizar la dirección");
+        throw new Error('No se pudo actualizar la dirección');
       }
     });
 
@@ -363,85 +348,79 @@ export const setDefaultAddressController = asyncHandler(
    USER: GET PREFERENCES
 ========================================================= */
 
-export const getPreferencesController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const getPreferencesController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        marketingEmails: true,
-      },
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
     });
+  }
 
-    res.json(user);
-  },
-);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      marketingEmails: true,
+    },
+  });
+
+  res.json(user);
+});
 
 /* =========================================================
    USER: UPDATE PREFERENCES
 ========================================================= */
 
-export const updatePreferencesController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const updatePreferencesController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    const { marketingEmails } = req.body;
-
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        marketingEmails: Boolean(marketingEmails),
-      },
-      select: {
-        marketingEmails: true,
-      },
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
     });
+  }
 
-    res.json(user);
-  },
-);
+  const { marketingEmails } = req.body;
 
-export const updateProfileController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      marketingEmails: Boolean(marketingEmails),
+    },
+    select: {
+      marketingEmails: true,
+    },
+  });
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
+  res.json(user);
+});
 
-    const { name, phone } = req.body;
+export const updateProfileController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        name: name?.trim() || null,
-        phone: phone?.trim() || null,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-      },
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
     });
+  }
 
-    res.json(updatedUser);
-  },
-);
+  const { name, phone } = req.body;
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      name: name?.trim() || null,
+      phone: phone?.trim() || null,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      phone: true,
+    },
+  });
+
+  res.json(updatedUser);
+});

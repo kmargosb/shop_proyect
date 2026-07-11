@@ -62,6 +62,12 @@ const CheckoutForm = memo(function CheckoutForm({ checkoutForm, onSubmit }: Prop
       </CheckoutSection>
 
       <CheckoutSection title={t.checkout.shippingAddress} subtitle={t.checkout.shippingDescription}>
+        <Input
+          compact={compact}
+          placeholder="Home, Work, Office..."
+          {...register('addressLabel')}
+        />
+
         <AddressFields form={checkoutForm} prefix="" compact={compact} />
       </CheckoutSection>
 

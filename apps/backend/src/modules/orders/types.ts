@@ -1,5 +1,6 @@
 export type CreateOrderInput = {
   userId?: string;
+  label?: string;
 
   items: {
     productId: string;

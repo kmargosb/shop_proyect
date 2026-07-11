@@ -5,6 +5,7 @@ export const checkoutSchema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   phone: z.string().min(5),
+  addressLabel: z.string().optional(),
 
   addressLine1: z.string().min(1),
   addressLine2: z.string().optional(),

@@ -173,6 +173,7 @@ export default function CreateOrderForm() {
                         checkoutForm.reset({
                           firstName,
                           lastName: lastParts.join(' '),
+                          addressLabel: addr.label ?? 'Casa',
                           email: checkoutForm.getValues('email'),
                           phone: addr.phone ?? '',
                           addressLine1: addr.addressLine1 ?? '',
@@ -198,7 +199,7 @@ export default function CreateOrderForm() {
                       />
 
                       <div className="flex justify-between">
-                        <p className="font-medium">{addr.fullName}</p>
+                        <p className="font-medium">{addr.label}</p>
 
                         <div className="flex gap-2">
                           <button
@@ -222,6 +223,9 @@ export default function CreateOrderForm() {
                       </div>
 
                       <p className="mt-1 text-xs text-neutral-400">{addr.addressLine1}</p>
+                      <p className="text-xs text-neutral-500">
+                        {addr.city}, {addr.country}
+                      </p>
                     </motion.div>
                   );
                 })}

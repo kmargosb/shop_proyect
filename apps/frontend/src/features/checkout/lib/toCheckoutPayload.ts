@@ -13,6 +13,7 @@ export function mapCheckoutToApi(data: CheckoutSchema) {
     method: 'CARD',
 
     email: data.email,
+    label: data.addressLabel,
 
     shippingFullName,
     shippingPhone: data.phone,
