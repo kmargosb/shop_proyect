@@ -140,30 +140,58 @@ model InventoryReservation {
 }
 
 model Order {
-  id                    String                 @id @default(uuid())
-  userId                String?                 
-  status                OrderStatus            @default(PENDING)
-  createdAt             DateTime               @default(now())
+  id                    String          @id @default(uuid())
+  userId                String?
+  status                OrderStatus     @default(PENDING)
+  createdAt             DateTime        @default(now())
+
+  // Customer
+  email                 String
+
+  // LEGACY (temporal, hasta migrar los datos)
+  fullName              String
+  phone                 String
   addressLine1          String
   addressLine2          String?
   city                  String
-  country               String
-  email                 String
-  fullName              String
-  phone                 String
   postalCode            String
-  currency              String                 @default("eur")
+  country               String
+
+  // Shipping Address
+  shippingFullName      String?
+  shippingPhone         String?
+  shippingAddressLine1  String?
+  shippingAddressLine2  String?
+  shippingCity          String?
+  shippingPostalCode    String?
+  shippingCountry       String?
+
+  // Billing Address
+  billingFullName       String?
+  billingPhone          String?
+  billingAddressLine1   String?
+  billingAddressLine2   String?
+  billingCity           String?
+  billingPostalCode     String?
+  billingCountry        String?
+
+  // Payment
+  currency              String          @default("eur")
+  totalAmount           Int
+  paymentProvider       PaymentProvider @default(STRIPE)
+  paymentMethod         PaymentMethod?
   paidAt                DateTime?
   stripeCustomerId      String?
-  stripePaymentIntentId String?                @unique
-  totalAmount           Int
-  paymentProvider       PaymentProvider        @default(STRIPE)
-  paymentMethod         PaymentMethod?
-  abandonedEmailStage   Int                    @default(0)
+  stripePaymentIntentId String?         @unique
+
+  // Recovery
+  abandonedEmailStage   Int             @default(0)
+
+  // Relations
+  user                  User?                   @relation(fields: [userId], references: [id])
   analyticsEvents       AnalyticsEvent[]
   reservations          InventoryReservation[]
   invoice               Invoice?
-  user                  User?                  @relation(fields: [userId], references: [id])
   OrderChangeRequest    OrderChangeRequest[]
   events                OrderEvent[]
   items                 OrderItem[]
@@ -318,15 +346,21 @@ model InvoiceSequence {
 model Address {
   id           String   @id @default(cuid())
   userId       String
+
+  label        String   @default("Casa")
+
   fullName     String
   phone        String
+
   addressLine1 String
   addressLine2 String?
   city         String
   postalCode   String
   country      String
+
   createdAt    DateTime @default(now())
   isDefault    Boolean  @default(false)
+
   user         User     @relation(fields: [userId], references: [id])
 
   @@index([userId])

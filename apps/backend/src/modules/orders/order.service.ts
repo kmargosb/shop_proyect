@@ -3,34 +3,8 @@ import { getIO } from '@/lib/socket';
 import { Prisma, OrderStatus } from '@prisma/client';
 import { RefundService } from '@/modules/refunds/refund.service';
 import { InventoryService } from '@/modules/inventory/inventory.service';
+import type { CreateOrderInput } from './types';
 import Stripe from 'stripe';
-
-type CreateOrderInput = {
-  userId?: string;
-
-  items: {
-    productId: string;
-    variantId?: string;
-    quantity: number;
-
-    productName: string;
-    productPrice: number;
-
-    sku?: string | null;
-
-    size?: any;
-    color?: any;
-  }[];
-
-  fullName: string;
-  email: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  postalCode: string;
-  country: string;
-};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-02-25.clover',
@@ -43,14 +17,23 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
   const {
     userId,
     items,
-    fullName,
     email,
-    phone,
-    addressLine1,
-    addressLine2,
-    city,
-    postalCode,
-    country,
+
+    shippingFullName,
+    shippingPhone,
+    shippingAddressLine1,
+    shippingAddressLine2,
+    shippingCity,
+    shippingPostalCode,
+    shippingCountry,
+
+    billingFullName,
+    billingPhone,
+    billingAddressLine1,
+    billingAddressLine2,
+    billingCity,
+    billingPostalCode,
+    billingCountry,
   } = data;
 
   if (!items || items.length === 0) {
@@ -104,14 +87,29 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
   const order = await tx.order.create({
     data: {
       userId: userId ?? null,
-      fullName,
       email,
-      phone,
-      addressLine1,
-      addressLine2,
-      city,
-      postalCode,
-      country,
+      fullName: shippingFullName,
+      phone: shippingPhone,
+      addressLine1: shippingAddressLine1,
+      addressLine2: shippingAddressLine2,
+      city: shippingCity,
+      postalCode: shippingPostalCode,
+      country: shippingCountry,
+      shippingFullName,
+      shippingPhone,
+      shippingAddressLine1,
+      shippingAddressLine2,
+      shippingCity,
+      shippingPostalCode,
+      shippingCountry,
+
+      billingFullName,
+      billingPhone,
+      billingAddressLine1,
+      billingAddressLine2,
+      billingCity,
+      billingPostalCode,
+      billingCountry,
       totalAmount,
       currency: 'eur',
       status: OrderStatus.PENDING,
@@ -134,10 +132,10 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
     const existing = await tx.address.findFirst({
       where: {
         userId,
-        addressLine1: normalize(addressLine1),
-        city: normalize(city),
-        postalCode: normalize(postalCode),
-        country,
+        addressLine1: normalize(shippingAddressLine1),
+        city: normalize(shippingCity),
+        postalCode: normalize(shippingPostalCode),
+        country: shippingCountry,
       },
     });
 
@@ -145,13 +143,13 @@ export async function createOrderTx(tx: Prisma.TransactionClient, data: CreateOr
       await tx.address.create({
         data: {
           userId,
-          fullName,
-          phone,
-          addressLine1: normalize(addressLine1) || '',
-          addressLine2,
-          city: normalize(city) || '',
-          postalCode: normalize(postalCode) || '',
-          country,
+          fullName: shippingFullName,
+          phone: shippingPhone,
+          addressLine1: normalize(shippingAddressLine1) || '',
+          addressLine2: shippingAddressLine2,
+          city: normalize(shippingCity) || '',
+          postalCode: normalize(shippingPostalCode) || '',
+          country: shippingCountry,
         },
       });
     }
@@ -514,7 +512,7 @@ export async function searchOrders(params: {
       },
 
       {
-        fullName: {
+        shippingFullName: {
           contains: params.query,
           mode: 'insensitive',
         },
@@ -556,14 +554,14 @@ export async function searchOrders(params: {
 export async function updateOrderAdmin(
   orderId: string,
   data: {
-    fullName: string;
+    shippingFullName: string;
     email: string;
-    phone: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    postalCode: string;
-    country: string;
+    shippingPhone: string;
+    shippingAddressLine1: string;
+    shippingAddressLine2?: string;
+    shippingCity: string;
+    shippingPostalCode: string;
+    shippingCountry: string;
 
     items?: {
       orderItemId: string;
@@ -607,16 +605,25 @@ export async function updateOrderAdmin(
       },
 
       data: {
-        fullName: data.fullName,
         email: data.email,
-        phone: data.phone,
 
-        addressLine1: data.addressLine1,
-        addressLine2: data.addressLine2,
+        // Legacy (temporal)
+        fullName: data.shippingFullName,
+        phone: data.shippingPhone,
+        addressLine1: data.shippingAddressLine1,
+        addressLine2: data.shippingAddressLine2,
+        city: data.shippingCity,
+        postalCode: data.shippingPostalCode,
+        country: data.shippingCountry,
 
-        city: data.city,
-        postalCode: data.postalCode,
-        country: data.country,
+        // Nuevo modelo
+        shippingFullName: data.shippingFullName,
+        shippingPhone: data.shippingPhone,
+        shippingAddressLine1: data.shippingAddressLine1,
+        shippingAddressLine2: data.shippingAddressLine2,
+        shippingCity: data.shippingCity,
+        shippingPostalCode: data.shippingPostalCode,
+        shippingCountry: data.shippingCountry,
       },
     });
 

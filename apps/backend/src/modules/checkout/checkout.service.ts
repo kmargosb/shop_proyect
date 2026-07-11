@@ -2,21 +2,7 @@ import { CartService } from '@/modules/cart/cart.service';
 import { PaymentSessionService } from '@/modules/payment-sessions/payment-session.service';
 import { prisma } from '@/lib/prisma';
 import { createOrderWithTx } from '@/modules/orders/order.service';
-
-type CheckoutInput = {
-  cartId: string;
-  method: string;
-
-  userId?: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  postalCode: string;
-  country: string;
-};
+import type { CheckoutInput } from './types';
 
 export const CheckoutService = {
   async checkout(data: CheckoutInput) {

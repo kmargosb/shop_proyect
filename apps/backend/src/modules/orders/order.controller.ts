@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { asyncHandler } from "@/common/utils/asyncHandler";
+import { Request, Response } from 'express';
+import { asyncHandler } from '@/common/utils/asyncHandler';
 import {
   createOrder,
   searchOrders,
@@ -7,158 +7,164 @@ import {
   updateOrderStatus,
   cancelOrder,
   updateOrderAdmin,
-} from "./order.service";
-import { AuthRequest } from "@/common/middleware/auth.middleware";
-import { prisma } from "@/lib/prisma";
-import { OrderStatus } from "@prisma/client";
-import { generateInvoicePDF } from "@/modules/invoices/invoice.generator";
+} from './order.service';
+import { AuthRequest } from '@/common/middleware/auth.middleware';
+import { prisma } from '@/lib/prisma';
+import { OrderStatus } from '@prisma/client';
+import { generateInvoicePDF } from '@/modules/invoices/invoice.generator';
 import {
   sendOrderConfirmationEmail,
   sendHelpRequestEmail,
   sendCustomerReplyEmail,
-} from "@/modules/email/sendOrderEmail";
-import { getIO } from "@/lib/socket";
+} from '@/modules/email/sendOrderEmail';
+import { getIO } from '@/lib/socket';
 
 /**
  * Crear orden
  */
-export const createOrderController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const {
-      items,
-      fullName,
-      email,
-      phone,
-      addressLine1,
-      addressLine2,
-      city,
-      postalCode,
-      country,
-    } = req.body;
+export const createOrderController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const {
+    items,
+    email,
 
-    const order = await createOrder({
-      userId: req.user?.id,
-      items,
-      fullName,
-      email,
-      phone,
-      addressLine1,
-      addressLine2,
-      city,
-      postalCode,
-      country,
-    });
+    shippingFullName,
+    shippingPhone,
+    shippingAddressLine1,
+    shippingAddressLine2,
+    shippingCity,
+    shippingPostalCode,
+    shippingCountry,
 
-    getIO().emit("dashboard:update", {
-      type: "ORDER_CREATED",
-      orderId: order.id,
-    });
+    billingFullName,
+    billingPhone,
+    billingAddressLine1,
+    billingAddressLine2,
+    billingCity,
+    billingPostalCode,
+    billingCountry,
+  } = req.body;
 
-    res.status(201).json(order);
-  },
-);
+  const order = await createOrder({
+    userId: req.user?.id,
+    items,
+    email,
+
+    shippingFullName,
+    shippingPhone,
+    shippingAddressLine1,
+    shippingAddressLine2,
+    shippingCity,
+    shippingPostalCode,
+    shippingCountry,
+
+    billingFullName,
+    billingPhone,
+    billingAddressLine1,
+    billingAddressLine2,
+    billingCity,
+    billingPostalCode,
+    billingCountry,
+  });
+
+  getIO().emit('dashboard:update', {
+    type: 'ORDER_CREATED',
+    orderId: order.id,
+  });
+
+  res.status(201).json(order);
+});
 
 /**
  * Obtener órdenes (admin)
  */
-export const getOrdersController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const { page, limit, status } = req.query;
+export const getOrdersController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { page, limit, status } = req.query;
 
-    const result = await getOrders({
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 10,
-      status: status as string | undefined,
-    });
+  const result = await getOrders({
+    page: page ? Number(page) : 1,
+    limit: limit ? Number(limit) : 10,
+    status: status as string | undefined,
+  });
 
-    res.json(result);
-  },
-);
+  res.json(result);
+});
 
 /**
  * Actualizar estado de orden
  */
-export const updateOrderStatusController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const id = req.params.id as string;
+export const updateOrderStatusController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
 
-    const { status } = req.body;
+  const { status } = req.body;
 
-    if (!Object.values(OrderStatus).includes(status)) {
-      return res.status(400).json({
-        error: "Invalid order status",
-      });
-    }
-
-    const updated = await updateOrderStatus(id, status);
-
-    getIO().emit("dashboard:update", {
-      type: "ORDER_UPDATED",
-      orderId: updated.id,
-      status: updated.status,
+  if (!Object.values(OrderStatus).includes(status)) {
+    return res.status(400).json({
+      error: 'Invalid order status',
     });
+  }
 
-    res.json(updated);
-  },
-);
+  const updated = await updateOrderStatus(id, status);
 
-export const cancelOrderController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const orderId =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  getIO().emit('dashboard:update', {
+    type: 'ORDER_UPDATED',
+    orderId: updated.id,
+    status: updated.status,
+  });
 
-    const { reason } = req.body;
+  res.json(updated);
+});
 
-    await cancelOrder(orderId, reason);
+export const cancelOrderController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const orderId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
 
-    getIO().emit("dashboard:update", {
-      type: "ORDER_CANCELLED",
-      orderId,
+  const { reason } = req.body;
+
+  await cancelOrder(orderId, reason);
+
+  getIO().emit('dashboard:update', {
+    type: 'ORDER_CANCELLED',
+    orderId,
+  });
+
+  res.json({
+    success: true,
+  });
+});
+
+export const cancelPublicOrderController = asyncHandler(async (req: Request, res: Response) => {
+  const id = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
+
+  const { email } = req.body;
+
+  const order = await prisma.order.findUnique({
+    where: {
+      id,
+    },
+
+    select: {
+      email: true,
+      status: true,
+    },
+  });
+
+  if (!order) {
+    return res.status(404).json({
+      error: 'Order not found',
     });
+  }
 
-    res.json({
-      success: true,
+  if (!email || email !== order.email) {
+    return res.status(403).json({
+      error: 'Unauthorized',
     });
-  },
-);
+  }
 
-export const cancelPublicOrderController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  await cancelOrder(id, 'Cancelled by customer');
 
-    const { email } = req.body;
-
-    const order = await prisma.order.findUnique({
-      where: {
-        id,
-      },
-
-      select: {
-        email: true,
-        status: true,
-      },
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        error: "Order not found",
-      });
-    }
-
-    if (!email || email !== order.email) {
-      return res.status(403).json({
-        error: "Unauthorized",
-      });
-    }
-
-    await cancelOrder(id, "Cancelled by customer");
-
-    res.json({
-      success: true,
-    });
-  },
-);
+  res.json({
+    success: true,
+  });
+});
 
 /**
  * Descargar factura desde Order
@@ -177,15 +183,15 @@ export const downloadOrderInvoice = asyncHandler(
 
     if (!order || !order.invoice) {
       return res.status(404).json({
-        error: "Factura no encontrada",
+        error: 'Factura no encontrada',
       });
     }
 
     const pdf = await generateInvoicePDF(order.invoice.id);
 
-    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
-      "Content-Disposition",
+      'Content-Disposition',
       `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`,
     );
 
@@ -196,105 +202,99 @@ export const downloadOrderInvoice = asyncHandler(
 // ===============================
 // Página pública de compra
 // ===============================
-export const getPublicOrderController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+export const getPublicOrderController = asyncHandler(async (req: Request, res: Response) => {
+  const id = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
 
-    const email = req.query.email as string | undefined;
+  const email = req.query.email as string | undefined;
 
-    const order = await prisma.order.findUnique({
-      where: { id },
+  const order = await prisma.order.findUnique({
+    where: { id },
 
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: true,
-                variants: true,
-              },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              images: true,
+              variants: true,
             },
-
-            variant: true,
-            refundItems: true,
           },
-        },
 
-        invoice: true,
-
-        shipment: true,
-
-        refunds: {
-          include: {
-            items: true,
-            evidence: true,
-          },
-        },
-
-        events: {
-          orderBy: {
-            createdAt: "asc",
-          },
+          variant: true,
+          refundItems: true,
         },
       },
+
+      invoice: true,
+
+      shipment: true,
+
+      refunds: {
+        include: {
+          items: true,
+          evidence: true,
+        },
+      },
+
+      events: {
+        orderBy: {
+          createdAt: 'asc',
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    return res.status(404).json({
+      error: 'Pedido no encontrado',
     });
+  }
 
-    if (!order) {
-      return res.status(404).json({
-        error: "Pedido no encontrado",
-      });
-    }
+  if (!email || email !== order.email) {
+    return res.status(403).json({
+      error: 'Unauthorized',
+    });
+  }
 
-    if (!email || email !== order.email) {
-      return res.status(403).json({
-        error: "Unauthorized",
-      });
-    }
-
-    res.json(order);
-  },
-);
+  res.json(order);
+});
 
 // ===============================
 // Descarga pública de Factura
 // ===============================
 
-export const downloadPublicInvoice = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+export const downloadPublicInvoice = asyncHandler(async (req: Request, res: Response) => {
+  const id = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
 
-    const email = req.query.email as string | undefined;
+  const email = req.query.email as string | undefined;
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: { invoice: true },
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { invoice: true },
+  });
+
+  if (!order || !order.invoice) {
+    return res.status(404).json({
+      error: 'Factura no encontrada',
     });
+  }
 
-    if (!order || !order.invoice) {
-      return res.status(404).json({
-        error: "Factura no encontrada",
-      });
-    }
+  if (!email || email !== order.email) {
+    return res.status(403).json({
+      error: 'Unauthorized',
+    });
+  }
 
-    if (!email || email !== order.email) {
-      return res.status(403).json({
-        error: "Unauthorized",
-      });
-    }
+  const pdf = await generateInvoicePDF(order.invoice.id);
 
-    const pdf = await generateInvoicePDF(order.invoice.id);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`,
+  );
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=invoice-${order.invoice.invoiceNumber}.pdf`,
-    );
-
-    res.send(pdf);
-  },
-);
+  res.send(pdf);
+});
 
 export const resendOrderEmailController = asyncHandler(
   async (req: Request<{ id: string }>, res: Response) => {
@@ -302,13 +302,13 @@ export const resendOrderEmailController = asyncHandler(
 
     await sendOrderConfirmationEmail(id);
 
-    getIO().emit("dashboard:update", {
-      type: "EMAIL_RESENT",
+    getIO().emit('dashboard:update', {
+      type: 'EMAIL_RESENT',
       orderId: id,
     });
 
     res.json({
-      message: "Email reenviado correctamente",
+      message: 'Email reenviado correctamente',
     });
   },
 );
@@ -317,304 +317,285 @@ export const getOrderTimelineController = asyncHandler(
   async (req: Request<{ id: string }>, res: Response) => {
     const timeline = await prisma.orderEvent.findMany({
       where: { orderId: req.params.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
 
     res.json(timeline);
   },
 );
 
-export const searchOrdersController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { q, status, page, limit } = req.query;
+export const searchOrdersController = asyncHandler(async (req: Request, res: Response) => {
+  const { q, status, page, limit } = req.query;
 
-    const result = await searchOrders({
-      query: q as string | undefined,
-      status: status as OrderStatus | undefined,
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 10,
-    });
+  const result = await searchOrders({
+    query: q as string | undefined,
+    status: status as OrderStatus | undefined,
+    page: page ? Number(page) : 1,
+    limit: limit ? Number(limit) : 10,
+  });
 
-    res.json(result);
-  },
-);
+  res.json(result);
+});
 
 // ===============================
 // Obtener pedidos del usuario logueado
 // ===============================
 
-export const getMyOrdersController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const getMyOrdersController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+    });
+  }
 
-    const orders = await prisma.order.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
+  const orders = await prisma.order.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
 
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                images: true,
-              },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: {
+              name: true,
+              images: true,
             },
           },
         },
       },
-    });
+    },
+  });
 
-    res.json(orders);
-  },
-);
+  res.json(orders);
+});
 
 // ===============================
 // Obtener pedido del usuario logueado
 // ===============================
 
-export const getMyOrderByIdController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user?.id;
+export const getMyOrderByIdController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
 
-    const orderId =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const orderId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
 
-    const order = await prisma.order.findFirst({
-      where: {
-        id: orderId,
-        userId,
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: true,
-                variants: true,
-              },
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      userId,
+    },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              images: true,
+              variants: true,
             },
-
-            variant: true,
-            refundItems: true,
-          },
-        },
-
-        invoice: true,
-
-        shipment: true,
-
-        refunds: {
-          where: {
-            type: "CUSTOMER_RETURN",
           },
 
-          include: {
-            items: true,
-            evidence: true,
-          },
-        },
-
-        events: {
-          orderBy: {
-            createdAt: "asc",
-          },
+          variant: true,
+          refundItems: true,
         },
       },
+
+      invoice: true,
+
+      shipment: true,
+
+      refunds: {
+        where: {
+          type: 'CUSTOMER_RETURN',
+        },
+
+        include: {
+          items: true,
+          evidence: true,
+        },
+      },
+
+      events: {
+        orderBy: {
+          createdAt: 'asc',
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    return res.status(404).json({
+      error: 'Pedido no encontrado',
     });
+  }
 
-    if (!order) {
-      return res.status(404).json({
-        error: "Pedido no encontrado",
-      });
-    }
+  res.json(order);
+});
 
-    res.json(order);
-  },
-);
+export const getAdminOrderByIdController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const orderId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
 
-export const getAdminOrderByIdController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const orderId =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
 
-    const order = await prisma.order.findUnique({
-      where: {
-        id: orderId,
-      },
-
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: true,
-                variants: true,
-              },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              images: true,
+              variants: true,
             },
-
-            variant: true,
-
-            refundItems: true,
-          },
-        },
-
-        invoice: true,
-
-        shipment: true,
-
-        refunds: {
-          where: {
-            type: "CUSTOMER_RETURN",
           },
 
-          include: {
-            items: true,
-            evidence: true,
-          },
-        },
+          variant: true,
 
-        events: {
-          orderBy: {
-            createdAt: "asc",
-          },
+          refundItems: true,
         },
       },
-    });
 
-    if (!order) {
-      return res.status(404).json({
-        error: "Pedido no encontrado",
-      });
-    }
+      invoice: true,
 
-    res.json(order);
-  },
-);
+      shipment: true,
 
-export const updateOrderAdminController = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
-    const orderId =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-    const updated = await updateOrderAdmin(orderId, req.body);
-
-    getIO().emit("dashboard:update", {
-      type: "ORDER_UPDATED",
-      orderId,
-    });
-
-    res.json(updated);
-  },
-);
-
-export const submitHelpRequestController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-    const { message, phone } = req.body;
-
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-
-    const recentMessages = await prisma.orderEvent.count({
-      where: {
-        orderId: id,
-        type: "ORDER_UPDATED",
-        message: {
-          startsWith: "CUSTOMER_MESSAGE:",
+      refunds: {
+        where: {
+          type: 'CUSTOMER_RETURN',
         },
-        createdAt: {
-          gte: oneHourAgo,
+
+        include: {
+          items: true,
+          evidence: true,
         },
       },
-    });
 
-    if (recentMessages >= 5) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many messages. Please try again later.",
-      });
-    }
-
-    if (!message?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Message is required",
-      });
-    }
-
-    if (message.trim().length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Message too short",
-      });
-    }
-
-    if (message.trim().length > 2000) {
-      return res.status(400).json({
-        success: false,
-        message: "Message too long",
-      });
-    }
-
-    await sendHelpRequestEmail(id, message.trim(), phone?.trim());
-
-    await prisma.orderEvent.create({
-      data: {
-        orderId: id,
-        type: "ORDER_UPDATED",
-        message: `CUSTOMER_MESSAGE:${message.trim()}`,
+      events: {
+        orderBy: {
+          createdAt: 'asc',
+        },
       },
-    });
+    },
+  });
 
-    getIO().emit("orderUpdated", {
+  if (!order) {
+    return res.status(404).json({
+      error: 'Pedido no encontrado',
+    });
+  }
+
+  res.json(order);
+});
+
+export const updateOrderAdminController = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const orderId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
+
+  const updated = await updateOrderAdmin(orderId, req.body);
+
+  getIO().emit('dashboard:update', {
+    type: 'ORDER_UPDATED',
+    orderId,
+  });
+
+  res.json(updated);
+});
+
+export const submitHelpRequestController = asyncHandler(async (req: Request, res: Response) => {
+  const id = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
+
+  const { message, phone } = req.body;
+
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+  const recentMessages = await prisma.orderEvent.count({
+    where: {
       orderId: id,
-    });
-
-    res.json({
-      success: true,
-    });
-  },
-);
-
-export const replyToCustomerController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id =
-      typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-    const { message, includeCancelLink } = req.body;
-
-    if (!message?.trim()) {
-      return res.status(400).json({
-        success: false,
-      });
-    }
-
-    await sendCustomerReplyEmail(id, message.trim(), includeCancelLink);
-
-    await prisma.orderEvent.create({
-      data: {
-        orderId: id,
-
-        type: "ORDER_UPDATED",
-
-        message: `ADMIN_REPLY:${message.trim()}`,
+      type: 'ORDER_UPDATED',
+      message: {
+        startsWith: 'CUSTOMER_MESSAGE:',
       },
-    });
+      createdAt: {
+        gte: oneHourAgo,
+      },
+    },
+  });
 
-    getIO().emit("orderUpdated", {
+  if (recentMessages >= 5) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many messages. Please try again later.',
+    });
+  }
+
+  if (!message?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Message is required',
+    });
+  }
+
+  if (message.trim().length < 10) {
+    return res.status(400).json({
+      success: false,
+      message: 'Message too short',
+    });
+  }
+
+  if (message.trim().length > 2000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Message too long',
+    });
+  }
+
+  await sendHelpRequestEmail(id, message.trim(), phone?.trim());
+
+  await prisma.orderEvent.create({
+    data: {
       orderId: id,
-    });
+      type: 'ORDER_UPDATED',
+      message: `CUSTOMER_MESSAGE:${message.trim()}`,
+    },
+  });
 
-    res.json({
-      success: true,
+  getIO().emit('orderUpdated', {
+    orderId: id,
+  });
+
+  res.json({
+    success: true,
+  });
+});
+
+export const replyToCustomerController = asyncHandler(async (req: Request, res: Response) => {
+  const id = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
+
+  const { message, includeCancelLink } = req.body;
+
+  if (!message?.trim()) {
+    return res.status(400).json({
+      success: false,
     });
-  },
-);
+  }
+
+  await sendCustomerReplyEmail(id, message.trim(), includeCancelLink);
+
+  await prisma.orderEvent.create({
+    data: {
+      orderId: id,
+
+      type: 'ORDER_UPDATED',
+
+      message: `ADMIN_REPLY:${message.trim()}`,
+    },
+  });
+
+  getIO().emit('orderUpdated', {
+    orderId: id,
+  });
+
+  res.json({
+    success: true,
+  });
+});

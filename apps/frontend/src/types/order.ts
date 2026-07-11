@@ -1,13 +1,13 @@
 export type OrderStatus =
-  | "PENDING"
-  | "PAYMENT_PROCESSING"
-  | "PAID"
-  | "SHIPPED"
-  | "DELIVERED"
-  | "CANCELLED"
-  | "FAILED"
-  | "PARTIALLY_REFUNDED"
-  | "REFUNDED"
+  | 'PENDING'
+  | 'PAYMENT_PROCESSING'
+  | 'PAID'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'FAILED'
+  | 'PARTIALLY_REFUNDED'
+  | 'REFUNDED';
 
 export type OrderItem = {
   id: string;
@@ -46,19 +46,32 @@ export type Refund = {
 
 export type Order = {
   id: string;
-  fullName: string;
   email: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string | null;
-  city: string;
-  postalCode: string;
-  country: string;
+
+  shippingFullName: string;
+  shippingPhone: string;
+  shippingAddressLine1: string;
+  shippingAddressLine2?: string | null;
+  shippingCity: string;
+  shippingPostalCode: string;
+  shippingCountry: string;
+
+  billingFullName: string;
+  billingPhone: string;
+  billingAddressLine1: string;
+  billingAddressLine2?: string | null;
+  billingCity: string;
+  billingPostalCode: string;
+  billingCountry: string;
+
   totalAmount: number;
-  status: OrderStatus | string ;
+  status: OrderStatus | string;
   createdAt: string;
+
   stripePaymentIntentId?: string | null;
+
   items: OrderItem[];
+
   invoice?: Invoice | null;
   shipment?: Shipment | null;
   refunds?: Refund[];

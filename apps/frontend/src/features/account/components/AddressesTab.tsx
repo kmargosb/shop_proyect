@@ -260,12 +260,7 @@ export default function AddressesTab() {
 
               <AddressAutocomplete
                 value={form.addressLine1}
-                onChange={(data: {
-                  addressLine1: string;
-                  city: string;
-                  postalCode: string;
-                  country: string;
-                }) =>
+                onChange={(data) =>
                   setForm((prev) => ({
                     ...prev,
                     addressLine1: data.addressLine1 || '',

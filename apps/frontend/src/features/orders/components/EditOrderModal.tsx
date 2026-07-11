@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { X, Save } from "lucide-react";
-import { apiFetch } from "@/shared/lib/api";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { X, Save } from 'lucide-react';
+import { apiFetch } from '@/shared/lib/api';
+import { toast } from 'sonner';
 
 type Props = {
   order: any;
@@ -15,16 +15,16 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    fullName: order.fullName || "",
-    email: order.email || "",
-    phone: order.phone || "",
+    shippingFullName: order.shippingFullName || '',
+    email: order.email || '',
+    shippingPhone: order.shippingPhone || '',
 
-    addressLine1: order.addressLine1 || "",
-    addressLine2: order.addressLine2 || "",
+    shippingAddressLine1: order.shippingAddressLine1 || '',
+    shippingAddressLine2: order.shippingAddressLine2 || '',
 
-    city: order.city || "",
-    postalCode: order.postalCode || "",
-    country: order.country || "",
+    shippingCity: order.shippingCity || '',
+    shippingPostalCode: order.shippingPostalCode || '',
+    shippingCountry: order.shippingCountry || '',
   });
 
   const [items, setItems] = useState(
@@ -40,10 +40,10 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
       setSaving(true);
 
       const res = await apiFetch(`/orders/${order.id}/admin-edit`, {
-        method: "PATCH",
+        method: 'PATCH',
 
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
 
         body: JSON.stringify({
@@ -56,13 +56,13 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
         throw new Error();
       }
 
-      toast.success("Pedido actualizado correctamente");
+      toast.success('Pedido actualizado correctamente');
 
       await onSaved();
 
       onClose();
     } catch {
-      toast.error("No se pudo actualizar el pedido");
+      toast.error('No se pudo actualizar el pedido');
     } finally {
       setSaving(false);
     }
@@ -70,22 +70,17 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-4xl premium-scrollbar overflow-y-auto rounded-3xl border border-white/10 bg-neutral-950 p-6">
+      <div className="premium-scrollbar max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/10 bg-neutral-950 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
-              Editor de pedido
-            </p>
+            <p className="text-xs tracking-[0.2em] text-neutral-500 uppercase">Editor de pedido</p>
 
             <h2 className="mt-2 text-2xl font-bold text-white">
               #{order.id.slice(0, 8).toUpperCase()}
             </h2>
           </div>
 
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 text-neutral-400 hover:bg-white/10"
-          >
+          <button onClick={onClose} className="rounded-full p-2 text-neutral-400 hover:bg-white/10">
             <X size={20} />
           </button>
         </div>
@@ -97,11 +92,11 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <input
-              value={form.fullName}
+              value={form.shippingFullName}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  fullName: e.target.value,
+                  shippingFullName: e.target.value,
                 })
               }
               placeholder="Nombre"
@@ -121,11 +116,11 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
             />
 
             <input
-              value={form.phone}
+              value={form.shippingPhone}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  phone: e.target.value,
+                  shippingPhone: e.target.value,
                 })
               }
               placeholder="Teléfono"
@@ -141,11 +136,11 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <input
-              value={form.addressLine1}
+              value={form.shippingAddressLine1}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  addressLine1: e.target.value,
+                  shippingAddressLine1: e.target.value,
                 })
               }
               placeholder="Dirección"
@@ -153,11 +148,11 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
             />
 
             <input
-              value={form.addressLine2}
+              value={form.shippingAddressLine2}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  addressLine2: e.target.value,
+                  shippingAddressLine2: e.target.value,
                 })
               }
               placeholder="Piso / Apartamento"
@@ -165,11 +160,11 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
             />
 
             <input
-              value={form.city}
+              value={form.shippingCity}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  city: e.target.value,
+                  shippingCity: e.target.value,
                 })
               }
               placeholder="Ciudad"
@@ -177,14 +172,26 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
             />
 
             <input
-              value={form.postalCode}
+              value={form.shippingPostalCode}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  postalCode: e.target.value,
+                  shippingPostalCode: e.target.value,
                 })
               }
               placeholder="Código postal"
+              className="rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
+            />
+
+            <input
+              value={form.shippingCountry}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  shippingCountry: e.target.value,
+                })
+              }
+              placeholder="País"
               className="rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
             />
           </div>
@@ -197,10 +204,7 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
 
           <div className="mt-4 space-y-4">
             {order.items.map((item: any, index: number) => (
-              <div
-                key={item.id}
-                className="rounded-2xl border border-white/10 p-4"
-              >
+              <div key={item.id} className="rounded-2xl border border-white/10 p-4">
                 <p className="font-medium text-white">{item.productName}</p>
 
                 <select
@@ -215,13 +219,9 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
                   className="mt-3 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white"
                 >
                   {item.product.variants.map((variant: any) => (
-                    <option
-                      key={variant.id}
-                      value={variant.id}
-                      disabled={variant.stock <= 0}
-                    >
+                    <option key={variant.id} value={variant.id} disabled={variant.stock <= 0}>
                       {variant.size}
-                      {" · "}
+                      {' · '}
                       {variant.color} ({variant.stock})
                     </option>
                   ))}
@@ -233,10 +233,7 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
                     onClick={() => {
                       const copy = [...items];
 
-                      copy[index].quantity = Math.max(
-                        1,
-                        copy[index].quantity - 1,
-                      );
+                      copy[index].quantity = Math.max(1, copy[index].quantity - 1);
 
                       setItems(copy);
                     }}
@@ -273,7 +270,7 @@ export default function EditOrderModal({ order, onClose, onSaved }: Props) {
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-black"
         >
           <Save size={18} />
-          {saving ? "Guardando..." : "Guardar cambios"}
+          {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
       </div>
     </div>

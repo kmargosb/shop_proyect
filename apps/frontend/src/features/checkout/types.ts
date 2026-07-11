@@ -36,6 +36,33 @@ export type CheckoutFormData = {
   country: string;
 };
 
+export type CheckoutAddress = {
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+};
+
+export type CheckoutInput = {
+  cartId: string;
+  method: string;
+
+  userId?: string;
+
+  fullName: string;
+  email: string;
+  phone: string;
+
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+
+  billingAddress?: CheckoutAddress;
+};
+
 export type CheckoutChangeHandler = (
   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
 ) => void;

@@ -223,6 +223,15 @@ export default function DashboardOrderPage() {
     return <div className="p-6 text-white">Cargando pedido...</div>;
   }
 
+  const sameBilling =
+    order.shippingFullName === order.billingFullName &&
+    order.shippingPhone === order.billingPhone &&
+    order.shippingAddressLine1 === order.billingAddressLine1 &&
+    order.shippingAddressLine2 === order.billingAddressLine2 &&
+    order.shippingCity === order.billingCity &&
+    order.shippingPostalCode === order.billingPostalCode &&
+    order.shippingCountry === order.billingCountry;
+
   return (
     <>
       <div className="mx-auto max-w-7xl p-4 md:p-6">
@@ -257,7 +266,7 @@ export default function DashboardOrderPage() {
                 <div>
                   <p className="text-xs text-neutral-500 uppercase">Cliente</p>
 
-                  <p className="mt-1 text-white">{order.fullName}</p>
+                  <p className="mt-1 text-white">{order.shippingFullName}</p>
                 </div>
 
                 <div>
@@ -269,7 +278,7 @@ export default function DashboardOrderPage() {
                 <div>
                   <p className="text-xs text-neutral-500 uppercase">Teléfono</p>
 
-                  <p className="mt-1 text-white">{order.phone}</p>
+                  <p className="mt-1 text-white">{order.shippingPhone}</p>
                 </div>
 
                 <div>
@@ -674,24 +683,62 @@ export default function DashboardOrderPage() {
               <h2 className="text-lg font-semibold text-white">Dirección de envío</h2>
 
               <div className="mt-4 space-y-2 text-sm">
-                <p className="font-medium text-white">{order.fullName}</p>
+                <p className="font-medium text-white">{order.shippingFullName}</p>
 
-                <p className="text-neutral-400">{order.addressLine1}</p>
+                <p className="text-neutral-400">{order.shippingAddressLine1}</p>
 
-                {order.addressLine2 && <p className="text-neutral-400">{order.addressLine2}</p>}
+                {order.shippingAddressLine2 && (
+                  <p className="text-neutral-400">{order.shippingAddressLine2}</p>
+                )}
 
                 <p className="text-neutral-400">
-                  {order.postalCode} {order.city}
+                  {order.shippingPostalCode} {order.shippingCity}
                 </p>
 
-                <p className="text-neutral-400">{countryLabels[order.country] ?? order.country}</p>
+                <p className="text-neutral-400">
+                  {countryLabels[order.shippingCountry] ?? order.shippingCountry}
+                </p>
 
                 <div className="border-t border-white/10 pt-4">
                   <p className="break-all text-neutral-400">{order.email}</p>
 
-                  <p className="text-neutral-400">{order.phone}</p>
+                  <p className="text-neutral-400">{order.shippingPhone}</p>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-neutral-950 p-6">
+              <h2 className="text-lg font-semibold text-white">Dirección de facturación</h2>
+
+              {sameBilling ? (
+                <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+                  <p className="text-sm text-yellow-300">
+                    La dirección de facturación es la misma que la dirección de envío.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-2 text-sm">
+                  <p className="font-medium text-white">{order.billingFullName}</p>
+
+                  <p className="text-neutral-400">{order.billingAddressLine1}</p>
+
+                  {order.billingAddressLine2 && (
+                    <p className="text-neutral-400">{order.billingAddressLine2}</p>
+                  )}
+
+                  <p className="text-neutral-400">
+                    {order.billingPostalCode} {order.billingCity}
+                  </p>
+
+                  <p className="text-neutral-400">
+                    {countryLabels[order.billingCountry] ?? order.billingCountry}
+                  </p>
+
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="text-neutral-400">{order.billingPhone}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* SHIPPING PLACEHOLDER */}
