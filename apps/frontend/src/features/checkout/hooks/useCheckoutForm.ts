@@ -76,6 +76,19 @@ export function useCheckoutForm() {
       billingCompanyName: '',
       billingVatNumber: '',
     });
+
+    const billing =
+      addresses.find((a) => a.isDefaultBilling) ?? addresses.find((a) => a.type === 'BILLING');
+
+    if (billing) {
+      setValue('billingCompanyName', billing.companyName ?? '');
+      setValue('billingVatNumber', billing.vatNumber ?? '');
+      setValue('billingAddressLine1', billing.addressLine1);
+      setValue('billingAddressLine2', billing.addressLine2 ?? '');
+      setValue('billingCity', billing.city);
+      setValue('billingPostalCode', billing.postalCode);
+      setValue('billingCountry', billing.country);
+    }
   }, [addresses, user, reset, setValue]);
 
   const {

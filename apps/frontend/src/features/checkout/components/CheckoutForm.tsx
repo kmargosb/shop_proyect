@@ -14,12 +14,18 @@ type Props = {
   checkoutForm: UseFormReturn<CheckoutSchema>;
   onSubmit: () => void;
   billingAddresses: Address[];
+
+  setFavorite: (data: { id: string; type: 'SHIPPING' | 'BILLING' }) => Promise<void>;
+
+  deleteAddress: (id: string) => Promise<void>;
 };
 
 const CheckoutForm = memo(function CheckoutForm({
   checkoutForm,
   onSubmit,
   billingAddresses,
+  setFavorite,
+  deleteAddress,
 }: Props) {
   const [billingEnabled, setBillingEnabled] = useState(false);
   const { t } = useLanguage();
@@ -82,6 +88,8 @@ const CheckoutForm = memo(function CheckoutForm({
         setEnabled={setBillingEnabled}
         checkoutForm={checkoutForm}
         billingAddresses={billingAddresses}
+        setFavorite={setFavorite}
+        deleteAddress={deleteAddress}
       />
     </form>
   );

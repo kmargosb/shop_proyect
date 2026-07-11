@@ -8,7 +8,7 @@ export async function fetchAddresses(): Promise<Address[]> {
 }
 
 export async function deleteAddress(id: string) {
-  await request(`/addresses/${id}`, {
+  await request(`/customers/me/addresses/${id}`, {
     method: 'DELETE',
   });
 

@@ -172,6 +172,8 @@ export default function CreateOrderForm() {
           checkoutForm={checkoutForm}
           onSubmit={submit}
           billingAddresses={billingAddresses}
+          setFavorite={setFavorite}
+          deleteAddress={deleteAddress}
         />
       </div>
       <CheckoutSummary

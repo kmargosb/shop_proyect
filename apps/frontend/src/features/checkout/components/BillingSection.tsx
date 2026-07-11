@@ -15,6 +15,10 @@ type Props = {
   setEnabled: (value: boolean) => void;
   checkoutForm: UseFormReturn<CheckoutSchema>;
   billingAddresses: Address[];
+
+  setFavorite: (data: { id: string; type: 'SHIPPING' | 'BILLING' }) => Promise<void>;
+
+  deleteAddress: (id: string) => Promise<void>;
 };
 
 export default function BillingSection({
@@ -22,6 +26,8 @@ export default function BillingSection({
   setEnabled,
   checkoutForm,
   billingAddresses,
+  setFavorite,
+  deleteAddress,
 }: Props) {
   const { t } = useLanguage();
   const { setValue, getValues } = checkoutForm;
@@ -64,6 +70,14 @@ export default function BillingSection({
                   setValue('billingCompanyName', addr.companyName ?? '');
                   setValue('billingVatNumber', addr.vatNumber ?? '');
                 }}
+                onFavorite={(id) =>
+                  setFavorite({
+                    id,
+                    type: 'BILLING',
+                  })
+                }
+                onDelete={deleteAddress}
+                isDefault={(address) => !!address.isDefaultBilling}
               />
 
               <div className="mb-4 grid gap-3 md:grid-cols-2">
