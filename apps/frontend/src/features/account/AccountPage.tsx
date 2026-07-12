@@ -54,8 +54,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-72px)] overflow-hidden bg-black px-4 py-4 text-white md:px-6">
-      <div className="mx-auto grid h-full max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="min-h-[calc(100vh-72px)] bg-black px-4 py-4 text-white md:px-6">
+      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
         {/* MOBILE OVERLAY */}
 
         {sidebarOpen && (
@@ -86,7 +86,7 @@ export default function AccountPage() {
             {t.account.menu}
           </button>
         </div>
-        <section className="h-full overflow-y-auto pr-1 pb-10">
+        <section className="pr-1 pb-10">
           {activeTab === 'orders' && <OrdersTab orders={orders} />}
 
           {activeTab === 'profile' && <ProfileTab user={user} orders={orders} />}

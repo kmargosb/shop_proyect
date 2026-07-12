@@ -90,6 +90,15 @@ export default function MobileAccountSheet({ open, onClose }: MobileAccountSheet
             </Link>
 
             <Link
+              href="/account?tab=addresses"
+              onClick={onClose}
+              className="flex items-center justify-between py-4"
+            >
+              <span>{t.navbar.addresses}</span>
+              <span>→</span>
+            </Link>
+
+            <Link
               href="/account?tab=wishlist"
               onClick={onClose}
               className="flex items-center justify-between py-4"
