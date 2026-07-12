@@ -87,7 +87,7 @@ export default function AdminOrders() {
     const query = search.trim().toLowerCase();
     return orders.filter((order) => {
       const searchable =
-        `${order.id} ${order.fullName} ${order.email} ${order.phone}`.toLowerCase();
+        `${order.id} ${order.shippingFullName} ${order.email} ${order.shippingPhone}`.toLowerCase();
       if (filter !== 'ALL' && order.status !== filter) return false;
       if (query && !searchable.includes(query)) return false;
       return true;
@@ -422,7 +422,7 @@ function OrderMobileCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-semibold text-white">#{order.id.slice(0, 8)}</p>
-            <p className="text-sm text-neutral-500">{order.fullName}</p>
+            <p className="text-sm text-neutral-500">{order.shippingFullName}</p>
           </div>
           <StatusBadge status={order.status} />
         </div>
