@@ -9,7 +9,7 @@ type Props = {
 export default function PaymentSummary({ order }: Props) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
-      <h2 className="text-xl font-semibold">Order Summary</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Order Summary</h2>
 
       <div className="mt-6 space-y-4">
         {order.items.map((item: any) => {
@@ -19,9 +19,9 @@ export default function PaymentSummary({ order }: Props) {
             '/placeholder-product.png';
 
           return (
-            <div key={item.id} className="flex items-center justify-between gap-4">
+            <div key={item.id} className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-neutral-900">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900">
                   <Image
                     src={image}
                     alt={item.productName}
@@ -31,8 +31,8 @@ export default function PaymentSummary({ order }: Props) {
                   />
                 </div>
 
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{item.productName}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm leading-5 font-medium">{item.productName}</p>
 
                   <p className="mt-1 text-xs text-neutral-500">
                     {item.size}
@@ -44,7 +44,7 @@ export default function PaymentSummary({ order }: Props) {
                 </div>
               </div>
 
-              <div className="text-sm font-semibold whitespace-nowrap">
+              <div className="shrink-0 text-right text-sm font-semibold whitespace-nowrap">
                 €{((item.price * item.quantity) / 100).toFixed(2)}
               </div>
             </div>
@@ -80,7 +80,7 @@ export default function PaymentSummary({ order }: Props) {
         <span className="text-2xl font-bold">€{(order.totalAmount / 100).toFixed(2)}</span>
       </div>
 
-      <div className="mt-8 space-y-2 text-xs text-neutral-500">
+      <div className="mt-8 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-neutral-400">
         <p>🔒 Secure payment</p>
         <p>💳 Powered by Stripe</p>
         <p>🚚 Fast shipping</p>

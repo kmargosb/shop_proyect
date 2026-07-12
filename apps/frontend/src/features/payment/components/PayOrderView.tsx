@@ -83,9 +83,10 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
         <div className="absolute top-[-200px] left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-white/5 blur-[160px]" />
       </div>
 
-      <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12">
+      <div className="relative mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[420px_1fr]">
         {/* LEFT */}
         <motion.div
+          className="self-start lg:sticky lg:top-8"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
@@ -102,7 +103,18 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
         >
           <div className="pointer-events-none absolute inset-0 rounded-3xl bg-white/[0.06] blur-3xl" />
 
-          <div className="relative z-10 rounded-3xl border border-white/[0.08] bg-white/[0.04] p-4 shadow-[0_20px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl md:p-8">
+          <div className="relative z-10 mb-6">
+            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+              Complete your purchase
+            </h1>
+
+            <p className="mt-2 text-sm text-neutral-400 md:text-base">
+              Secure payment powered by Stripe. Your order will be confirmed instantly after
+              payment.
+            </p>
+          </div>
+
+          <div className="relative z-10 max-w-2xl rounded-3xl border border-white/[0.08] bg-white/[0.04] p-4 shadow-[0_20px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl md:p-8">
             <PaymentWrapper clientSecret={secret}>
               <StripePaymentForm orderId={orderId} />
             </PaymentWrapper>

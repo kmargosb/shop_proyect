@@ -16,6 +16,9 @@ export default function StripePaymentForm({ orderId }: Props) {
   const [elementError, setElementError] = useState(false);
   const [elementReady, setElementReady] = useState(false);
 
+  const checkoutData =
+    typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('checkoutData') ?? '{}') : {};
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -70,17 +73,13 @@ export default function StripePaymentForm({ orderId }: Props) {
     <form onSubmit={handleSubmit} className="w-full max-w-full space-y-6 overflow-hidden">
       {/* PAYMENT ELEMENT */}
       {!elementError ? (
-        <div className="w-full max-w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black/30 p-3 md:p-4">
+        <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/70 p-4 shadow-inner backdrop-blur">
+          <p className="mb-4 text-sm font-medium text-neutral-300">Card details</p>
           <PaymentElement
             options={{
               layout: {
                 type: 'tabs',
                 defaultCollapsed: false,
-              },
-
-              wallets: {
-                applePay: 'auto',
-                googlePay: 'auto',
               },
 
               business: {
@@ -89,9 +88,19 @@ export default function StripePaymentForm({ orderId }: Props) {
 
               defaultValues: {
                 billingDetails: {
-                  name: '',
-                  email: '',
+                  name: `${checkoutData.firstName ?? ''} ${checkoutData.lastName ?? ''}`.trim(),
+                  email: checkoutData.email ?? '',
                 },
+              },
+
+              fields: {
+                billingDetails: {
+                  address: 'never',
+                },
+              },
+
+              terms: {
+                card: 'never',
               },
             }}
             onReady={() => {
@@ -141,12 +150,16 @@ export default function StripePaymentForm({ orderId }: Props) {
         disabled={!stripe || !elements || !elementReady || loading || elementError}
         className="w-full rounded-xl bg-white py-4 text-lg font-medium text-black transition disabled:opacity-50"
       >
-        {loading ? 'Processing...' : !elementReady ? 'Loading payment...' : 'Pay now'}
+        {loading
+          ? 'Processing payment...'
+          : !elementReady
+            ? 'Loading secure payment...'
+            : 'Complete payment'}
       </motion.button>
 
       {/* FOOTER */}
       <p className="text-center text-xs text-neutral-500">
-        Your payment is securely processed with Stripe
+        Protected by Stripe • SSL encrypted • PCI DSS compliant
       </p>
     </form>
   );
