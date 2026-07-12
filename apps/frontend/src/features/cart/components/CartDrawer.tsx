@@ -111,8 +111,6 @@ export default function CartDrawer() {
 
           {items.length > 0 &&
             items.map((item: CartItem) => {
-              console.log('CART IMAGE:', item.name, item.image);
-
               return (
                 <div
                   key={item.id}

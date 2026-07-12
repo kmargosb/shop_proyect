@@ -42,7 +42,7 @@ const CheckoutSummary = memo(function CheckoutSummary({
           <div key={item.id} className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               {/* IMAGE  */}
-              <div className="h-16 w-16 overflow-hidden rounded-lg bg-neutral-800">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-neutral-800">
                 {item.image ? (
                   <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                 ) : (
