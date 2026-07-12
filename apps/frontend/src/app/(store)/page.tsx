@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 
 import HeroCarousel from '@/components/store/HeroCarousel';
 import ProductsView from '@/features/products/components/ProductsView';
-import FeaturedBrands from '@/components/store/FeaturedBrands';
 import HomeCTA from '@/components/store/HomeCTA';
 import Footer from '@/components/store/Footer';
 import BrandsShowcase from '@/components/store/BrandsShowcase';

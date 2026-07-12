@@ -14,7 +14,7 @@ type Props = {
   onCreate: () => void;
   onEdit: (address: Address) => void;
   onDelete: (id: string) => void;
-  onFavorite: (id: string) => void;
+  onFavorite: (address: Address) => void;
 
   defaultText: string;
   setDefaultText: string;

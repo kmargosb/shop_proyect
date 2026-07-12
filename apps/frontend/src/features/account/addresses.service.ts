@@ -31,8 +31,11 @@ export async function deleteAddressRequest(id: string) {
   });
 }
 
-export async function setFavoriteAddress(id: string) {
-  await request(`/customers/me/addresses/${id}/favorite`, {
+export async function setFavoriteAddress(data: { id: string; type: 'SHIPPING' | 'BILLING' }) {
+  await request(`/customers/me/addresses/${data.id}/favorite`, {
     method: 'PATCH',
+    body: JSON.stringify({
+      type: data.type,
+    }),
   });
 }

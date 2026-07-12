@@ -115,8 +115,11 @@ export default function AddressesTab() {
     await refetch();
   };
 
-  const setFavorite = async (id: string) => {
-    await setFavoriteAddress(id);
+  const setFavorite = async (address: Address) => {
+    await setFavoriteAddress({
+      id: address.id,
+      type: address.type,
+    });
 
     await refetch();
   };

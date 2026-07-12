@@ -15,6 +15,8 @@ type Props = {
   setEnabled: (value: boolean) => void;
   checkoutForm: UseFormReturn<CheckoutSchema>;
   billingAddresses: Address[];
+  selectedBillingAddressId: string | null;
+  setSelectedBillingAddressId: (id: string) => void;
 
   setFavorite: (data: { id: string; type: 'SHIPPING' | 'BILLING' }) => Promise<void>;
 
@@ -26,6 +28,8 @@ export default function BillingSection({
   setEnabled,
   checkoutForm,
   billingAddresses,
+  selectedBillingAddressId,
+  setSelectedBillingAddressId,
   setFavorite,
   deleteAddress,
 }: Props) {
@@ -53,48 +57,56 @@ export default function BillingSection({
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <CheckoutSection
-              title={t.checkout.billingAddress}
-              subtitle={t.checkout.billingDescription2}
-            >
-              <SavedAddresses
-                title="Direcciones de facturación"
-                addresses={billingAddresses}
-                selectedId={null}
-                onSelect={(addr) => {
-                  setValue('billingAddressLine1', addr.addressLine1);
-                  setValue('billingAddressLine2', addr.addressLine2 ?? '');
-                  setValue('billingCity', addr.city);
-                  setValue('billingPostalCode', addr.postalCode);
-                  setValue('billingCountry', addr.country);
-                  setValue('billingCompanyName', addr.companyName ?? '');
-                  setValue('billingVatNumber', addr.vatNumber ?? '');
-                }}
-                onFavorite={(id) =>
-                  setFavorite({
-                    id,
-                    type: 'BILLING',
-                  })
-                }
-                onDelete={deleteAddress}
-                isDefault={(address) => !!address.isDefaultBilling}
-              />
-
-              <div className="mb-4 grid gap-3 md:grid-cols-2">
-                <Input
-                  compact
-                  placeholder="Company name"
-                  {...checkoutForm.register('billingCompanyName')}
+            <>
+              {billingAddresses.length > 0 && (
+                <SavedAddresses
+                  title="Direcciones de facturación"
+                  addresses={billingAddresses}
+                  selectedId={selectedBillingAddressId}
+                  onSelect={(addr) => {
+                    setSelectedBillingAddressId(addr.id);
+                    setValue('billingAddressLine1', addr.addressLine1);
+                    setValue('billingAddressLine2', addr.addressLine2 ?? '');
+                    setValue('billingCity', addr.city);
+                    setValue('billingPostalCode', addr.postalCode);
+                    setValue('billingCountry', addr.country);
+                    setValue('billingCompanyName', addr.companyName ?? '');
+                    setValue('billingVatNumber', addr.vatNumber ?? '');
+                  }}
+                  onFavorite={(id) =>
+                    setFavorite({
+                      id,
+                      type: 'BILLING',
+                    })
+                  }
+                  onDelete={deleteAddress}
+                  isDefault={(address) => !!address.isDefaultBilling}
                 />
+              )}
 
-                <Input
-                  compact
-                  placeholder="VAT / NIF"
-                  {...checkoutForm.register('billingVatNumber')}
-                />
+              <div className="pt-6">
+                <CheckoutSection
+                  title={t.checkout.billingAddress}
+                  subtitle={t.checkout.billingDescription2}
+                >
+                  <div className="mb-4 grid gap-3 md:grid-cols-2">
+                    <Input
+                      compact
+                      placeholder="Company name"
+                      {...checkoutForm.register('billingCompanyName')}
+                    />
+
+                    <Input
+                      compact
+                      placeholder="VAT / NIF"
+                      {...checkoutForm.register('billingVatNumber')}
+                    />
+                  </div>
+
+                  <AddressFields form={checkoutForm} prefix="billing" compact />
+                </CheckoutSection>
               </div>
-              <AddressFields form={checkoutForm} prefix="billing" compact />
-            </CheckoutSection>
+            </>
           </motion.div>
         )}
       </AnimatePresence>

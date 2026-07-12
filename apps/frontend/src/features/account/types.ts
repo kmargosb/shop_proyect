@@ -55,7 +55,8 @@ export type Address = {
   postalCode: string;
   country: string;
 
-  isDefault?: boolean;
+  isDefaultShipping?: boolean;
+  isDefaultBilling?: boolean;
 };
 
 export type AddressPayload = {

@@ -45,15 +45,20 @@ export default function SavedAddresses({
             {title} ({addresses.length})
           </span>
 
-          <ChevronDown size={18} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            size={20}
+            className={`text-neutral-400 transition-all duration-300 ${
+              open ? 'rotate-180 text-white' : ''
+            }`}
+          />
         </button>
 
         {open && (
           <div className="space-y-3 px-4 pb-4">
-            <h3 className="text-sm text-neutral-400">{title}</h3>
-
             {addresses.map((addr) => {
               const selected = selectedId === addr.id;
+
+              const shipping = addr.type === 'SHIPPING';
 
               return (
                 <motion.div
@@ -62,8 +67,12 @@ export default function SavedAddresses({
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   onClick={() => onSelect(addr)}
-                  className={`relative cursor-pointer rounded-xl border p-4 pl-10 ${
-                    selected ? 'border-white bg-white/5' : 'border-white/10 hover:border-white/30'
+                  className={`relative cursor-pointer rounded-2xl border p-4 pl-10 transition-all ${
+                    selected
+                      ? shipping
+                        ? 'border-blue-500/40 bg-blue-500/5'
+                        : 'border-emerald-500/40 bg-emerald-500/5'
+                      : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                   }`}
                 >
                   <motion.div
@@ -75,15 +84,21 @@ export default function SavedAddresses({
                   />
 
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex items-center gap-2">
                       <p className="font-medium">{addr.label}</p>
 
-                      {addr.companyName && (
-                        <p className="text-xs text-neutral-500">{addr.companyName}</p>
-                      )}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase ${
+                          shipping
+                            ? 'bg-blue-500/15 text-blue-300'
+                            : 'bg-emerald-500/15 text-emerald-300'
+                        }`}
+                      >
+                        {shipping ? 'Envío' : 'Facturación'}
+                      </span>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-4">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -93,11 +108,11 @@ export default function SavedAddresses({
                       >
                         <Star
                           size={16}
-                          className={
+                          className={`transition ${
                             isDefault?.(addr)
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-neutral-500'
-                          }
+                              ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,.45)]'
+                              : 'text-neutral-500 hover:text-yellow-300'
+                          }`}
                         />
                       </button>
 
@@ -108,7 +123,10 @@ export default function SavedAddresses({
                           onDelete?.(addr.id);
                         }}
                       >
-                        <Trash2 size={16} className="text-neutral-500 hover:text-red-400" />
+                        <Trash2
+                          size={16}
+                          className="text-neutral-500 transition hover:scale-110 hover:text-red-400"
+                        />
                       </button>
                     </div>
                   </div>

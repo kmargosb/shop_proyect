@@ -137,7 +137,7 @@ export default function CreateOrderForm() {
         {/* ADDRESSES */}
         {shippingAddresses.length > 0 && (
           <SavedAddresses
-            title={t.checkout.savedAddresses}
+            title="Direcciones de envío"
             addresses={shippingAddresses}
             selectedId={selectedAddressId}
             onSelect={(addr) => {

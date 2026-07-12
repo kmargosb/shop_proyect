@@ -2,7 +2,7 @@
 
 import type { UseFormReturn } from 'react-hook-form';
 import type { CheckoutSchema } from '../schemas/checkout.schema';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Input } from '@/shared/ui/input';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
 import CheckoutSection from './sections/CheckoutSection';
@@ -28,8 +28,19 @@ const CheckoutForm = memo(function CheckoutForm({
   deleteAddress,
 }: Props) {
   const [billingEnabled, setBillingEnabled] = useState(false);
-  const { t } = useLanguage();
+  const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const compact = true;
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    if (selectedBillingAddressId) return;
+
+    const favorite = billingAddresses.find((a) => a.isDefaultBilling);
+
+    if (favorite) {
+      setSelectedBillingAddressId(favorite.id);
+    }
+  }, [billingAddresses, selectedBillingAddressId]);
 
   const {
     register,
@@ -88,6 +99,8 @@ const CheckoutForm = memo(function CheckoutForm({
         setEnabled={setBillingEnabled}
         checkoutForm={checkoutForm}
         billingAddresses={billingAddresses}
+        selectedBillingAddressId={selectedBillingAddressId}
+        setSelectedBillingAddressId={setSelectedBillingAddressId}
         setFavorite={setFavorite}
         deleteAddress={deleteAddress}
       />

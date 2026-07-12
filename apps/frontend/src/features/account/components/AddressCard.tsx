@@ -12,7 +12,7 @@ type Props = {
 
   onEdit: (address: Address) => void;
   onDelete: (id: string) => void;
-  onFavorite: (id: string) => void;
+  onFavorite: (address: Address) => void;
 };
 
 export default function AddressCard({
@@ -46,7 +46,8 @@ export default function AddressCard({
           <p className="mt-1 text-sm text-neutral-500">{address.phone}</p>
         </div>
 
-        {address.isDefault && (
+        {((address.type === 'SHIPPING' && address.isDefaultShipping) ||
+          (address.type === 'BILLING' && address.isDefaultBilling)) && (
           <div className="rounded-full bg-white px-3 py-1 text-[10px] font-bold tracking-wide text-black uppercase">
             {defaultText}
           </div>
@@ -77,16 +78,18 @@ export default function AddressCard({
 
       <div className="mt-6 flex flex-wrap gap-2">
         <button
-          onClick={() => onFavorite(address.id)}
+          onClick={() => onFavorite(address)}
           className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition ${
-            address.isDefault
+            (address.type === 'SHIPPING' ? address.isDefaultShipping : address.isDefaultBilling)
               ? 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300'
               : 'border-white/10 text-neutral-300 hover:bg-white/10'
           }`}
         >
           <Star size={15} />
 
-          {address.isDefault ? defaultText : setDefaultText}
+          {(address.type === 'SHIPPING' ? address.isDefaultShipping : address.isDefaultBilling)
+            ? defaultText
+            : setDefaultText}
         </button>
 
         <button
