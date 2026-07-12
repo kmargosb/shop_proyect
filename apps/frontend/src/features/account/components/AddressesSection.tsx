@@ -37,7 +37,7 @@ export default function AddressesSection({
 }: Props) {
   return (
     <section className="mt-10">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-xl font-semibold text-white">{title}</h3>
 
@@ -50,9 +50,9 @@ export default function AddressesSection({
 
         <button
           onClick={onCreate}
-          className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
+          className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-xl border border-white/10 bg-white px-4 text-sm font-medium text-black transition hover:bg-neutral-200"
         >
-          <Plus size={16} />
+          <Plus size={15} />
           {buttonText}
         </button>
       </div>

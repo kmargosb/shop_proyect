@@ -106,7 +106,10 @@ export default function OrdersTab({ orders }: Props) {
                       </h3>
                       <div className="mt-3 space-y-1">
                         {order.items.slice(0, 2).map((item) => (
-                          <p key={item.id} className="truncate text-sm text-neutral-400">
+                          <p
+                            key={item.id}
+                            className="line-clamp-2 text-sm leading-5 break-words text-neutral-400"
+                          >
                             {item.product?.name}
 
                             {(item.color || item.size) && (
@@ -138,7 +141,7 @@ export default function OrdersTab({ orders }: Props) {
 
                     {/* RIGHT */}
 
-                    <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
+                    <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:shrink-0 sm:flex-col sm:items-end">
                       <span
                         className={`rounded-full px-2 py-1 text-[11px] font-semibold sm:px-3 sm:text-xs ${
                           order.status === 'PAID'
@@ -160,7 +163,7 @@ export default function OrdersTab({ orders }: Props) {
                       <div className="text-right">
                         <p className="text-xs text-neutral-500">{t.orders.total}</p>
 
-                        <p className="text-2xl font-bold text-white">
+                        <p className="text-xl font-bold break-keep text-white sm:text-2xl">
                           €{(order.totalAmount / 100).toFixed(2)}
                         </p>
                       </div>
