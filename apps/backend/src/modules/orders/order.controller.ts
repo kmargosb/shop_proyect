@@ -599,3 +599,45 @@ export const replyToCustomerController = asyncHandler(async (req: Request, res: 
     success: true,
   });
 });
+
+export const getPaymentSummaryController = async (req: Request, res: Response) => {
+  try {
+    const orderId = typeof req.params.id === 'string' ? req.params.id : req.params.id[0];
+
+    const order = await prisma.order.findUnique({
+      where: {
+        id: orderId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found',
+      });
+    }
+
+    return res.json({
+      id: order.id,
+      currency: order.currency,
+      totalAmount: order.totalAmount,
+
+      items: order.items.map((item) => ({
+        id: item.id,
+        name: item.productName,
+        quantity: item.quantity,
+        price: item.price,
+        size: item.size,
+        color: item.color,
+      })),
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: 'Failed to load payment summary',
+    });
+  }
+};

@@ -1,7 +1,7 @@
-import Stripe from "stripe";
+import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-02-25.clover",
+  apiVersion: '2026-02-25.clover',
 });
 
 export class StripeProvider {
@@ -10,16 +10,14 @@ export class StripeProvider {
     currency: string,
     orderId: string,
   ): Promise<Stripe.PaymentIntent> {
-    console.log("Creating Stripe PaymentIntent for order:", orderId);
+    console.log('Creating Stripe PaymentIntent for order:', orderId);
 
     const paymentIntent = await stripe.paymentIntents.create(
       {
         amount,
         currency,
 
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        payment_method_types: ['card', 'link'],
 
         metadata: {
           orderId,
@@ -30,7 +28,7 @@ export class StripeProvider {
       },
     );
 
-    console.log("Stripe PaymentIntent created:", paymentIntent.id);
+    console.log('Stripe PaymentIntent created:', paymentIntent.id);
 
     return paymentIntent;
   }

@@ -1,16 +1,33 @@
-"use client";
+'use client';
 
-import { Elements } from "@stripe/react-stripe-js";
-import { stripePromise } from "../stripe";
+import { Elements } from '@stripe/react-stripe-js';
+import { stripePromise } from '../stripe';
 
-export default function PaymentWrapper({
-  clientSecret,
-  children,
-}: any) {
+type Props = {
+  clientSecret: string;
+  children: React.ReactNode;
+};
+
+export default function PaymentWrapper({ clientSecret, children }: Props) {
   return (
     <Elements
       stripe={stripePromise}
-      options={{ clientSecret }}
+      options={{
+        clientSecret,
+        appearance: {
+          theme: 'night',
+          variables: {
+            colorPrimary: '#ffffff',
+            colorBackground: '#111111',
+            colorText: '#ffffff',
+            colorDanger: '#ef4444',
+            borderRadius: '14px',
+            spacingUnit: '4px',
+            fontSizeBase: '15px',
+          },
+        },
+        loader: 'auto',
+      }}
     >
       {children}
     </Elements>

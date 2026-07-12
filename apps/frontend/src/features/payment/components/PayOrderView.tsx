@@ -6,6 +6,8 @@ import StripePaymentForm from './StripePaymentForm';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
+import { useOrder } from '@/features/orders/hooks/useOrder';
+import PaymentSummary from './PaymentSummary';
 
 type Props = {
   orderId: string;
@@ -14,6 +16,7 @@ type Props = {
 
 export default function PayOrderView({ orderId, clientSecret }: Props) {
   const [secret, setSecret] = useState(clientSecret);
+  const { data: order, isPending } = useOrder(orderId);
 
   useEffect(() => {
     if (secret) return;
@@ -51,6 +54,14 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
     };
   }, [orderId]);
 
+  if (isPending || !order) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        Loading...
+      </div>
+    );
+  }
+
   if (!secret) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -75,32 +86,11 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
       <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12">
         {/* LEFT */}
         <motion.div
-          initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.6 }}
-          className="space-y-8"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
         >
-          <div className="space-y-4">
-            <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">Checkout</h1>
-
-            <p className="text-base text-neutral-400 md:text-lg">Complete your payment securely</p>
-          </div>
-
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 backdrop-blur-xl">
-            <p className="mb-2 text-sm text-neutral-500">Order ID</p>
-
-            <p className="font-mono text-sm break-all text-neutral-300">{orderId}</p>
-
-            <div className="mt-4 border-t border-white/[0.08] pt-4 text-xs text-neutral-500">
-              Powered by Stripe
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 text-sm text-neutral-500">
-            <span>🔒 Secure</span>
-            <span>•</span>
-            <span>Global payments</span>
-          </div>
+          <PaymentSummary order={order} />
         </motion.div>
 
         {/* RIGHT */}

@@ -1,12 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  PaymentElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-import { motion } from "framer-motion";
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 type Props = {
   orderId: string;
@@ -15,7 +11,6 @@ type Props = {
 export default function StripePaymentForm({ orderId }: Props) {
   const stripe = useStripe();
   const elements = useElements();
-
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [elementError, setElementError] = useState(false);
@@ -32,15 +27,15 @@ export default function StripePaymentForm({ orderId }: Props) {
     setErrorMessage(null);
 
     try {
-      const checkoutData = localStorage.getItem("checkoutData");
+      const checkoutData = localStorage.getItem('checkoutData');
 
       if (checkoutData) {
         try {
           const parsed = JSON.parse(checkoutData);
 
           if (parsed?.email) {
-            localStorage.setItem("orderEmail", parsed.email);
-            localStorage.setItem("orderEmailOrderId", orderId);
+            localStorage.setItem('orderEmail', parsed.email);
+            localStorage.setItem('orderEmailOrderId', orderId);
           }
         } catch {}
       }
@@ -52,61 +47,75 @@ export default function StripePaymentForm({ orderId }: Props) {
       });
 
       if (result.error) {
-        console.log("STRIPE ERROR", result.error);
-        const message = result.error.message ?? "";
+        console.log('STRIPE ERROR', result.error);
+        const message = result.error.message ?? '';
 
-        if (
-          message.includes("status of canceled") ||
-          message.includes("PaymentIntent")
-        ) {
-          setErrorMessage("Este pedido ha expirado y ya no puede ser pagado.");
+        if (message.includes('status of canceled') || message.includes('PaymentIntent')) {
+          setErrorMessage('Este pedido ha expirado y ya no puede ser pagado.');
         } else {
-          setErrorMessage(message || "Payment failed");
+          setErrorMessage(message || 'Payment failed');
         }
 
         setLoading(false);
         return;
       }
     } catch (err) {
-      console.error("Unexpected payment error:", err);
-      setErrorMessage("Unexpected error occurred");
+      console.error('Unexpected payment error:', err);
+      setErrorMessage('Unexpected error occurred');
       setLoading(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-full overflow-hidden space-y-6"
-    >
+    <form onSubmit={handleSubmit} className="w-full max-w-full space-y-6 overflow-hidden">
       {/* PAYMENT ELEMENT */}
       {!elementError ? (
-        <div className="w-full max-w-full overflow-hidden bg-black/30 border border-white/[0.08] rounded-xl p-3 md:p-4">
+        <div className="w-full max-w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black/30 p-3 md:p-4">
           <PaymentElement
+            options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: false,
+              },
+
+              wallets: {
+                applePay: 'auto',
+                googlePay: 'auto',
+              },
+
+              business: {
+                name: 'CAMARGUETTE',
+              },
+
+              defaultValues: {
+                billingDetails: {
+                  name: '',
+                  email: '',
+                },
+              },
+            }}
             onReady={() => {
               setElementReady(true);
             }}
             onLoadError={() => {
               setElementError(true);
 
-              setErrorMessage("Esta sesión de pago ya no es válida");
+              setErrorMessage('Esta sesión de pago ya no es válida');
 
               setTimeout(() => {
-                window.location.href = "/shop";
+                window.location.href = '/shop';
               }, 2500);
             }}
           />
         </div>
       ) : (
-        <div className="text-center space-y-4">
-          <p className="text-sm text-neutral-400">
-            No se pudo cargar el formulario de pago
-          </p>
+        <div className="space-y-4 text-center">
+          <p className="text-sm text-neutral-400">No se pudo cargar el formulario de pago</p>
 
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="text-sm underline text-neutral-400 hover:text-white"
+            className="text-sm text-neutral-400 underline hover:text-white"
           >
             Reintentar
           </button>
@@ -118,7 +127,7 @@ export default function StripePaymentForm({ orderId }: Props) {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-red-400 text-sm"
+          className="text-sm text-red-400"
         >
           {errorMessage}
         </motion.div>
@@ -129,20 +138,14 @@ export default function StripePaymentForm({ orderId }: Props) {
         whileTap={{ scale: 0.97 }}
         whileHover={{ scale: 1.02 }}
         type="submit"
-        disabled={
-          !stripe || !elements || !elementReady || loading || elementError
-        }
-        className="w-full py-4 rounded-xl font-medium text-lg bg-white text-black transition disabled:opacity-50"
+        disabled={!stripe || !elements || !elementReady || loading || elementError}
+        className="w-full rounded-xl bg-white py-4 text-lg font-medium text-black transition disabled:opacity-50"
       >
-        {loading
-          ? "Processing..."
-          : !elementReady
-            ? "Loading payment..."
-            : "Pay now"}
+        {loading ? 'Processing...' : !elementReady ? 'Loading payment...' : 'Pay now'}
       </motion.button>
 
       {/* FOOTER */}
-      <p className="text-xs text-neutral-500 text-center">
+      <p className="text-center text-xs text-neutral-500">
         Your payment is securely processed with Stripe
       </p>
     </form>

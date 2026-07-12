@@ -1,9 +1,5 @@
-import { Router } from "express";
-import {
-  protect,
-  adminOnly,
-  attachUserIfExists,
-} from "@/common/middleware/auth.middleware";
+import { Router } from 'express';
+import { protect, adminOnly, attachUserIfExists } from '@/common/middleware/auth.middleware';
 
 import {
   createOrderController,
@@ -23,10 +19,11 @@ import {
   updateOrderAdminController,
   replyToCustomerController,
   cancelPublicOrderController,
-} from "./order.controller";
+  getPaymentSummaryController,
+} from './order.controller';
 
-import { getActivityFeedController } from "./order.activity.controller";
-import { getOrderAnalytics } from "@/modules/orders/order.analytics.controller";
+import { getActivityFeedController } from './order.activity.controller';
+import { getOrderAnalytics } from '@/modules/orders/order.analytics.controller';
 
 const router = Router();
 
@@ -35,71 +32,73 @@ const router = Router();
 ================================= */
 
 // Public invoice
-router.get("/public/:id/invoice", downloadPublicInvoice);
+router.get('/public/:id/invoice', downloadPublicInvoice);
 
 // Public order page
-router.get("/public/:id", getPublicOrderController);
+router.get('/public/:id', getPublicOrderController);
+
+router.get('/:id/payment-summary', getPaymentSummaryController);
 
 // Guest checkout
-router.post("/", createOrderController);
+router.post('/', createOrderController);
 
-router.post("/public/:id/cancel", cancelPublicOrderController);
+router.post('/public/:id/cancel', cancelPublicOrderController);
 
 /* ===============================
    ADMIN ROUTES (🔥 ANTES DE :id)
 ================================= */
 
 // Activity feed
-router.get("/activity-feed", protect, adminOnly, getActivityFeedController);
+router.get('/activity-feed', protect, adminOnly, getActivityFeedController);
 
 // Analytics dashboard
-router.get("/analytics", protect, adminOnly, getOrderAnalytics);
+router.get('/analytics', protect, adminOnly, getOrderAnalytics);
 
 // Filter Orders
-router.get("/search", protect, adminOnly, searchOrdersController);
+router.get('/search', protect, adminOnly, searchOrdersController);
 
 // Admin list
-router.get("/", protect, adminOnly, getOrdersController);
+router.get('/', protect, adminOnly, getOrdersController);
 
-router.get("/admin/:id", protect, adminOnly, getAdminOrderByIdController);
+router.get('/admin/:id', protect, adminOnly, getAdminOrderByIdController);
 
 // Timeline Orders
-router.get("/:id/timeline", protect, adminOnly, getOrderTimelineController);
+router.get('/:id/timeline', protect, adminOnly, getOrderTimelineController);
 
 // Reenviar email
-router.post("/:id/resend-email", protect, adminOnly, resendOrderEmailController);
+router.post('/:id/resend-email', protect, adminOnly, resendOrderEmailController);
 
-router.patch("/:id/admin-edit", protect, adminOnly, updateOrderAdminController);
+router.patch('/:id/admin-edit', protect, adminOnly, updateOrderAdminController);
 
 // Help email
-router.post("/:id/help-request", submitHelpRequestController);
+router.post('/:id/help-request', submitHelpRequestController);
 
-router.post("/:id/reply", protect, adminOnly, replyToCustomerController);
+router.post('/:id/reply', protect, adminOnly, replyToCustomerController);
 
 // Cambiar estado
-router.patch("/:id", protect, adminOnly, updateOrderStatusController);
+router.patch('/:id', protect, adminOnly, updateOrderStatusController);
 
 // Cancelar orden
-router.post("/:id/cancel", protect, adminOnly, cancelOrderController);
+router.post('/:id/cancel', protect, adminOnly, cancelOrderController);
 
 // Descargar invoice admin
-router.get("/:id/invoice", protect, adminOnly, downloadOrderInvoice);
+router.get('/:id/invoice', protect, adminOnly, downloadOrderInvoice);
 
 /* ===============================
    USER ROUTES
 ================================= */
 
 // Get my orders
-router.get("/me", protect, getMyOrdersController);
+router.get('/me', protect, getMyOrdersController);
 
 // Get my order by id
-router.get("/:id/me", protect, getMyOrderByIdController);
+router.get('/:id/me', protect, getMyOrderByIdController);
 
 /* ===============================
    🔥 UNIVERSAL ORDER ROUTE (SIEMPRE AL FINAL)
 ================================= */
 
-router.get("/:id", attachUserIfExists, async (req, res, next) => {
+router.get('/:id', attachUserIfExists, async (req, res, next) => {
   try {
     if ((req as any).user) {
       return getMyOrderByIdController(req as any, res, next);
