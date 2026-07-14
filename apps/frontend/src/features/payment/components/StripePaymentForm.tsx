@@ -92,16 +92,6 @@ export default function StripePaymentForm({ orderId }: Props) {
                   email: checkoutData.email ?? '',
                 },
               },
-
-              fields: {
-                billingDetails: {
-                  address: 'never',
-                },
-              },
-
-              terms: {
-                card: 'never',
-              },
             }}
             onReady={() => {
               setElementReady(true);
