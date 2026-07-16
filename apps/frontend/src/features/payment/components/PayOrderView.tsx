@@ -16,7 +16,15 @@ type Props = {
 
 export default function PayOrderView({ orderId, clientSecret }: Props) {
   const [secret, setSecret] = useState(clientSecret);
-  const { data: order, isPending } = useOrder(orderId);
+  const { data: order, isPending, isError, error } = useOrder(orderId);
+
+  console.log({
+    orderId,
+    isPending,
+    isError,
+    hasOrder: !!order,
+    error,
+  });
 
   useEffect(() => {
     if (secret) return;
@@ -54,10 +62,39 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
     };
   }, [orderId]);
 
-  if (isPending || !order) {
+  if (isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading...
+        Loading your order...
+      </div>
+    );
+  }
+
+  if (isError) {
+    console.error(error);
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+        <div className="space-y-4 text-center">
+          <h2 className="text-2xl font-semibold">We couldn't load your order</h2>
+
+          <p className="text-neutral-400">Please refresh the page or try again in a few seconds.</p>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-white px-6 py-3 text-black"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        Order not found.
       </div>
     );
   }

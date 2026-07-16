@@ -1,9 +1,17 @@
 import { request } from '@/shared/lib/request';
 
 export async function fetchOrder(id: string) {
+  console.log('📦 Fetching order:', id);
+
   const response = await request(`/orders/${id}`);
 
-  return response.json();
+  console.log('✅ Order response:', response.status);
+
+  const data = await response.json();
+
+  console.log('📦 Order loaded:', data);
+
+  return data;
 }
 
 export async function fetchPublicOrder(id: string, email: string) {
