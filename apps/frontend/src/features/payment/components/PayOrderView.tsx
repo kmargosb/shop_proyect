@@ -16,20 +16,38 @@ type Props = {
 
 export default function PayOrderView({ orderId, clientSecret }: Props) {
   const [secret, setSecret] = useState(clientSecret);
-  const [loadOrder, setLoadOrder] = useState(false);
 
   const email =
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') : null;
 
-  const { data: order, isPending, isError, error } = useOrder(orderId, email, loadOrder);
+  const [order, setOrder] = useState<any>(null);
 
-  console.log({
-    orderId,
-    isPending,
-    isError,
-    hasOrder: !!order,
-    error,
-  });
+  useEffect(() => {
+    async function load() {
+      console.log('🚀 Cargando pedido manualmente');
+
+      const endpoint = email
+        ? `/orders/public/${orderId}?email=${encodeURIComponent(email)}`
+        : `/orders/${orderId}/payment-summary`;
+
+      const res = await apiFetch(endpoint);
+
+      if (!res) {
+        console.error('apiFetch devolvió null');
+        return;
+      }
+
+      console.log('STATUS', res.status);
+
+      const data = await res.json();
+
+      console.log('ORDER', data);
+
+      setOrder(data);
+    }
+
+    load();
+  }, [orderId, email]);
 
   useEffect(() => {
     if (secret) return;
@@ -96,11 +114,7 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {isError ? (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="text-neutral-400">We couldn't load the order summary.</p>
-            </div>
-          ) : order ? (
+          {order ? (
             <PaymentSummary order={order} />
           ) : (
             <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">

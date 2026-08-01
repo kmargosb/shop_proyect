@@ -6,7 +6,11 @@ export function useOrder(id: string, email?: string | null, enabled = true) {
   return useQuery({
     queryKey: ['payment-summary', id],
 
-    queryFn: () => (email ? fetchPublicOrder(id, email) : fetchPaymentSummary(id)),
+    queryFn: async () => {
+      console.log('🔥 React Query ejecutando query');
+
+      return email ? fetchPublicOrder(id, email) : fetchPaymentSummary(id);
+    },
 
     enabled: !!id && enabled,
 
