@@ -6,18 +6,31 @@ import type { CheckoutInput } from './types';
 
 export const CheckoutService = {
   async checkout(data: CheckoutInput) {
+    console.time('🛒 TOTAL CHECKOUT');
+
     const { cartId, method, userId, ...checkoutData } = data;
 
+    console.time('1️⃣ Sync inventory');
     await CartService.syncCartInventory(cartId);
+    console.timeEnd('1️⃣ Sync inventory');
+
+    console.time('2️⃣ Database transaction');
 
     const { order, totals } = await prisma.$transaction(
       async (tx) => {
+        console.time('2.1️⃣ Lock cart');
         await CartService.lockCartTx(tx, cartId);
+        console.timeEnd('2.1️⃣ Lock cart');
 
+        console.time('2.2️⃣ Validate cart');
         const cart = await CartService.validateCartTx(tx, cartId);
+        console.timeEnd('2.2️⃣ Validate cart');
 
+        console.time('2.3️⃣ Calculate totals');
         const totals = CartService.calculateTotalsFromCart(cart);
+        console.timeEnd('2.3️⃣ Calculate totals');
 
+        console.time('2.4️⃣ Create order');
         const order = await createOrderWithTx(tx, {
           ...checkoutData,
           userId,
@@ -34,8 +47,11 @@ export const CheckoutService = {
             color: item.variant?.color,
           })),
         });
+        console.timeEnd('2.4️⃣ Create order');
 
+        console.time('2.5️⃣ Finish cart');
         await CartService.finishCartTx(tx, cartId);
+        console.timeEnd('2.5️⃣ Finish cart');
 
         return {
           order,
@@ -48,6 +64,9 @@ export const CheckoutService = {
       },
     );
 
+    console.timeEnd('2️⃣ Database transaction');
+
+    console.time('3️⃣ Analytics');
     await prisma.analyticsEvent.create({
       data: {
         userId,
@@ -56,14 +75,17 @@ export const CheckoutService = {
         event: 'CHECKOUT_STARTED',
       },
     });
+    console.timeEnd('3️⃣ Analytics');
 
-    /* =========================
-       CREATE PAYMENT SESSION
-    ========================= */
-
+    console.time('4️⃣ Create payment session');
     const session = await PaymentSessionService.createSession(order.id, method as any);
+    console.timeEnd('4️⃣ Create payment session');
 
+    console.time('5️⃣ Create PaymentIntent');
     const paymentIntent = await PaymentSessionService.createPaymentIntent(session.id);
+    console.timeEnd('5️⃣ Create PaymentIntent');
+
+    console.timeEnd('🛒 TOTAL CHECKOUT');
 
     return {
       orderId: order.id,

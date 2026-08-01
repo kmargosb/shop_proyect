@@ -17,7 +17,9 @@ export class StripeProvider {
         amount,
         currency,
 
-        payment_method_types: ['card', 'link'],
+        automatic_payment_methods: {
+          enabled: true,
+        },
 
         metadata: {
           orderId,

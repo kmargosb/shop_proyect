@@ -10,7 +10,7 @@ import { checkoutSchema, type CheckoutSchema } from '../schemas/checkout.schema'
 
 export function useCheckoutForm() {
   const { user, loading: authLoading } = useAuth();
-  const { data: addresses = [] } = useAddressesQuery();
+  const { data: addresses = [] } = useAddressesQuery(!!user);
   const deleteAddressMutation = useDeleteAddress();
   const favoriteAddressMutation = useFavoriteAddress();
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);

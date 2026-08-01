@@ -19,7 +19,7 @@ export function useCheckoutMutation() {
       localStorage.setItem('orderEmail', variables.email);
       localStorage.setItem('orderEmailOrderId', data.orderId);
 
-      await queryClient.invalidateQueries({
+      queryClient.invalidateQueries({
         queryKey: queryKeys.cart.all,
       });
 

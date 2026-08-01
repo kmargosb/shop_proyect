@@ -16,7 +16,11 @@ type Props = {
 
 export default function PayOrderView({ orderId, clientSecret }: Props) {
   const [secret, setSecret] = useState(clientSecret);
-  const { data: order, isPending, isError, error } = useOrder(orderId);
+
+  const email =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') : null;
+
+  const { data: order, isPending, isError, error } = useOrder(orderId, email);
 
   console.log({
     orderId,
@@ -62,14 +66,6 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
     };
   }, [orderId]);
 
-  if (isPending) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading your order...
-      </div>
-    );
-  }
-
   if (isError) {
     console.error(error);
 
@@ -91,7 +87,7 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
     );
   }
 
-  if (!order) {
+  if (!order && !isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
         Order not found.
@@ -128,7 +124,13 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <PaymentSummary order={order} />
+          {order ? (
+            <PaymentSummary order={order} />
+          ) : (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+              <p className="text-neutral-400">Loading order summary...</p>
+            </div>
+          )}
         </motion.div>
 
         {/* RIGHT */}
