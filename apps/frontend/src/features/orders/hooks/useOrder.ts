@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchOrder, fetchPublicOrder } from '../orders.service';
+import { fetchPaymentSummary, fetchPublicOrder } from '../orders.service';
 
 export function useOrder(id: string, email?: string | null, enabled = true) {
   return useQuery({
-    queryKey: ['orders', id, email],
+    queryKey: ['payment-summary', id],
 
-    queryFn: () => (email ? fetchPublicOrder(id, email) : fetchOrder(id)),
+    queryFn: () => (email ? fetchPublicOrder(id, email) : fetchPaymentSummary(id)),
 
     enabled: !!id && enabled,
 
