@@ -52,16 +52,3 @@ export async function retryPayment(orderId: string) {
 
   return response.json();
 }
-
-export async function getOrder(id: string) {
-  const response = await request(`/orders/${id}`);
-  return response.json();
-}
-
-export async function getGuestOrder(id: string, email: string) {
-  const response = await request(`/orders/public/${id}?email=${encodeURIComponent(email)}`, {
-    auth: false,
-  });
-
-  return response.json();
-}

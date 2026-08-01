@@ -9,11 +9,9 @@ import {
   cancelOrder,
   markRefundSent,
   retryPayment,
-  getOrder,
-  getGuestOrder,
+  fetchOrder,
+  fetchPublicOrder,
 } from '@/features/orders/orders.service';
-import { useOrder } from '@/features/orders/hooks/useOrder';
-import { apiFetch, publicFetch } from '@/shared/lib/api';
 import { Button } from '@/shared/ui/button';
 import {
   CheckCircle2,
@@ -66,14 +64,14 @@ export default function Page() {
       const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
       if (email) {
-        const data = await getGuestOrder(id, email);
+        const data = await fetchPublicOrder(id, email);
 
         setOrder(data);
 
         return data;
       }
 
-      const data = await getOrder(id);
+      const data = await fetchOrder(id);
 
       setOrder(data);
 
@@ -214,11 +212,11 @@ export default function Page() {
       const email = queryEmail || (storedOrderId === id ? storedEmail : null);
 
       if (email) {
-        const updatedOrder = await getGuestOrder(id, email);
+        const updatedOrder = await fetchPublicOrder(id, email);
 
         setOrder(updatedOrder);
       } else {
-        const updatedOrder = await getOrder(order.id);
+        const updatedOrder = await fetchOrder(order.id);
 
         setOrder(updatedOrder);
       }
@@ -259,7 +257,7 @@ export default function Page() {
 
       await cancelOrder(order.id, cancelReason);
 
-      const updatedOrder = await getOrder(order.id);
+      const updatedOrder = await fetchOrder(order.id);
 
       setOrder(updatedOrder);
     } catch (error) {

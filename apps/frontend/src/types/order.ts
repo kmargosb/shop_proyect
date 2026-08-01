@@ -76,3 +76,20 @@ export type Order = {
   shipment?: Shipment | null;
   refunds?: Refund[];
 };
+
+export interface PaymentSummaryItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  size?: string | null;
+  color?: string | null;
+  image: string;
+}
+
+export interface PaymentSummaryResponse {
+  id: string;
+  currency: string;
+  totalAmount: number;
+  items: PaymentSummaryItem[];
+}

@@ -40,7 +40,9 @@ export default function StripePaymentForm({ orderId }: Props) {
             localStorage.setItem('orderEmail', parsed.email);
             localStorage.setItem('orderEmailOrderId', orderId);
           }
-        } catch {}
+        } catch (error) {
+          console.error(error);
+        }
       }
       const result = await stripe.confirmPayment({
         elements,
@@ -50,7 +52,6 @@ export default function StripePaymentForm({ orderId }: Props) {
       });
 
       if (result.error) {
-        console.log('STRIPE ERROR', result.error);
         const message = result.error.message ?? '';
 
         if (message.includes('status of canceled') || message.includes('PaymentIntent')) {

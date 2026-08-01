@@ -1,13 +1,16 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import PaymentWrapper from './PaymentWrapper';
-import StripePaymentForm from './StripePaymentForm';
 import { useEffect, useState } from 'react';
+
 import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
-import { useOrder } from '@/features/orders/hooks/useOrder';
+
+import PaymentWrapper from './PaymentWrapper';
+import StripePaymentForm from './StripePaymentForm';
 import PaymentSummary from './PaymentSummary';
+
+import { usePaymentSummary } from '@/features/orders/hooks/usePaymentSummary';
 
 type Props = {
   orderId: string;
@@ -20,34 +23,7 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
   const email =
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') : null;
 
-  const [order, setOrder] = useState<any>(null);
-
-  useEffect(() => {
-    async function load() {
-      console.log('🚀 Cargando pedido manualmente');
-
-      const endpoint = email
-        ? `/orders/public/${orderId}?email=${encodeURIComponent(email)}`
-        : `/orders/${orderId}/payment-summary`;
-
-      const res = await apiFetch(endpoint);
-
-      if (!res) {
-        console.error('apiFetch devolvió null');
-        return;
-      }
-
-      console.log('STATUS', res.status);
-
-      const data = await res.json();
-
-      console.log('ORDER', data);
-
-      setOrder(data);
-    }
-
-    load();
-  }, [orderId, email]);
+  const { order, loading, error } = usePaymentSummary(orderId, email);
 
   useEffect(() => {
     if (secret) return;
@@ -101,33 +77,47 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
 
   return (
     <main className="relative flex min-h-[calc(100vh-64px)] items-center overflow-x-hidden bg-[#0A0A0A] px-4 py-6 text-white">
-      {/* BACKGROUND LIGHT */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-[-200px] left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-white/5 blur-[160px]" />
       </div>
 
       <div className="relative mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[420px_1fr]">
-        {/* LEFT */}
         <motion.div
           className="self-start lg:sticky lg:top-8"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {order ? (
+          {error ? (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+              <p className="text-neutral-400">We couldn't load the order summary.</p>
+            </div>
+          ) : order ? (
             <PaymentSummary order={order} />
           ) : (
             <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="text-neutral-400">Loading order summary...</p>
+              <p className="text-neutral-400">
+                {loading ? 'Loading order summary...' : 'Order unavailable.'}
+              </p>
             </div>
           )}
         </motion.div>
 
-        {/* RIGHT */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          initial={{
+            opacity: 0,
+            scale: 0.96,
+            filter: 'blur(10px)',
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+          }}
+          transition={{
+            duration: 0.5,
+            delay: 0.1,
+          }}
           className="relative"
         >
           <div className="pointer-events-none absolute inset-0 rounded-3xl bg-white/[0.06] blur-3xl" />
