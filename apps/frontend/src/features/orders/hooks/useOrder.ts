@@ -2,16 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 
 import { fetchOrder, fetchPublicOrder } from '../orders.service';
 
-export function useOrder(id: string, email?: string | null) {
+export function useOrder(id: string, email?: string | null, enabled = true) {
   return useQuery({
     queryKey: ['orders', id, email],
 
     queryFn: () => (email ? fetchPublicOrder(id, email) : fetchOrder(id)),
 
-    enabled: !!id,
+    enabled: !!id && enabled,
 
-    retry: 3,
+    retry: 1,
 
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    retryDelay: 1000,
   });
 }

@@ -1,21 +1,21 @@
 import { request } from '@/shared/lib/request';
 
 export async function fetchOrder(id: string) {
-  console.log('📦 Fetching order:', id);
-
   const response = await request(`/orders/${id}`);
 
-  console.log('✅ Order response:', response.status);
-
-  const data = await response.json();
-
-  console.log('📦 Order loaded:', data);
-
-  return data;
+  return response.json();
 }
 
 export async function fetchPublicOrder(id: string, email: string) {
   const response = await request(`/orders/public/${id}?email=${encodeURIComponent(email)}`, {
+    auth: false,
+  });
+
+  return response.json();
+}
+
+export async function fetchPaymentSummary(id: string) {
+  const response = await request(`/orders/${id}/payment-summary`, {
     auth: false,
   });
 

@@ -23,11 +23,13 @@ export function useCheckoutMutation() {
         queryKey: queryKeys.cart.all,
       });
 
-      router.push(
-        `/orders/${data.orderId}/pay?clientSecret=${encodeURIComponent(
-          data.payment.clientSecret,
-        )}&email=${encodeURIComponent(variables.email)}`,
-      );
+      const paymentUrl = `/orders/${data.orderId}/pay?clientSecret=${encodeURIComponent(
+        data.payment.clientSecret,
+      )}&email=${encodeURIComponent(variables.email)}`;
+
+      router.prefetch(paymentUrl);
+
+      router.push(paymentUrl);
     },
 
     onError(error: any) {

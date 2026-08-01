@@ -609,7 +609,23 @@ export const getPaymentSummaryController = async (req: Request, res: Response) =
         id: orderId,
       },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                images: {
+                  where: {
+                    isPrimary: true,
+                  },
+                  take: 1,
+                  select: {
+                    url: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -626,11 +642,13 @@ export const getPaymentSummaryController = async (req: Request, res: Response) =
 
       items: order.items.map((item) => ({
         id: item.id,
-        name: item.productName,
+        productName: item.productName,
         quantity: item.quantity,
         price: item.price,
         size: item.size,
         color: item.color,
+
+        image: item.product?.images?.[0]?.url ?? '/placeholder-product.png',
       })),
     });
   } catch (error) {

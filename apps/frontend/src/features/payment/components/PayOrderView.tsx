@@ -16,11 +16,12 @@ type Props = {
 
 export default function PayOrderView({ orderId, clientSecret }: Props) {
   const [secret, setSecret] = useState(clientSecret);
+  const [loadOrder, setLoadOrder] = useState(false);
 
   const email =
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') : null;
 
-  const { data: order, isPending, isError, error } = useOrder(orderId, email);
+  const { data: order, isPending, isError, error } = useOrder(orderId, email, loadOrder);
 
   console.log({
     orderId,
@@ -66,35 +67,6 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
     };
   }, [orderId]);
 
-  if (isError) {
-    console.error(error);
-
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
-        <div className="space-y-4 text-center">
-          <h2 className="text-2xl font-semibold">We couldn't load your order</h2>
-
-          <p className="text-neutral-400">Please refresh the page or try again in a few seconds.</p>
-
-          <button
-            onClick={() => window.location.reload()}
-            className="rounded-xl bg-white px-6 py-3 text-black"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!order && !isPending) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Order not found.
-      </div>
-    );
-  }
-
   if (!secret) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -124,7 +96,11 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {order ? (
+          {isError ? (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+              <p className="text-neutral-400">We couldn't load the order summary.</p>
+            </div>
+          ) : order ? (
             <PaymentSummary order={order} />
           ) : (
             <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
