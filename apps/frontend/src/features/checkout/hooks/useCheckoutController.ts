@@ -6,8 +6,11 @@ export function useCheckoutController() {
 
   const mutation = useCheckoutMutation();
 
-  async function submit() {
-    await mutation.mutateAsync(checkoutForm.getValues());
+  async function submit(clearCart: () => void) {
+    await mutation.mutateAsync({
+      data: checkoutForm.getValues(),
+      clearCart,
+    });
   }
 
   return {

@@ -2,21 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { useCheckoutController } from './hooks/useCheckoutController';
 import { useCart } from '@/features/cart/CartContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useLanguage } from '@/shared/i18n/LanguageContext';
+
 import LoginInline from '@/features/auth/components/LoginInline';
 import CheckoutSummary from './components/CheckoutSummary';
 import CheckoutForm from './components/CheckoutForm';
 import SavedAddresses from './components/SavedAddresses';
 
 export default function CreateOrderForm() {
-  const { items, totalPrice, increaseQuantity, decreaseQuantity, removeItem } = useCart();
+  const { items, totalPrice, increaseQuantity, decreaseQuantity, removeItem, clearCart } =
+    useCart();
+
   const [showAddresses, setShowAddresses] = useState(false);
   const [sameAsShipping, setSameAsShipping] = useState(true);
+
   const { refreshUser } = useAuth();
   const { t } = useLanguage();
+
   const {
     checkoutForm,
     submit,
@@ -41,26 +47,27 @@ export default function CreateOrderForm() {
 
   useEffect(() => {
     const saved = localStorage.getItem('checkoutData');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
 
-        reset({
-          firstName: parsed.firstName ?? '',
-          lastName: parsed.lastName ?? '',
-          email: parsed.email ?? '',
-          phone: parsed.phone ?? '',
-          addressLine1: parsed.addressLine1 ?? '',
-          addressLine2: parsed.addressLine2 ?? '',
-          city: parsed.city ?? '',
-          postalCode: parsed.postalCode ?? '',
-          country: parsed.country ?? 'ES',
-        });
-      } catch {
-        localStorage.removeItem('checkoutData');
-      }
+    if (!saved) return;
+
+    try {
+      const parsed = JSON.parse(saved);
+
+      reset({
+        firstName: parsed.firstName ?? '',
+        lastName: parsed.lastName ?? '',
+        email: parsed.email ?? '',
+        phone: parsed.phone ?? '',
+        addressLine1: parsed.addressLine1 ?? '',
+        addressLine2: parsed.addressLine2 ?? '',
+        city: parsed.city ?? '',
+        postalCode: parsed.postalCode ?? '',
+        country: parsed.country ?? 'ES',
+      });
+    } catch {
+      localStorage.removeItem('checkoutData');
     }
-  }, []);
+  }, [reset]);
 
   /* ================= AUTO SAVE ================= */
 
@@ -73,68 +80,71 @@ export default function CreateOrderForm() {
   }, [watch]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
-      {/* LEFT */}
-      <div className="space-y-6">
-        {/* LOGIN APPLE STYLE */}
-        {!isLogged && (
-          <div className="overflow-hidden rounded-xl bg-neutral-900">
-            <motion.div layout className="p-4">
-              <AnimatePresence mode="wait">
-                {!showLogin ? (
-                  <motion.div
-                    key="cta"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{
-                      duration: 0.35,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                  >
-                    <p className="text-sm text-neutral-400">
-                      {t.checkout.alreadyAccount}{' '}
-                      <button
-                        onClick={() => setShowLogin(true)}
-                        className="underline transition hover:text-white"
-                      >
-                        {t.checkout.signIn}
-                      </button>
-                    </p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="login"
-                    initial={{ opacity: 0, scale: 0.97 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.97 }}
-                    transition={{
-                      duration: 0.35,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                  >
-                    <LoginInline
-                      onSuccess={async () => {
-                        await refreshUser();
-                        setIsLogged(true);
-                        setShowLogin(false);
-                      }}
-                    />
+    <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+      {/* ====================================================== */}
+      {/* LEFT COLUMN                                            */}
+      {/* ====================================================== */}
 
-                    <button
-                      onClick={() => setShowLogin(false)}
-                      className="mt-4 text-xs text-neutral-400 transition hover:text-white"
-                    >
-                      ← {t.checkout.back}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </div>
+      <div className="space-y-6">
+        {/* ================= LOGIN ================= */}
+
+        {!isLogged && (
+          <motion.div layout className="p-4">
+            <AnimatePresence mode="wait">
+              {!showLogin ? (
+                <motion.div
+                  key="cta"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  {t.checkout.alreadyAccount}{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowLogin(true)}
+                    className="underline transition hover:text-white"
+                  >
+                    {t.checkout.signIn}
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="login"
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <LoginInline
+                    onSuccess={async () => {
+                      await refreshUser();
+                      setIsLogged(true);
+                      setShowLogin(false);
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowLogin(false)}
+                    className="mt-4 text-xs text-neutral-400 transition hover:text-white"
+                  >
+                    ← {t.checkout.back}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
 
-        {/* ADDRESSES */}
+        {/* ================= SAVED SHIPPING ADDRESSES ================= */}
+
         {shippingAddresses.length > 0 && (
           <SavedAddresses
             title="Direcciones de envío"
@@ -168,14 +178,22 @@ export default function CreateOrderForm() {
             isDefault={(address) => !!address.isDefaultShipping}
           />
         )}
+
+        {/* ================= CHECKOUT FORM ================= */}
+
         <CheckoutForm
           checkoutForm={checkoutForm}
-          onSubmit={submit}
+          onSubmit={() => submit(clearCart)}
           billingAddresses={billingAddresses}
           setFavorite={setFavorite}
           deleteAddress={deleteAddress}
         />
       </div>
+
+      {/* ====================================================== */}
+      {/* RIGHT COLUMN                                           */}
+      {/* ====================================================== */}
+
       <CheckoutSummary
         items={items}
         totalPrice={totalPrice}
