@@ -162,6 +162,12 @@ export default function StripePaymentForm({ orderId }: Props) {
           <ExpressCheckoutElement
             options={{
               buttonHeight: 48,
+
+              paymentMethods: {
+                applePay: 'always',
+                googlePay: 'always',
+              },
+
               layout: {
                 maxColumns: 2,
                 maxRows: 2,
