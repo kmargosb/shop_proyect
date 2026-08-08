@@ -2,33 +2,59 @@
 
 import Image from 'next/image';
 
+type PaymentItem = {
+  id: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  size?: string | null;
+  color?: string | null;
+  image?: string | null;
+};
+
+type PaymentOrder = {
+  id: string;
+  currency: string;
+  totalAmount: number;
+  items: PaymentItem[];
+};
+
 type Props = {
-  order: any;
+  order: PaymentOrder;
 };
 
 export default function PaymentSummary({ order }: Props) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
-      <h2 className="text-2xl font-semibold tracking-tight">Order Summary</h2>
+    <div>
+      <h2 className="text-lg font-semibold">Order Summary</h2>
 
       <div className="mt-6 space-y-4">
-        {order.items.map((item: any) => {
+        {order.items.map((item) => {
           const image =
-            item.product?.images?.find((i: any) => i.isPrimary)?.url ??
-            item.product?.images?.[0]?.url ??
-            '/placeholder-product.png';
+            typeof item.image === 'string' && item.image.trim().length > 0
+              ? item.image
+              : '/placeholder-product.png';
+
+          console.log('PAYMENT ITEM:', item);
+          console.log('PAYMENT IMAGE:', image);
 
           return (
             <div key={item.id} className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900">
-                  <Image
-                    src={image}
-                    alt={item.productName}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
+                  {image ? (
+                    <Image
+                      src={image}
+                      alt={item.productName}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-600">
+                      No image
+                    </div>
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -57,19 +83,16 @@ export default function PaymentSummary({ order }: Props) {
       <div className="space-y-3 text-sm">
         <div className="flex justify-between text-neutral-400">
           <span>Subtotal</span>
-
           <span>€{(order.totalAmount / 100).toFixed(2)}</span>
         </div>
 
         <div className="flex justify-between text-neutral-400">
           <span>Shipping</span>
-
           <span className="text-green-400">Free</span>
         </div>
 
         <div className="flex justify-between text-neutral-400">
           <span>Taxes</span>
-
           <span>Included</span>
         </div>
       </div>
