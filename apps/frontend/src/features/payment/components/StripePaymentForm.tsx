@@ -144,11 +144,9 @@ export default function StripePaymentForm({ orderId }: Props) {
 
       <section className="space-y-4">
         <div className="space-y-1">
-          <h2 className="text-sm font-medium text-white">Quick checkout</h2>
+          <h2 className="text-sm font-medium text-white">Express checkout</h2>
 
-          <p className="text-xs text-neutral-500">
-            Use a saved payment method for a faster checkout.
-          </p>
+          <p className="text-xs text-neutral-500">Pay faster with your preferred wallet.</p>
         </div>
 
         <div
@@ -161,17 +159,34 @@ export default function StripePaymentForm({ orderId }: Props) {
         >
           <ExpressCheckoutElement
             options={{
-              buttonHeight: 48,
-
-              paymentMethods: {
-                applePay: 'always',
-                googlePay: 'always',
-              },
+              buttonHeight: 52,
 
               layout: {
                 maxColumns: 2,
                 maxRows: 2,
-                overflow: 'auto',
+              },
+
+              paymentMethods: {
+                applePay: 'auto',
+                googlePay: 'auto',
+                paypal: 'auto',
+                klarna: 'never',
+                amazonPay: 'never',
+                link: 'never',
+              },
+
+              paymentMethodOrder: ['applePay', 'googlePay', 'paypal'],
+
+              buttonType: {
+                applePay: 'plain',
+                googlePay: 'plain',
+                paypal: 'paypal',
+              },
+
+              buttonTheme: {
+                applePay: 'white',
+                googlePay: 'white',
+                paypal: 'gold',
               },
             }}
             onReady={() => {
@@ -212,8 +227,8 @@ export default function StripePaymentForm({ orderId }: Props) {
             <PaymentElement
               options={{
                 layout: {
-                  type: 'tabs',
-                  defaultCollapsed: false,
+                  type: 'accordion',
+                  defaultCollapsed: true,
                 },
 
                 business: {
@@ -223,7 +238,6 @@ export default function StripePaymentForm({ orderId }: Props) {
                 defaultValues: {
                   billingDetails: {
                     name: `${checkoutData.firstName ?? ''} ${checkoutData.lastName ?? ''}`.trim(),
-
                     email: checkoutData.email ?? '',
                   },
                 },

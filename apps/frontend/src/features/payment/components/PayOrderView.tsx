@@ -1,14 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 import { apiFetch } from '@/shared/lib/api';
 import { socket } from '@/shared/lib/socket';
 
 import PaymentWrapper from './PaymentWrapper';
-import StripePaymentForm from './StripePaymentForm';
 import PaymentSummary from './PaymentSummary';
+import StripePaymentForm from './StripePaymentForm';
 
 import { usePaymentSummary } from '@/features/orders/hooks/usePaymentSummary';
 
@@ -25,8 +24,16 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
 
   const { order, loading, error } = usePaymentSummary(orderId, email);
 
+  /*
+   * --------------------------------------------------
+   * RECOVER PAYMENT
+   * --------------------------------------------------
+   */
+
   useEffect(() => {
     if (secret) return;
+
+    let cancelled = false;
 
     const recover = async () => {
       try {
@@ -34,22 +41,38 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
           method: 'POST',
         });
 
-        if (!res?.ok) return;
+        if (!res?.ok) {
+          return;
+        }
 
         const data = await res.json();
 
-        setSecret(data.clientSecret);
+        if (!cancelled && data?.clientSecret) {
+          setSecret(data.clientSecret);
+        }
       } catch (error) {
         console.error(error);
       }
     };
 
     recover();
+
+    return () => {
+      cancelled = true;
+    };
   }, [orderId, secret]);
+
+  /*
+   * --------------------------------------------------
+   * ORDER CANCELLATION
+   * --------------------------------------------------
+   */
 
   useEffect(() => {
     const handler = ({ orderId: updatedOrderId }: { orderId: string }) => {
-      if (updatedOrderId !== orderId) return;
+      if (updatedOrderId !== orderId) {
+        return;
+      }
 
       window.location.reload();
     };
@@ -61,84 +84,90 @@ export default function PayOrderView({ orderId, clientSecret }: Props) {
     };
   }, [orderId]);
 
+  /*
+   * --------------------------------------------------
+   * PAYMENT RECOVERY SCREEN
+   * --------------------------------------------------
+   */
+
   if (!secret) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="space-y-4 text-center">
-          <p className="text-lg">Recovering your payment...</p>
+      <main className="flex min-h-dvh items-center justify-center bg-[#0A0A0A] px-6 text-white">
+        <div className="w-full max-w-sm text-center">
+          <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-8">
+            <div className="mx-auto mb-5 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
 
-          <a href="/shop" className="text-neutral-400 underline hover:text-white">
-            Volver a la tienda
-          </a>
+            <p className="text-base font-medium">Recovering your payment...</p>
+
+            <p className="mt-2 text-sm text-neutral-500">Please wait a moment.</p>
+
+            <a
+              href="/shop"
+              className="mt-6 inline-block text-sm text-neutral-400 underline underline-offset-4 transition-colors hover:text-white"
+            >
+              Volver a la tienda
+            </a>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
-  return (
-    <main className="relative flex min-h-[calc(100vh-64px)] items-center overflow-x-hidden bg-[#0A0A0A] px-4 py-6 text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-[-200px] left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-white/5 blur-[160px]" />
-      </div>
+  /*
+   * --------------------------------------------------
+   * PAYMENT PAGE
+   * --------------------------------------------------
+   */
 
-      <div className="relative mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[420px_1fr]">
-        <motion.div
-          className="self-start lg:sticky lg:top-8"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-        >
+  return (
+    <main className="min-h-dvh bg-[#0A0A0A] px-4 py-6 text-white sm:px-6 sm:py-8 lg:py-12">
+      <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-10">
+        {/* -------------------------------------------- */}
+        {/* ORDER SUMMARY                                 */}
+        {/* -------------------------------------------- */}
+
+        <aside className="self-start lg:sticky lg:top-8">
           {error ? (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="text-neutral-400">We couldn't load the order summary.</p>
+            <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6">
+              <p className="text-sm text-neutral-400">We couldn&apos;t load the order summary.</p>
             </div>
           ) : order ? (
             <PaymentSummary order={order} />
           ) : (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="text-neutral-400">
+            <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6">
+              <p className="text-sm text-neutral-400">
                 {loading ? 'Loading order summary...' : 'Order unavailable.'}
               </p>
             </div>
           )}
-        </motion.div>
+        </aside>
 
-        <motion.div
-          initial={{
-            opacity: 0,
-            scale: 0.96,
-            filter: 'blur(10px)',
-          }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            filter: 'blur(0px)',
-          }}
-          transition={{
-            duration: 0.5,
-            delay: 0.1,
-          }}
-          className="relative"
-        >
-          <div className="pointer-events-none absolute inset-0 rounded-3xl bg-white/[0.06] blur-3xl" />
+        {/* -------------------------------------------- */}
+        {/* PAYMENT                                      */}
+        {/* -------------------------------------------- */}
 
-          <div className="relative z-10 mb-6">
-            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+        <section className="min-w-0">
+          {/* HEADER */}
+
+          <div className="mb-6">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Complete your purchase
             </h1>
 
-            <p className="mt-2 text-sm text-neutral-400 md:text-base">
+            <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-400 sm:text-base">
               Secure payment powered by Stripe. Your order will be confirmed instantly after
               payment.
             </p>
           </div>
 
-          <div className="relative z-10 max-w-2xl rounded-3xl border border-white/[0.08] bg-white/[0.04] p-4 shadow-[0_20px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl md:p-8">
+          {/* STRIPE CONTAINER */}
+
+          <div className="w-full max-w-2xl rounded-3xl border border-white/[0.08] bg-white/[0.035] p-3 shadow-[0_20px_70px_rgba(0,0,0,0.45)] sm:p-5 lg:p-7">
             <PaymentWrapper clientSecret={secret}>
               <StripePaymentForm orderId={orderId} />
             </PaymentWrapper>
           </div>
-        </motion.div>
+        </section>
       </div>
     </main>
   );
